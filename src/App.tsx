@@ -1,35 +1,77 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
-import './App.css'
+/* eslint-disable @typescript-eslint/no-explicit-any */
+import {  useEffect, useState } from "react";
+import TenantLogin from "@ui/components/auth/TenantLogin";
 
-function App() {
-  const [count, setCount] = useState(0)
+import RoleRouter from "./ui/components/role/RoleRouter";
+import SelectLocationPage from "./ui/components/auth/SelectLocationPage"; 
+import { deviceService, type DeviceRole } from "./services/local/device.local.service";
+import Home from "./ui/Home";
 
-  return (
-    <>
-      <div>
-        <a href="https://vite.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.tsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
-    </>
-  )
+
+export default function App() {
+  const [tenant, setTenant] = useState<string | null>(() =>
+    localStorage.getItem("tenant_domain")
+  );
+
+  const [locationId, setLocationId] = useState<string | null>(() =>
+    localStorage.getItem("selected_location_id")
+  );
+
+   const [deviceRole, setDeviceRole] = useState<DeviceRole | null>(null);
+  const [checkingDevice, setCheckingDevice] = useState(true);
+
+  useEffect(() => {
+    deviceService
+      .getDevice()
+      .then((device) => {
+        if (device) {
+          setDeviceRole(device.role);
+          (window as any).screenType = device.role;
+        }
+      })
+      .finally(() => setCheckingDevice(false));
+  }, []);
+
+
+  if (!tenant) {
+    return (
+      <TenantLogin
+        onTenantSelected={(domain) => {
+          localStorage.setItem("tenant_domain", domain);
+          setTenant(domain);
+          
+        }}
+      />
+    );
+  }
+
+
+  if (!locationId) {
+    return (
+      <SelectLocationPage
+        onSelect={(location) => {
+          localStorage.setItem("selected_location_id", location.id);
+          setLocationId(location.id);
+        }}
+      />
+    );
+  }
+
+   if (checkingDevice) {
+    return <div className="min-h-screen flex items-center justify-center">Loading device…</div>;
+  }
+  
+  if (!deviceRole) {
+    return (
+      <Home
+        onRoleSelected={(role) => {
+          setDeviceRole(role);
+          (window as any).screenType = role;
+        }}
+      />
+    );
+  }
+
+
+  return <RoleRouter />;
 }
-
-export default App
