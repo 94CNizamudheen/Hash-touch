@@ -32,6 +32,7 @@ export default function Home({ onRoleSelected }: Props) {
         name: `${label} Device`,
         role: selectedRole,
       });
+      console.log('device',device)
       onRoleSelected(device.role as DeviceRole);
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (err: any) {

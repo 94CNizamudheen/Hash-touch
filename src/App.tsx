@@ -2,7 +2,7 @@
 import {  useEffect, useState } from "react";
 import TenantLogin from "@ui/components/auth/TenantLogin";
 
-import RoleRouter from "./ui/components/role/RoleRouter";
+import RoleRouter from "./ui/components/routes/RoleRouter";
 import SelectLocationPage from "./ui/components/auth/SelectLocationPage"; 
 import { deviceService, type DeviceRole } from "./services/local/device.local.service";
 import Home from "./ui/Home";

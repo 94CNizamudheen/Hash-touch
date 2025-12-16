@@ -26,6 +26,7 @@ pub fn run() {
             commands::location::select_location,
             commands::device::get_devices,
             commands::device::save_device,
+            commands::device::get_device,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
