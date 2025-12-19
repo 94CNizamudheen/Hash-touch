@@ -1,77 +1,154 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
-import {  useEffect, useState } from "react";
-import TenantLogin from "@ui/components/auth/TenantLogin";
 
-import RoleRouter from "./ui/components/routes/RoleRouter";
-import SelectLocationPage from "./ui/components/auth/SelectLocationPage"; 
-import { deviceService, type DeviceRole } from "./services/local/device.local.service";
-import Home from "./ui/Home";
+import { useEffect, useState } from "react";
+import { useDispatch, useSelector } from "react-redux";
+import {  Routes, Route } from "react-router-dom";
 
+import TenantLogin from "@/ui/components/auth/TenantLogin";
+import SelectLocationPage from "@/ui/components/auth/SelectLocationPage";
+import Home from "@/ui/Home";
+import RoleRouter from "@/ui/components/routes/RoleRouter";
+
+
+
+import { initialSync } from "@/services/data/initialSync.service";
+import { appStateApi } from "@/services/tauri/appState";
+
+import type { AppState, DeviceRole } from "@/types/app-state";
+import type { RootState, AppDispatch } from "@/ui/store/store";
+import {
+  hydrateAppState,
+  setDeviceRole,
+} from "@/ui/store/slices/appStateSlice";
+import { commonDataService } from "./services/data/common.data.service";
+import PosRoutes from "./ui/components/routes/pos.routes";
+import KioskRoutes from "./ui/components/routes/kiosk.routes";
+import KdsRoutes from "./ui/components/routes/kds.routes";
+import QueueRoutes from "./ui/components/routes/queue.routes";
+
+
+/* =========================
+   Types
+========================= */
+interface Location {
+  id: string;
+  brand_id: string;
+  name: string;
+  active: boolean;
+}
 
 export default function App() {
-  const [tenant, setTenant] = useState<string | null>(() =>
-    localStorage.getItem("tenant_domain")
-  );
+  const dispatch = useDispatch<AppDispatch>();
+  const appState = useSelector((state: RootState) => state.appState);
+  const [booting, setBooting] = useState(true);
 
-  const [locationId, setLocationId] = useState<string | null>(() =>
-    localStorage.getItem("selected_location_id")
-  );
-
-   const [deviceRole, setDeviceRole] = useState<DeviceRole | null>(null);
-  const [checkingDevice, setCheckingDevice] = useState(true);
-
+  /* =========================
+     BOOTSTRAP (Rust → Redux)
+  ========================= */
   useEffect(() => {
-    deviceService
-      .getDevice()
-      .then((device) => {
-        if (device) {
-          setDeviceRole(device.role);
-          (window as any).screenType = device.role;
-        }
+    async function bootstrap() {
+      const state: AppState = await appStateApi.get();
+      dispatch(hydrateAppState(state));
+      setBooting(false);
+    }
+    bootstrap();
+  }, [dispatch]);
+
+  /* =========================
+     HANDLERS
+  ========================= */
+
+  const handleTenantSelected = async (domain: string, token: string) => {
+    await appStateApi.setTenant(domain, token);
+    dispatch(
+      hydrateAppState({
+        ...appState,
+        tenant_domain: domain,
+        access_token: token,
       })
-      .finally(() => setCheckingDevice(false));
-  }, []);
+    );
+  };
 
+  const handleLocationSelected = async (location: Location) => {
+    if (!appState.tenant_domain || !appState.access_token) {
+      throw new Error("Missing tenant or token");
+    }
 
-  if (!tenant) {
+    await appStateApi.setLocation(location.id, location.brand_id);
+
+    const orderModesResponse = await commonDataService.getOrderModes(
+      appState.tenant_domain,
+      appState.access_token,
+      {
+        channel: appState.device_role ?? "POS",
+        location_id: location.id,
+        brand_id: location.brand_id,
+      }
+    );
+
+    const orderModeIds = orderModesResponse.map((om: any) => om.id);
+    await appStateApi.setOrderModeIds(orderModeIds);
+
+    await initialSync(appState.tenant_domain, appState.access_token, {
+      channel: appState.device_role ?? "POS",
+      locationId: location.id,
+      brandId: location.brand_id,
+      orderModeIds,
+    });
+
+    dispatch(
+      hydrateAppState({
+        ...appState,
+        selected_location_id: location.id,
+        brand_id: location.brand_id,
+        order_mode_ids: orderModeIds,
+      })
+    );
+  };
+
+  const handleRoleSelected = async (role: DeviceRole) => {
+    await appStateApi.setDeviceRole(role);
+    dispatch(setDeviceRole(role));
+  };
+
+  /* =========================
+     BOOT / AUTH FLOW
+  ========================= */
+
+  if (booting) {
     return (
-      <TenantLogin
-        onTenantSelected={(domain) => {
-          localStorage.setItem("tenant_domain", domain);
-          setTenant(domain);
-          
-        }}
-      />
+      <div className="min-h-screen flex items-center justify-center">
+        Booting device…
+      </div>
     );
   }
 
-
-  if (!locationId) {
-    return (
-      <SelectLocationPage
-        onSelect={(location) => {
-          localStorage.setItem("selected_location_id", location.id);
-          setLocationId(location.id);
-        }}
-      />
-    );
+  if (!appState.tenant_domain) {
+    return <TenantLogin onTenantSelected={handleTenantSelected} />;
   }
 
-   if (checkingDevice) {
-    return <div className="min-h-screen flex items-center justify-center">Loading device…</div>;
-  }
-  
-  if (!deviceRole) {
-    return (
-      <Home
-        onRoleSelected={(role) => {
-          setDeviceRole(role);
-          (window as any).screenType = role;
-        }}
-      />
-    );
+  if (!appState.selected_location_id) {
+    return <SelectLocationPage onSelect={handleLocationSelected} />;
   }
 
+  if (!appState.device_role) {
+    return <Home onRoleSelected={handleRoleSelected} />;
+  }
 
-  return <RoleRouter />;
+  /* =========================
+     ROUTER (ROLE BASED)
+  ========================= */
+
+  return (
+ 
+      <Routes>
+        {/* Entry: decides where to go */}
+        <Route path="/" element={<RoleRouter />} />
+        {/* Role route trees */}
+        <Route path="/pos/*" element={<PosRoutes />} />
+        <Route path="/kiosk/*" element={<KioskRoutes />} />
+        <Route path="/kds/*" element={<KdsRoutes />} />
+        <Route path="/queue/*" element={<QueueRoutes />} />
+      </Routes>
+ 
+  );
 }

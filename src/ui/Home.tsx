@@ -34,7 +34,6 @@ export default function Home({ onRoleSelected }: Props) {
       });
       console.log('device',device)
       onRoleSelected(device.role as DeviceRole);
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (err: any) {
       console.error("role select error:", err);
       setError(err.message || "Failed to save device profile");

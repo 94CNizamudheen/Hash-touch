@@ -1,4 +1,6 @@
+
 import { useEffect, useState } from "react";
+import { Navigate } from "react-router-dom";
 import { deviceService, type DeviceRole } from "@services/local/device.local.service";
 
 const RoleRouter = () => {
@@ -11,9 +13,7 @@ const RoleRouter = () => {
       .then((device) => {
         if (device) {
           setRole(device.role);
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           (window as any).screenType = device.role;
-          console.log("📺 screenType =", device.role);
         }
       })
       .finally(() => setLoading(false));
@@ -23,13 +23,13 @@ const RoleRouter = () => {
 
   switch (role) {
     case "POS":
-      return <div>POS Screen</div>;
+      return <Navigate to="/pos" replace />;
     case "KIOSK":
-      return <div>Kiosk Screen</div>;
-    case "QUEUE":
-      return <div>Queue Screen</div>;
+      return <Navigate to="/kiosk" replace />;
     case "KDS":
-      return <div>KDS Screen</div>;
+      return <Navigate to="/kds" replace />;
+    case "QUEUE":
+      return <Navigate to="/queue" replace />;
     default:
       return <div>No device configured</div>;
   }

@@ -8,7 +8,7 @@ import {
 } from "../data";
 import { cn } from "@/lib/utils";
 import { ArrowRightIcon } from "@radix-ui/react-icons";
-import { Icons } from "@/ui/icons";
+import { Icons } from "@/ui/icons"; 
 
 const Type4 = ({
   keysRow1,

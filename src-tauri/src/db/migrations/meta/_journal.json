@@ -5,8 +5,29 @@
     {
       "idx": 0,
       "version": "6",
-      "when": 1765885774402,
-      "tag": "0000_spooky_the_watchers",
+      "when": 1766032056233,
+      "tag": "0000_melodic_lorna_dane",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "6",
+      "when": 1766040536318,
+      "tag": "0001_quiet_nighthawk",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "6",
+      "when": 1766125432243,
+      "tag": "0002_panoramic_nitro",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "6",
+      "when": 1766148384276,
+      "tag": "0003_dusty_kat_farrell",
       "breakpoints": true
     }
   ]

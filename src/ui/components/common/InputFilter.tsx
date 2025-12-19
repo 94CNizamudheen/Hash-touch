@@ -1,0 +1,103 @@
+
+import { type FormEvent, useEffect, useRef, useState } from "react";
+import Keyboard from "./keyboard";
+import { useNavigate, useSearchParams } from "react-router-dom";
+import { useMediaQuery } from "usehooks-ts";
+import { Search } from "lucide-react";
+import { cn } from "@/lib/utils";
+import { Input } from "@/ui/shadcn/components/ui/input";
+
+interface InputFilterProps {
+  className?: string;
+  placeholder?: string;
+  value?: string;
+  onChange?: (e: React.ChangeEvent<HTMLInputElement>) => void;
+}
+
+const InputFilter = ({
+  className,
+  placeholder = "Search Product",
+  value: controlledValue,
+  onChange,
+}: InputFilterProps) => {
+  const router = useNavigate();
+  const [searchParams] = useSearchParams();
+  const [internalValue, setInternalValue] = useState<string>(
+    searchParams.get("search") ?? ""
+  );
+  const matches = useMediaQuery("(min-width: 1000px)");
+  const [showKeyboard, setShowKeyboard] = useState(false);
+  const inputRef = useRef<HTMLFormElement>(null);
+  const keyboardRef = useRef<HTMLDivElement>(null);
+
+  const value = controlledValue !== undefined ? controlledValue : internalValue;
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (onChange) onChange(e);
+    else setInternalValue(e.target.value);
+  };
+
+  const onSubmit = (e: FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    const params = new URLSearchParams(searchParams.toString());
+    if (value === "") params.delete("search");
+    else params.set("search", value);
+    router(`?${params.toString()}`);
+  };
+
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (
+        inputRef.current &&
+        !inputRef.current.contains(e.target as Node) &&
+        keyboardRef.current &&
+        !keyboardRef.current.contains(e.target as Node)
+      ) {
+        setShowKeyboard(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, []);
+
+  return (
+    <form
+      onSubmit={onSubmit}
+      className={cn(
+        "flex items-center bg-background min-h-[50px] gap-2 px-2 border rounded-lg md:min-w-96",
+        className
+      )}
+      ref={inputRef}
+    >
+      <Search className="stroke-body-foreground w-5 h-5" />
+      <Input
+        value={value}
+        onChange={handleChange}
+        placeholder={placeholder}
+        className="bg-transparent p-0 border-none shadow-none outline-none focus:ring-0 focus:outline-none focus-visible:ring-0 text-accent"
+        onFocus={() => setShowKeyboard(true)}
+      />
+      {matches && showKeyboard && (
+        <div
+          ref={keyboardRef}
+          className="fixed bottom-0 left-0 w-full min-h-[300px] px-44 py-10 bg-navigation-foreground z-50"
+        >
+          <Keyboard
+            onChange={(val) => {
+              const fakeEvent = {
+                target: { value: val },
+              } as React.ChangeEvent<HTMLInputElement>;
+              handleChange(fakeEvent);
+            }}
+            defaultValue={value}
+          />
+        </div>
+      )}
+    </form>
+  );
+};
+
+export default InputFilter;

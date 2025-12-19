@@ -1,11 +1,10 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { useEffect, useRef, useState } from "react";
-import { charType1KeysRow1, charType1KeysRow2, charType1KeysRow3,type keysRow1Type,type keysRow2Type, type keysRow3Type, numberKeysRow1, numberKeysRow2, numberKeysRow3, } from "../data";
+import { charType1KeysRow1, charType1KeysRow2, charType1KeysRow3, type keysRow1Type,type keysRow2Type,type keysRow3Type, numberKeysRow1, numberKeysRow2, numberKeysRow3, } from "../data";
 import { cn } from "@/lib/utils";
 import data from "@emoji-mart/data";
 import { Picker } from 'emoji-mart'
 import { ArrowRightIcon, FaceIcon, GlobeIcon } from "@radix-ui/react-icons";
-import { Icons } from "@/ui/icons";
+import { Icons } from "@/ui/icons"; 
 const EmojiPicker = Picker as unknown as React.FC<any>;
 const Type1 = ({
   keysRow1,
@@ -58,28 +57,34 @@ const Type1 = ({
     >
       {/* First row */}
       <div className="space-x-2 grid grid-cols-11">
-        {keysRow1.map((key: string[] | string) => (
-          <button
-            type="button"
-            key={key[0] ?? key}
-            className={cn(
-              "col-span-1 relative h-12 rounded-lg bg-white shadow text-black flex justify-center items-center text-lg font-medium",
-              isCaps ? "uppercase" : "lowercase"
-            )}
-            onClick={() => handleKeyClick(key[0] ?? key)}
-          >
-            {key[0] ? (
-              <>
-                {key[0]}
-                <p className="absolute top-1 right-1 text-xs text-black">
-                  {key[1]}
-                </p>
-              </>
-            ) : (
-              key
-            )}
-          </button>
-        ))}
+        {keysRow1.map((key: string | string[]) => {
+          const isArray = Array.isArray(key);
+          const primary = isArray ? key[0] : key;
+          const secondary = isArray ? key[1] : undefined;
+
+          return (
+            <button
+              type="button"
+              key={primary}
+              className={cn(
+                "col-span-1 relative h-12 rounded-lg bg-white shadow text-black flex justify-center items-center text-lg font-medium",
+                isCaps ? "uppercase" : "lowercase"
+              )}
+              onClick={() => handleKeyClick(primary)}
+            >
+              {isArray ? (
+                <>
+                  {primary}
+                  <p className="absolute top-1 right-1 text-xs text-black">
+                    {secondary}
+                  </p>
+                </>
+              ) : (
+                key
+              )}
+            </button>
+          );
+        })}
         <button
           type="button"
           onClick={() => onChangeValue(value.slice(0, -1))}

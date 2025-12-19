@@ -7,7 +7,7 @@ import {
   defaultKeysRow3,
   type keysRow1Type,
   type keysRow2Type,
-  type keysRow3Type,
+  type keysRow3Type,  
   numberKeysRow1,
   numberKeysRow2,
   numberKeysRow3,

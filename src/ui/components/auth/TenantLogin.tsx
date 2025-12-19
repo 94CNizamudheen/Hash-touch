@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { useState } from "react";
 import { FormProvider, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -27,7 +28,7 @@ const tenantSchema = z.object({
 type TenantLoginForm = z.infer<typeof tenantSchema>;
 
 interface TenantLoginProps {
-  onTenantSelected: (tenantDomain: string) => void;
+  onTenantSelected: (domain: string, token: string) => Promise<void>;
 }
 
 export default function TenantLogin({
@@ -52,32 +53,28 @@ export default function TenantLogin({
   /* =========================
      Submit Handler
   ========================= */
-  const onSubmit = async (data: TenantLoginForm) => {
-    try {
-      console.log('hello')
-      setIsLoading(true);
+ const onSubmit = async (data: TenantLoginForm) => {
+  try {
+    setIsLoading(true);
 
-      const result = await authService.loginTenant({
-        domain: data.domain,
-        email: data.email,
-        password: data.password,
-      });
+    const result = await authService.loginTenant({
+      domain: data.domain,
+      email: data.email,
+      password: data.password,
+    });
 
-      // Save auth details
-      authService.saveTenantAuth(result.access_token, data.domain);
-      console.log('tenant Login success')
+    console.log("✅ Tenant login success",result);
 
-      // Move to next stage
-      onTenantSelected(data.domain);
-      
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    } catch (err: any) {
-      console.error("❌ Tenant login failed:", err);
-      alert(err?.message || "Tenant login failed");
-    } finally {
-      setIsLoading(false);
-    }
-  };
+    // PASS domain + token UPWARD (do not store here)
+    await onTenantSelected(data.domain, result.access_token);
+
+  } catch (err: any) {
+    console.error("❌ Tenant login failed:", err);
+    alert(err?.message || "Tenant login failed");
+  } finally {
+    setIsLoading(false);
+  }
+};
   console.log(form.formState.errors);
   /* =========================
      UI

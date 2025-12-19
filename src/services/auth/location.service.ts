@@ -21,3 +21,4 @@ export const locationService = {
     return res.json();
   },
 };
+

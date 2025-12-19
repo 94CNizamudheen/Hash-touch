@@ -4,6 +4,7 @@ import { ChevronDown } from "lucide-react";
 
 interface Location {
   id: string;
+  brand_id: string;
   name: string;
   active: boolean;
 }
@@ -22,19 +23,22 @@ export default function SelectLocationPage({
   const sourceData = useMemo(
     () => [
       {
-        serverId: "8c1e9c3a-1a2b-4f2a-9f7d-1a2c9e4b1234",
+        id: "ad98450c-a4da-4971-870e-295d33e1904b",
+        brand_id: "95e0791c-6cd2-4c4f-a77e-4f62eeb3573d",
         name: "Green Valley",
         active: 1,
         selected: 0,
       },
       {
-        serverId: "f4a9d8e1-55cc-4a11-9c77-8899aa112233",
+        id: "22b19a2b-b3ae-45d3-baa2-e0cf52206081",
+        brand_id: "4478e3f2-3fa4-47d5-9391-3f975ac70d71",
         name: "Ocean Side",
         active: 1,
         selected: 0,
       },
       {
-        serverId: "d9e2b1c4-7777-4e99-8888-abcdef123456",
+        id: "b5d06614-db41-4ddf-9eed-35d52ebbe3f5",
+        brand_id: "29303023-9f25-4179-b08e-6364f59687b4",
         name: "Hill Top",
         active: 1,
         selected: 0,
@@ -48,7 +52,7 @@ export default function SelectLocationPage({
     () =>
       sourceData
         .filter((l) => l.active)
-        .map((l) => ({ id: l.serverId, name: l.name, active: Boolean(l.active) })),
+        .map((l) => ({ id: l.id,brand_id:l.brand_id , name: l.name, active: Boolean(l.active) })),
     [sourceData]
   );
 

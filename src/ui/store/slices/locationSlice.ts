@@ -1,11 +1,15 @@
+import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 
-
-import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
-import { locationService } from "@services/auth/location.service";
-import { locationLocal, type DbLocation } from "@/services/local/location.local.service";
+export interface Location {
+  id: string;
+  brand_id: string;
+  name: string;
+  active: boolean;
+  selected?: boolean;
+}
 
 interface LocationState {
-  items: DbLocation[];
+  items: Location[];
   loading: boolean;
 }
 
@@ -14,47 +18,88 @@ const initialState: LocationState = {
   loading: false,
 };
 
-export const fetchAndStoreLocations = createAsyncThunk(
-  "location/fetchAndStore",
-  async ({ domain, token }: { domain: string; token: string }) => {
+/* =========================
+   Helpers
+========================= */
+const readLocations = (): Location[] => {
+  try {
+    return JSON.parse(localStorage.getItem("locations") || "[]");
+  } catch {
+    return [];
+  }
+};
 
-    const res = await locationService.fetchLocations(domain, token);
+const writeLocations = (locations: Location[]) => {
+  localStorage.setItem("locations", JSON.stringify(locations));
+};
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const locations: DbLocation[] = res.data.map((l: any) => ({
-      server_id: l.id,
-      name: l.name,
-      active: Boolean(l.active),
-      selected: false,
-    }));
+/* =========================
+   Thunks
+========================= */
 
-    await locationLocal.save(locations);
-
-
-    return await locationLocal.getAll();
+/**
+ * Load locations from localStorage into Redux
+ */
+export const loadLocations = createAsyncThunk(
+  "location/load",
+  async () => {
+    return readLocations();
   }
 );
 
+/**
+ * Save locations once (after sync / mock / bootstrap)
+ */
+export const saveLocations = createAsyncThunk(
+  "location/save",
+  async (locations: Location[]) => {
+    writeLocations(locations);
+    return locations;
+  }
+);
+
+/**
+ * Select a location
+ */
 export const selectLocation = createAsyncThunk(
   "location/select",
-  async (serverId: string) => {
-    await locationLocal.select(serverId);
-    return await locationLocal.getAll();
+  async (locationId: string) => {
+    const locations = readLocations().map((l) => ({
+      ...l,
+      selected: l.id === locationId,
+    }));
+
+    writeLocations(locations);
+    localStorage.setItem("selected_location_id", locationId);
+
+    return locations;
   }
 );
 
+/* =========================
+   Slice
+========================= */
 const locationSlice = createSlice({
   name: "location",
   initialState,
-  reducers: {},
+  reducers: {
+    clearLocations(state) {
+      state.items = [];
+      localStorage.removeItem("locations");
+      localStorage.removeItem("selected_location_id");
+    },
+  },
   extraReducers: (builder) => {
     builder
-      .addCase(fetchAndStoreLocations.pending, (state) => {
+      .addCase(loadLocations.pending, (state) => {
         state.loading = true;
       })
-      .addCase(fetchAndStoreLocations.fulfilled, (state, action) => {
+      .addCase(loadLocations.fulfilled, (state, action) => {
         state.items = action.payload;
         state.loading = false;
+      })
+      .addCase(saveLocations.fulfilled, (state, action) => {
+        state.items = action.payload;
       })
       .addCase(selectLocation.fulfilled, (state, action) => {
         state.items = action.payload;
@@ -62,4 +107,5 @@ const locationSlice = createSlice({
   },
 });
 
+export const { clearLocations } = locationSlice.actions;
 export default locationSlice.reducer;

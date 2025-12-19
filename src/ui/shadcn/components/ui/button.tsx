@@ -38,8 +38,8 @@ const buttonVariants = cva(
 
 function Button({
   className,
-  variant = "default",
-  size = "default",
+  variant,
+  size,
   asChild = false,
   ...props
 }: React.ComponentProps<"button"> &
@@ -51,13 +51,11 @@ function Button({
   return (
     <Comp
       data-slot="button"
-      data-variant={variant}
-      data-size={size}
       className={cn(buttonVariants({ variant, size, className }))}
       {...props}
     />
   )
 }
 
-/* eslint-disable react-refresh/only-export-components */
+// eslint-disable-next-line react-refresh/only-export-components
 export { Button, buttonVariants }
