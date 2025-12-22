@@ -13,13 +13,13 @@ export default function ProductGroupTabs() {
 
   return (
     <div className="w-full overflow-x-auto no-scrollbar">
-      <div className="flex gap-3 min-w-max">
+      <div className="flex gap-2 min-w-max">
         {productGroups.map((group) => (
           <button
             key={group.id}
             onClick={() => setSelectedGroup(group.id)}
             className={cn(
-              "px-6 py-3 rounded-xl text-sm font-semibold whitespace-nowrap transition-all",
+              "px-10 py-4 rounded text-sm font-semibold whitespace-nowrap transition-all",
               selectedGroup === group.id
                 ? "bg-primary text-primary-foreground shadow"
                 : "bg-navigation text-foreground hover:bg-blue-500"

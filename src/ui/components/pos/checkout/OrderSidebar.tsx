@@ -31,12 +31,12 @@ export default function OrderSidebar({
 
   return (
     <div
-      className={`${isMobileOverlay ? "fixed inset-0 z-50 bg-black/40 flex" : ""}`}
+      className={`${isMobileOverlay ? " fixed inset-0 z-50 bg-black/40 flex" : ""}`}
       onClick={(e) => {
         if (isMobileOverlay && e.target === e.currentTarget) onClose();
       }}
     >
-      <div className="w-[320px] h-screen bg-background flex flex-col border-r border-border shadow-lg safe-area">
+      <div className="w-[420px]  h-screen bg-background flex flex-col border-r border-border shadow-lg safe-area ">
         {/* Header */}
         <div className="h-14 px-4 flex items-center justify-between border-b border-border bg-secondary/30 shrink-0">
           <h2 className="text-sm font-semibold">{t("order_summary")}</h2>
@@ -48,7 +48,7 @@ export default function OrderSidebar({
         </div>
 
 
-        <div className="flex-1 overflow-y-auto px-3 py-3 space-y-2 no-scrollbar">
+        <div className="flex-1 overflow-y-auto px-3 py-3 space-y-2 items-center ">
           {items.length > 0 ? (
             items.map((item) => (
               <CardDineIn

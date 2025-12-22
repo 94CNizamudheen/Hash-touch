@@ -2,7 +2,7 @@ import type { Product } from "@/types/products";
 import { useProducts } from "@/ui/context/ProductContext";
 import { useEffect, useRef } from "react";
 import InputFilter from "../../common/InputFilter";
-import CategoryTabs from "../CategoryTabs";
+import CategoryTabs from "./CategoryTabs";
 import ProductCard from "./ProductCard";
 import { cn } from "@/lib/utils";
 import ProductGroupTabs from "./ProductGroupTabs";

@@ -50,7 +50,9 @@ pub fn run() {
             commands::cart_store::get_cart_draft,
             commands::cart_store::save_cart_draft,
             commands::cart_store::clear_cart_draft,
-
+            commands::work_shift::get_work_shift_draft,
+            commands::work_shift::save_work_shift_draft,
+            commands::work_shift::clear_work_shift_draft,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

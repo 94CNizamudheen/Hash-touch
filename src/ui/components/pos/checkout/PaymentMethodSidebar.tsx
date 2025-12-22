@@ -15,7 +15,6 @@ export default function PaymentMethodsSidebar({
   isOpen,
   onClose,
   onMethodSelect,
-  onCancel,
 }: PaymentMethodsSidebarProps) {
   const { t } = useTranslation();
 
@@ -42,26 +41,21 @@ export default function PaymentMethodsSidebar({
         if (isMobileOverlay && e.target === e.currentTarget) onClose();
       }}
     >
-      <div className="w-[260px] h-full bg-background flex flex-col border-l border-border shadow-lg safe-area">
-        {/* Header */}
-        <div className="h-14 px-4 flex items-center justify-between border-b border-border">
-          <h3 className="text-sm font-semibold">
-            {t("payment_method")}
-          </h3>
-          {isMobileOverlay && (
+      <div className="w-[300px] h-full bg-background flex flex-col border-l border-border shadow-lg safe-area">
+      
+
+        {/* Methods */}
+        <div className="flex-1 overflow-y-auto p-3 space-y-3 no-scrollbar">
+            {isMobileOverlay && (
             <button onClick={onClose}>
               <X className="w-5 h-5" />
             </button>
           )}
-        </div>
-
-        {/* Methods */}
-        <div className="flex-1 overflow-y-auto p-3 space-y-3 no-scrollbar">
           {paymentMethods.map((method) => (
             <Button
               key={method}
               onClick={() => onMethodSelect(method)}
-              className={`w-full h-14 text-sm font-medium rounded-xl justify-center ${
+              className={`w-full h-18 text-sm font-medium rounded-xl justify-center ${
                 selectedMethod === method
                   ? "bg-primary text-primary-foreground"
                   : "bg-secondary text-secondary-foreground hover:bg-primary-hover"
@@ -71,17 +65,7 @@ export default function PaymentMethodsSidebar({
             </Button>
           ))}
         </div>
-
-        {/* Cancel */}
-        <div className="p-3 border-t border-border">
-          <Button
-            onClick={onCancel}
-            className="w-full h-12 bg-destructive text-destructive-foreground"
-          >
-            {t("cancel_payment")}
-          </Button>
-        </div>
-      </div>
+   </div>
     </div>
   );
 }

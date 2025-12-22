@@ -6,7 +6,7 @@ import {  Routes, Route } from "react-router-dom";
 import TenantLogin from "@/ui/components/auth/TenantLogin";
 import SelectLocationPage from "@/ui/components/auth/SelectLocationPage";
 import Home from "@/ui/Home";
-import RoleRouter from "@/ui/components/routes/RoleRouter";
+import RoleRouter from "@/ui/routes/RoleRouter";
 
 
 
@@ -20,10 +20,10 @@ import {
   setDeviceRole,
 } from "@/ui/store/slices/appStateSlice";
 import { commonDataService } from "./services/data/common.data.service";
-import PosRoutes from "./ui/components/routes/pos.routes";
-import KioskRoutes from "./ui/components/routes/kiosk.routes";
-import KdsRoutes from "./ui/components/routes/kds.routes";
-import QueueRoutes from "./ui/components/routes/queue.routes";
+import PosRoutes from "./ui/routes/pos.routes";
+import KioskRoutes from "./ui/routes/kiosk.routes";
+import KdsRoutes from "./ui/routes/kds.routes";
+import QueueRoutes from "./ui/routes/queue.routes";
 
 
 /* =========================

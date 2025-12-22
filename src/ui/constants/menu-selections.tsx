@@ -23,16 +23,17 @@ export const MENUSELECTIONNAVIGATION = [
   {
     id: 1,
     title: "Member",
-    icon: <Icons.member className="lg:w-5 lg:h-5 w-6 h-6 stroke-primary" />,
+    icon: <Icons.member className="lg:w-5 lg:h-5 w-6 h-3 stroke-primary" />,
     position: "Top",
     link: "/member",
+
   },
   {
     id: 2,
     title: "Shift",
     icon: <Clock className="lg:w-5 lg:h-5 w-6 h-6 stroke-primary" />,
     position: "Top",
-    action: (openModal: (c: string) => void) => openModal("shift-end"),
+    action: (openModal: (c: string) => void) => openModal("shift"),
   },
   {
     id: 3,
@@ -69,7 +70,7 @@ export const MENUSELECTIONNAVIGATION = [
     title: "Settings",
     icon: <Settings className="lg:w-5 lg:h-5 w-6 h-6 stroke-primary" />,
     position: "Top",
-    link: "/settings",
+    // link: "/settings",
   },
   {
     id: 9,

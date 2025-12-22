@@ -18,7 +18,7 @@ export default function ProductCard({
       className="group cursor-pointer rounded-2xl shadow-sm 
                  transition-all duration-200 hover:shadow-lg hover:scale-[1.02] active:scale-[0.98] "
     >
-      <div className="relative h-40 w-full overflow-hidden bg-gray-100  ">
+      <div className="relative h-26 w-full rounded-t-1xl overflow-hidden bg-gray-100  ">
         <img
           src={image }
           alt={name}
