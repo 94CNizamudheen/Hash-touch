@@ -1,5 +1,5 @@
 import { Banknote, DollarSign } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { Button } from "@/ui/shadcn/components/ui/button";
 import { useTranslation } from "react-i18next";
 
 interface DrawerOpenedModalProps {

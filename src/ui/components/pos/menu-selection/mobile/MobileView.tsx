@@ -2,7 +2,7 @@ import ProductsMobile from "./ProductsMobile";
 import CartSidebar from "../CartSidebar";
 import { useState } from "react";
 import { ShoppingCart, TextAlignJustifyIcon } from "lucide-react";
-import { useOrder } from "@/ui/context/OrderContext";
+import { useCart } from "@/ui/context/CartContext";
 import { motion, AnimatePresence } from "framer-motion";
 import MenuSelectionSidebarMobile from "./MenuSelectionSidebarMobile";
 
@@ -10,9 +10,9 @@ import MenuSelectionSidebarMobile from "./MenuSelectionSidebarMobile";
    Header
 ========================= */
 const MobileHeader = ({ onOpenCart, onOpenMenu }: any) => {
-  const { orderItems } = useOrder();
+  const { items } = useCart();
 
-  const itemCount = orderItems.reduce(
+  const itemCount = items.reduce(
     (sum, item: any) => sum + item.quantity,
     0
   );
@@ -21,6 +21,7 @@ const MobileHeader = ({ onOpenCart, onOpenMenu }: any) => {
     <header className="fixed left-0 w-full h-16 z-30 border-b border-border bg-background flex items-center justify-between px-4">
       {/* Cart Button */}
       <button
+         id="cart-button" 
         onClick={onOpenCart}
         className="relative w-10 h-10 flex items-center justify-center bg-primary rounded-full"
       >

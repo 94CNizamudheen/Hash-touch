@@ -1,21 +1,21 @@
 import { Button } from "@/ui/shadcn/components/ui/button";
 import PaymentOptions from "../payment/PaymentOptions";
 import { useNavigate } from "react-router-dom";
-import { useOrder } from "@/ui/context/OrderContext"; 
+import { useCart } from "@/ui/context/CartContext"; 
 
 const BoardFooterDineIn = () => {
   const navigate = useNavigate();
-  const { orderItems } = useOrder(); 
+  const { items } = useCart(); 
 
   const handleSettle = () => {
-    const total = orderItems.reduce(
+    const total = items.reduce(
       (sum, item) => sum + item.price * (item as any).quantity,
       0
     );
 
-    // ✅ pass items and total using router state
+
     navigate("/pos/payment-panel", {
-      state: { items: orderItems, total },
+      state: { items: items, total },
     });
   };
 

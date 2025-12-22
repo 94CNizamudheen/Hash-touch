@@ -3,9 +3,9 @@ import { X } from "lucide-react";
 import { Button } from "@/ui/shadcn/components/ui/button";
 import PaymentOptions from "../common/payment/PaymentOptions";
 import { useNavigate } from "react-router-dom";
-import { useOrder } from "@/ui/context/OrderContext";
-import CardDineInMobile from "../common/card/CardDineInMobile";
+import { useCart } from "@/ui/context/CartContext";
 import EmptyCart from "@/assets/empty-cart.png";
+import CardDineIn from "../common/card/CardDineIn";
 
 type CartSidebarProps = {
   open: boolean;
@@ -14,17 +14,30 @@ type CartSidebarProps = {
 
 const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
   const navigate = useNavigate();
-  const { orderItems, incrementItem, decrementItem, removeItem, clearOrder } =
-    useOrder();
 
-  const total = orderItems.reduce(
-    (sum, item) => sum + item.price * (item as any).quantity,
+  const {
+    items,
+    increment,
+    decrement,
+    remove,
+    clear,
+    isHydrated,
+  } = useCart();
+
+  // Avoid flicker before SQLite hydration
+  if (!isHydrated) return null;
+
+  const total = items.reduce(
+    (sum, item) => sum + item.price * item.quantity,
     0
   );
 
   const handleSettle = () => {
-    navigate("/pos/payment-panel", { state: { items: orderItems, total } });
+    navigate("/pos/payment-panel", {
+      state: { items, total },
+    });
   };
+
   return (
     <AnimatePresence>
       {open && (
@@ -47,7 +60,9 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
             animate={{ x: 0 }}
             exit={{ x: "-100%" }}
             transition={{ type: "tween", duration: 0.3 }}
-            className="safe-area fixed left-0 top-0 bottom-0 w-[80%] sm:w-[60%] bg-background z-50 shadow-2xl flex flex-col pointer-events-auto border-r border-border rounded-r-2xl"
+            className="safe-area fixed left-0 top-0 bottom-0 w-[80%] sm:w-[60%] 
+                       bg-background z-50 shadow-2xl flex flex-col 
+                       pointer-events-auto border-r border-border rounded-r-2xl"
           >
             {/* Header */}
             <div className="flex-shrink-0 flex items-center justify-between p-4 border-b border-border bg-secondary">
@@ -62,18 +77,18 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
               </button>
             </div>
 
-            {/* Cart Items - Scrollable Area */}
+            {/* Cart Items */}
             <div className="flex-1 overflow-y-auto p-3 flex flex-col gap-3 min-h-0">
-              {orderItems.length > 0 ? (
-                orderItems.map((item) => (
-                  <CardDineInMobile
+              {items.length > 0 ? (
+                items.map((item) => (
+                  <CardDineIn
                     key={item.id}
                     menu={item.name}
-                    quantity={(item as any).quantity}
+                    quantity={item.quantity}
                     price={item.price}
-                    onIncrement={() => incrementItem(item.id)}
-                    onDecrement={() => decrementItem(item.id)}
-                    onRemove={() => removeItem(item.id)}
+                    onIncrement={() => increment(item.id)}
+                    onDecrement={() => decrement(item.id)}
+                    onRemove={() => remove(item.id)}
                   />
                 ))
               ) : (
@@ -106,7 +121,7 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
                 <Button
                   onClick={handleSettle}
                   className="flex-1 h-10 bg-primary text-primary-foreground text-sm font-medium rounded-[var(--radius)] hover:bg-primary-hover"
-                  disabled={!orderItems.length}
+                  disabled={!items.length}
                 >
                   Settle
                 </Button>
@@ -120,12 +135,16 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
 
               <div className="flex gap-2">
                 <Button
-                  onClick={clearOrder}
+                  onClick={clear}
                   className="flex-1 h-10 bg-secondary text-foreground text-sm font-medium rounded-[var(--radius)] hover:bg-secondary"
+                  disabled={!items.length}
                 >
                   Clear Cart
                 </Button>
-                <Button className="flex-1 h-10 bg-secondary text-foreground text-sm font-medium rounded-[var(--radius)] hover:bg-secondary">
+                <Button
+                  className="flex-1 h-10 bg-secondary text-foreground text-sm font-medium rounded-[var(--radius)] hover:bg-secondary"
+                  disabled={!items.length}
+                >
                   Print Ticket
                 </Button>
               </div>

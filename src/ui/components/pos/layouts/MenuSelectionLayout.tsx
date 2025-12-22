@@ -7,6 +7,7 @@ const MenuSelectionLayout = ({ children }: { children: ReactNode }) => {
   const isDesktop = useMediaQuery("(min-width: 768px)");
   const Desktop = WebView as ComponentType<{ children?: ReactNode }>;
   const Mobile = MobileView as ComponentType<{ children?: ReactNode }>;
+  console.log("isDesktop:", isDesktop, "width:", window.innerWidth);
 
   return (
     <div className="w-full h-full">

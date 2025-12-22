@@ -16,7 +16,7 @@ export async function initialSync(
     orderModeIds: string[] | null;
   }
 ) {
-  console.log("🔄 Initial sync started (from combinations)");
+  console.log("Initial sync started (from combinations)");
 
   const combinationsResponse = await commonDataService.getCombinations(
     domain,
@@ -29,7 +29,7 @@ export async function initialSync(
     }
   );
 
-  console.log("📦 combinations count:", combinationsResponse.length);
+  console.log(" combinations count:", combinationsResponse.length);
 
   /* ======================================================
       1️⃣ PRODUCT GROUPS
@@ -54,13 +54,11 @@ export async function initialSync(
     media: JSON.stringify(g.media ?? []),
   }));
 
-  console.log("🧪 First group to save:", dbProductGroups[0]);
+  console.log("First group to save:", dbProductGroups[0]);
   await productGroupLocal.save(dbProductGroups);
-  console.log(`✅ Product groups synced: ${dbProductGroups.length}`);
+  console.log(` Product groups synced: ${dbProductGroups.length}`);
 
-  /* ======================================================
-      2️⃣ PRODUCT GROUP CATEGORIES
-  ====================================================== */
+
   const dbGroupCategories = combinationsResponse.flatMap((g: any) =>
     (g.categories ?? []).map((c: any) => ({
       id: c.id,
@@ -87,12 +85,9 @@ export async function initialSync(
 
   await productGroupCategoryLocal.save(dbGroupCategories);
   console.log(
-    `✅ Product group categories synced: ${dbGroupCategories.length}`
+    ` Product group categories synced: ${dbGroupCategories.length}`
   );
 
-  /* ======================================================
-      3️⃣ PRODUCTS (FROM CATEGORIES)
-  ====================================================== */
   const dbProducts = combinationsResponse.flatMap((g: any) =>
   (g.categories ?? []).flatMap((c: any) =>
     (c.products ?? []).map((p: any) => ({
@@ -118,11 +113,9 @@ export async function initialSync(
 
 
   await productLocal.save(dbProducts);
-  console.log(`✅ Products synced: ${dbProducts.length}`);
+  console.log(`Products synced: ${dbProducts.length}`);
 
-  /* ======================================================
-      4️⃣ TAG GROUPS
-  ====================================================== */
+
   const dbTagGroups = combinationsResponse.flatMap((g: any) =>
     (g.categories ?? []).flatMap((c: any) =>
       (c.products ?? []).flatMap((p: any) =>
@@ -146,11 +139,9 @@ export async function initialSync(
   );
 
   await productTagGroupLocal.save(dbTagGroups);
-  console.log(`✅ Product tag groups synced: ${dbTagGroups.length}`);
+  console.log(`Product tag groups synced: ${dbTagGroups.length}`);
 
-  /* ======================================================
-      5️⃣ PRODUCT TAGS
-  ====================================================== */
+
   const dbProductTags = combinationsResponse.flatMap((g: any) =>
     (g.categories ?? []).flatMap((c: any) =>
       (c.products ?? []).flatMap((p: any) =>
@@ -176,7 +167,7 @@ export async function initialSync(
   );
 
   await productTagLocal.save(dbProductTags);
-  console.log(`✅ Product tags synced: ${dbProductTags.length}`);
+  console.log(` Product tags synced: ${dbProductTags.length}`);
 
-  console.log("🎉 Initial sync completed successfully (from combinations)");
+  console.log(" Initial sync completed successfully (from combinations)");
 }

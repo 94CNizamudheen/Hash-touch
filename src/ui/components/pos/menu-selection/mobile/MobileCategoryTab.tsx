@@ -1,11 +1,5 @@
 import { useMemo } from "react";
-import type { Category } from "@/types/products";
-
-interface MobileCategoryTabProps {
-  selected: string;
-  onSelect: (cat: string) => void;
-  categories: Category[];
-}
+import { useProducts } from "@/ui/context/ProductContext";
 
 function getImageFromMedia(media?: string) {
   try {
@@ -17,24 +11,30 @@ function getImageFromMedia(media?: string) {
   }
 }
 
-const MobileCategoryTab = ({
-  selected,
-  onSelect,
-  categories,
-}: MobileCategoryTabProps) => {
+const MobileCategoryTab = () => {
+  const {
+    groupCategories,
+    selectedCategory,
+    setSelectedCategory,
+    selectedGroup,
+  } = useProducts();
 
   const categoriesList = useMemo(() => {
-    const list = categories
-      .filter((c) => c.active === 1)
+    return groupCategories
+      .filter(
+        (c) =>
+          c.active === 1 &&
+          c.product_group_id === selectedGroup
+      )
       .sort((a, b) => a.sort_order - b.sort_order)
       .map((cat) => ({
-        value: cat.name,
+        value: cat.id,
         label: cat.name,
         image: getImageFromMedia(cat.media),
       }));
+  }, [groupCategories, selectedGroup]);
 
-    return [{ value: "all", label: "All", image: "" }, ...list];
-  }, [categories]);
+  if (!categoriesList.length) return null;
 
   return (
     <div className="w-full overflow-x-auto no-scrollbar">
@@ -42,9 +42,9 @@ const MobileCategoryTab = ({
         {categoriesList.map((cat) => (
           <button
             key={cat.value}
-            onClick={() => onSelect(cat.value)}
+            onClick={() => setSelectedCategory(cat.value)}
             className={`flex-shrink-0 flex flex-col items-center gap-2 transition-all ${
-              selected === cat.value
+              selectedCategory === cat.value
                 ? "opacity-100"
                 : "opacity-60 hover:opacity-80"
             }`}
@@ -52,7 +52,7 @@ const MobileCategoryTab = ({
             {/* image */}
             <div
               className={`w-16 h-16 rounded-full overflow-hidden border-2 ${
-                selected === cat.value
+                selectedCategory === cat.value
                   ? "border-blue-600 shadow-lg scale-105"
                   : "border-gray-300 shadow-sm"
               } bg-gray-100`}
@@ -75,7 +75,7 @@ const MobileCategoryTab = ({
             {/* label */}
             <span
               className={`text-xs font-medium ${
-                selected === cat.value
+                selectedCategory === cat.value
                   ? "text-blue-600 font-semibold"
                   : "text-gray-600"
               }`}

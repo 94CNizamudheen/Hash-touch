@@ -1,7 +1,7 @@
 import { cn } from "@/lib/utils";
 import { useProducts } from "@/ui/context/ProductContext";
 
-export default function ProductGroupTabs() {
+const MobileProductGroupTabs = () => {
   const {
     productGroups,
     selectedGroup,
@@ -9,20 +9,19 @@ export default function ProductGroupTabs() {
   } = useProducts();
 
   if (!productGroups?.length) return null;
-  console.log("productGroups", productGroups)
 
   return (
     <div className="w-full overflow-x-auto no-scrollbar">
-      <div className="flex gap-3 min-w-max">
+      <div className="flex gap-3 pb-2">
         {productGroups.map((group) => (
           <button
             key={group.id}
             onClick={() => setSelectedGroup(group.id)}
             className={cn(
-              "px-6 py-3 rounded-xl text-sm font-semibold whitespace-nowrap transition-all",
+              "flex-shrink-0 px-5 py-2 rounded-xl text-sm font-semibold transition-all",
               selectedGroup === group.id
                 ? "bg-primary text-primary-foreground shadow"
-                : "bg-navigation text-foreground hover:bg-blue-500"
+                : "bg-navigation text-foregrpund hover:bg-muted/80"
             )}
           >
             {group.name}
@@ -31,4 +30,6 @@ export default function ProductGroupTabs() {
       </div>
     </div>
   );
-}
+};
+
+export default MobileProductGroupTabs;

@@ -1,4 +1,4 @@
-import { Button } from "@/ui/shadcn/components/ui/button";
+import { Minus, Plus } from "lucide-react";
 
 interface CardDineInProps {
   menu: string;
@@ -15,52 +15,33 @@ const CardDineIn = ({
   price,
   onIncrement,
   onDecrement,
-  onRemove,
 }: CardDineInProps) => {
+  const totalPrice = quantity * price;
+  
   return (
-    <div className="flex justify-between items-center bg-secondary/40 p-3 rounded-lg shadow-sm">
-      {/* Left side */}
-      <div>
-        <h4 className="font-medium text-sm text-foreground">{menu}</h4>
-        <p className="text-xs text-muted-foreground">
-          Qty × {quantity} @ {price.toFixed(2)}
-        </p>
-        <p className="font-semibold text-sm text-foreground mt-1">
-          ${(price * quantity).toFixed(2)}
-        </p>
+    <div className="bg-navigation rounded-lg p-4">
+      <div className="flex justify-between items-start mb-3">
+        <h3 className=" font-semibold">{menu}</h3>
+        <span className="font-semibold">${totalPrice.toFixed(2)}</span>
       </div>
+      
 
-      {/* Right side controls */}
-      <div className="flex items-center gap-2">
-        <Button
-          variant="default"
-          size="sm"
-          className="bg-primary text-white px-2 h-7"
+      <div className="flex items-center justify-end gap-1 ">
+        <button
           onClick={onDecrement}
+          className="w-6 h-6 rounded bg-primary hover:bg-blue-700 text-white flex items-center justify-center font-bold text-lg"
         >
-          −
-        </Button>
-        <span className="w-6 text-center text-sm font-medium">
+          <Minus size={16} />
+        </button>
+        <span className="text-lg font-semibold min-w-[24px] text-center">
           {quantity}
         </span>
-        <Button
-          variant="default"
-          size="sm"
-          className="bg-primary text-white px-2 h-7"
+        <button
           onClick={onIncrement}
+          className="w-6 h-6 rounded bg-primary hover:bg-blue-700 text-white flex items-center justify-center font-bold text-lg"
         >
-          +
-        </Button>
-
-        {/* Delete */}
-        <Button
-          variant="ghost"
-          size="sm"
-          className="text-red-500 hover:text-red-700"
-          onClick={onRemove}
-        >
-          ✕
-        </Button>
+          <Plus size={16} />
+        </button>
       </div>
     </div>
   );
