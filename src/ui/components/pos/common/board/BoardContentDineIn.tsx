@@ -14,10 +14,10 @@ const BoardContentDineIn = () => {
   if (!isHydrated) return null;
 
   return (
-    <div className="w-full flex flex-col gap-2">
-      <div className="w-full h-6 bg-accent-foreground text-navigation px-3 text-xs flex items-center shrink-0">
+    <div className="w-full flex flex-col gap-2 p-2">
+      {/* <div className="w-full h-6 bg-accent-foreground text-navigation px-3 text-xs flex items-center shrink-0">
         Order No: 28890 - Admin
-      </div>
+      </div> */}
 
       <div className="flex-1 overflow-y-auto no-scrollbar px-2 pb-3">
         <div className="flex flex-col gap-3">

@@ -23,14 +23,14 @@ export default function CenterPaymentContent({
   const { t } = useTranslation();
 
   return (
-    <div className="flex flex-col h-full px-4 py-3">
+    <div className="flex flex-col h-full px-4   ">
       {/* Totals */}
       <div className="mb-3">
-        <div className="flex justify-between items-baseline p-5 border-b pb-2">
+        <div className="flex justify-between items-baseline p-3 border-b pb-1">
           <span className="text-lg text-muted-foreground">{t("Total")}:</span>
           <span className="text-3xl font-bold">${total.toFixed(2)}</span>
         </div>
-        <div className="flex justify-between items-baseline p-5">
+        <div className="flex justify-between items-baseline p-3">
           <span className="text-lg text-muted-foreground">{t("Balance")}:</span>
           <span className="text-3xl font-bold">
             ${balance >= 0 ? balance.toFixed(2) : "0.00"}

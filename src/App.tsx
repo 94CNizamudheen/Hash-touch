@@ -1,7 +1,7 @@
 
 import { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import {  Routes, Route } from "react-router-dom";
+import { Routes, Route } from "react-router-dom";
 
 import TenantLogin from "@/ui/components/auth/TenantLogin";
 import SelectLocationPage from "@/ui/components/auth/SelectLocationPage";
@@ -73,7 +73,7 @@ export default function App() {
       throw new Error("Missing tenant or token");
     }
 
-    await appStateApi.setLocation(location.id, location.brand_id);
+    await appStateApi.setLocation(location.id, location.brand_id, location.name);
 
     const orderModesResponse = await commonDataService.getOrderModes(
       appState.tenant_domain,
@@ -85,8 +85,12 @@ export default function App() {
       }
     );
 
+
     const orderModeIds = orderModesResponse.map((om: any) => om.id);
-    await appStateApi.setOrderModeIds(orderModeIds);
+    const orderModeNames = orderModesResponse.map((om: any) => om.name);
+    const defaultMode = orderModesResponse[0];
+
+    await appStateApi.setOrderMode(orderModeIds, orderModeNames, defaultMode.id, defaultMode.name);
 
     await initialSync(appState.tenant_domain, appState.access_token, {
       channel: appState.device_role ?? "POS",
@@ -99,8 +103,12 @@ export default function App() {
       hydrateAppState({
         ...appState,
         selected_location_id: location.id,
+        selected_location_name: location.name,
         brand_id: location.brand_id,
         order_mode_ids: orderModeIds,
+        order_mode_names: orderModeNames,
+        selected_order_mode_id: defaultMode.id,
+        selected_order_mode_name: defaultMode.name,
       })
     );
   };
@@ -139,16 +147,16 @@ export default function App() {
   ========================= */
 
   return (
- 
-      <Routes>
-        {/* Entry: decides where to go */}
-        <Route path="/" element={<RoleRouter />} />
-        {/* Role route trees */}
-        <Route path="/pos/*" element={<PosRoutes />} />
-        <Route path="/kiosk/*" element={<KioskRoutes />} />
-        <Route path="/kds/*" element={<KdsRoutes />} />
-        <Route path="/queue/*" element={<QueueRoutes />} />
-      </Routes>
- 
+
+    <Routes>
+      {/* Entry: decides where to go */}
+      <Route path="/" element={<RoleRouter />} />
+      {/* Role route trees */}
+      <Route path="/pos/*" element={<PosRoutes />} />
+      <Route path="/kiosk/*" element={<KioskRoutes />} />
+      <Route path="/kds/*" element={<KdsRoutes />} />
+      <Route path="/queue/*" element={<QueueRoutes />} />
+    </Routes>
+
   );
 }

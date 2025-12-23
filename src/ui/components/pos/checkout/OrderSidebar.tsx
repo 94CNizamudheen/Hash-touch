@@ -39,7 +39,7 @@ export default function OrderSidebar({
       <div className="w-[420px]  h-screen bg-background flex flex-col border-r border-border shadow-lg safe-area ">
         {/* Header */}
         <div className="h-14 px-4 flex items-center justify-between border-b border-border bg-secondary/30 shrink-0">
-          <h2 className="text-sm font-semibold">{t("order_summary")}</h2>
+          <h2 className="text-sm font-semibold">{t("Order summary")}</h2>
           {isMobileOverlay && (
             <button onClick={onClose}>
               <X className="w-5 h-5" />

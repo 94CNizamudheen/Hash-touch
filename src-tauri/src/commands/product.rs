@@ -17,3 +17,10 @@ pub fn get_products(app: AppHandle) -> Result<Vec<Product>, String> {
     product_repo::get_products(&conn)
         .map_err(|e| e.to_string())
 }
+
+#[tauri::command]
+pub fn clear_products_cache(app: AppHandle) -> Result<(), String> {
+    let mut conn = migrate::connection(&app);
+    product_repo::clear_all(&mut conn)
+        .map_err(|e| e.to_string())
+}

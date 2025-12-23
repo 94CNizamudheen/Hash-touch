@@ -1,20 +1,19 @@
 import {
   Clock,
   LogOut,
-  Moon,
   Settings,
   Home,
   MapPin,
   Table,
   Layout,
-
   Ticket,
-
   ChartBarBigIcon,
   BriefcaseBusiness,
   MousePointer2Icon,
 } from "lucide-react";
 import { Icons } from "../icons";
+
+
 
 export const MENUSELECTIONNAVIGATION = [
   /* =========================
@@ -82,11 +81,9 @@ export const MENUSELECTIONNAVIGATION = [
   {
     id: 10,
     title: "Dark Mode",
-    icon: <Moon className="lg:w-5 lg:h-5 w-6 h-6 stroke-primary" />,
+    icon: null,
     position: "Top",
-    action: () => {
-      document.documentElement.classList.toggle("dark");
-    },
+
   },
   {
     id: 11,
@@ -101,8 +98,8 @@ export const MENUSELECTIONNAVIGATION = [
   ========================= */
   {
     id: 12,
-    title: "Bedok",
-    icon: <MapPin className="lg:w-5 lg:h-5 w-6 h-6 text-white" />,
+    title: "Location",
+    icon: <MapPin className="lg:w-5 lg:h-5 w-6 h-6 stroke-primary" />,
     position: "Bottom",
     action: (openModal: (c: string) => void) => openModal("location"),
     highlight: true, // for blue background
@@ -119,6 +116,6 @@ export const MENUSELECTIONNAVIGATION = [
     title: "Home",
     icon: <Home className="lg:w-5 lg:h-5 w-6 h-6 stroke-primary" />,
     position: "Bottom",
-    link: "/dashboard",
+    link: "/pos",
   },
 ];

@@ -29,16 +29,16 @@ const CardDineIn = ({
       <div className="flex items-center justify-end gap-1 ">
         <button
           onClick={onDecrement}
-          className="w-6 h-6 rounded bg-primary hover:bg-blue-700 text-white flex items-center justify-center font-bold text-lg"
+          className="w-6 h-6 rounded bg-primary hover:bg-primary-hover text-background flex items-center justify-center font-bold text-lg"
         >
           <Minus size={16} />
         </button>
-        <span className="text-lg font-semibold min-w-[24px] text-center">
+        <span className="text-lg font-semibold min-w-[24px] text-center text-foreground">
           {quantity}
         </span>
         <button
           onClick={onIncrement}
-          className="w-6 h-6 rounded bg-primary hover:bg-blue-700 text-white flex items-center justify-center font-bold text-lg"
+          className="w-6 h-6 rounded bg-primary hover:bg-primary-hover text-background flex items-center justify-center font-bold text-lg"
         >
           <Plus size={16} />
         </button>

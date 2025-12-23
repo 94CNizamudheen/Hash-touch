@@ -5,43 +5,8 @@
     {
       "idx": 0,
       "version": "6",
-      "when": 1766032056233,
-      "tag": "0000_melodic_lorna_dane",
-      "breakpoints": true
-    },
-    {
-      "idx": 1,
-      "version": "6",
-      "when": 1766040536318,
-      "tag": "0001_quiet_nighthawk",
-      "breakpoints": true
-    },
-    {
-      "idx": 2,
-      "version": "6",
-      "when": 1766125432243,
-      "tag": "0002_panoramic_nitro",
-      "breakpoints": true
-    },
-    {
-      "idx": 3,
-      "version": "6",
-      "when": 1766148384276,
-      "tag": "0003_dusty_kat_farrell",
-      "breakpoints": true
-    },
-    {
-      "idx": 4,
-      "version": "6",
-      "when": 1766377097791,
-      "tag": "0004_married_tombstone",
-      "breakpoints": true
-    },
-    {
-      "idx": 5,
-      "version": "6",
-      "when": 1766400014176,
-      "tag": "0005_left_reptil",
+      "when": 1766495242402,
+      "tag": "0000_bored_king_bedlam",
       "breakpoints": true
     }
   ]

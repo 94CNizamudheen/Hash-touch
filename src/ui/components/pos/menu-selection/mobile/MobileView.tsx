@@ -39,7 +39,7 @@ const MobileHeader = ({ onOpenCart, onOpenMenu }: any) => {
         )}
       </button>
 
-      <h3 className="text-sm font-semibold">Dine In — Table T1</h3>
+      {/* <h3 className="text-sm font-semibold">Dine In — Table T1</h3> */}
 
       <button
         onClick={onOpenMenu}

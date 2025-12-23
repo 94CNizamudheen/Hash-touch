@@ -49,7 +49,7 @@ export default function PaymentMobile() {
     };
 
     return (
-        <div className="fixed inset-0 flex flex-col bg-background">
+        <div className="fixed inset-0 flex flex-col bg-background safe-area">
             {/* Top mobile buttons */}
             <div className="flex gap-2 p-3 border-b border-border">
                 <Button onClick={() => setShowActions(true)} className="flex-1">
@@ -65,7 +65,7 @@ export default function PaymentMobile() {
                 </Button>
             </div>
 
-            <div className="flex-1 overflow-y-auto p-3">
+            <div className="flex-1 overflow-y-auto p-3 safe-area">
                 <CenterPaymentContent
                     total={total}
                     balance={balance}

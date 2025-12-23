@@ -48,7 +48,7 @@ export default function PaymentDesktop() {
   };
 
   return (
-    <div className="fixed inset-0 flex bg-background text-foreground">
+    <div className="fixed inset-0 flex bg-background text-foreground safe-area">
       <LeftActionRail onBackToMenu={() => navigate("/pos")} />
 
       <OrderSidebar

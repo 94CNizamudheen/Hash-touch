@@ -41,20 +41,24 @@ export default function CategoryTabs({
 
   if (!categoriesList.length) return null;
 
+  const isVertical = direction === "vertical";
+
   return (
     <Tabs
       value={selectedCategory}
       onValueChange={(val: string) => setSelectedCategory(val)}
-      className="w-full h-full"
+      className="w-full min-h-0"
     >
       <TabsList
-        className={
-          direction === "vertical"
-            ? "flex flex-col w-full h-auto gap-2 p-0 bg-transparent border-0"
-            : "grid grid-cols-4 gap-3 h-auto p-3 bg-background rounded-2xl border border-border shadow-sm"
-        }
+        style={{ WebkitOverflowScrolling: "touch" }}
+        className={`
+          ${isVertical ? "flex flex-col" : "flex flex-row"}
+          gap-3 p-3
+          bg-background   shadow-sm
+          ${isVertical ? "h-[14rem] overflow-y-auto overflow-x-hidden" : "h-[5.5rem] overflow-x-auto overflow-y-hidden"}
+          overscroll-contain no-scrollbar 
+        `}
       >
-
         {categoriesList.map((cat) => {
           const isActive = selectedCategory === cat.value;
 
@@ -62,27 +66,19 @@ export default function CategoryTabs({
             <TabsTrigger
               key={cat.value}
               value={cat.value}
-              className={`group relative transition-all duration-200
-                ${direction === "vertical"
-                  ? "flex flex-col items-center justify-center gap-2 p-4 w-full min-h-[100px] rounded-lg border"
-                  : "flex flex-col items-center justify-center gap-2 p-3 rounded-xl border overflow-hidden cursor-pointer"
-                }
-                ${isActive
-                  ? "bg-primary text-primary-foreground border-border shadow-md scale-105"
-                  : "bg-background text-foreground border-border hover:bg-primary-hover hover:text-background"
+              className={`shrink-0 flex items-center gap-3 px-4 py-2
+                border transition-all duration-200 cursor-pointer
+                ${isVertical ? "w-full" : "min-w-[180px]"}
+                ${
+                  isActive
+                    ? "bg-primary text-primary-foreground border-border shadow-md"
+                    : "bg-navigation text-foreground border-border hover:bg-primary-hover hover:text-background"
                 }
               `}
             >
-              {/* Image / Initial */}
+              {/* Image */}
               {cat.image ? (
-                <div
-                  className={`relative ${direction === "vertical" ? "w-14 h-14" : "w-10 h-10"
-                    } rounded-lg overflow-hidden border transition-all duration-300
-                    ${isActive
-                      ? "border-border"
-                      : "border-border group-hover:border-border"
-                    }`}
-                >
+                <div className="w-10 h-10 rounded-lg overflow-hidden  flex-shrink-0">
                   <img
                     src={cat.image}
                     alt={cat.label}
@@ -91,24 +87,24 @@ export default function CategoryTabs({
                 </div>
               ) : (
                 <div
-                  className={`${direction === "vertical" ? "w-14 h-14" : "w-10 h-10"
-                    } flex items-center justify-center text-xl font-bold rounded-lg transition-all duration-300
-                    ${isActive
-                      ? "bg-secondary text-secondary-foreground"
-                      : "bg-accent text-accent-foreground group-hover:bg-primary-hover group-hover:text-background"
+                  className={`w-10 h-10 flex items-center justify-center text-lg font-bold rounded-lg flex-shrink-0
+                    ${
+                      isActive
+                        ? "bg-secondary text-secondary-foreground"
+                        : "bg-accent text-accent-foreground"
                     }`}
                 >
                   {cat.label.charAt(0).toUpperCase()}
                 </div>
               )}
 
-              {/* Label */}
+              {/* Name */}
               <span
-                className={`font-semibold text-center transition-all duration-300
-                  ${direction === "vertical" ? "text-sm" : "text-xs w-full"}
-                  ${isActive
-                    ? "text-primary-foreground"
-                    : "text-foreground group-hover:text-background"
+                className={`font-semibold text-sm whitespace-nowrap
+                  ${
+                    isActive
+                      ? "text-primary-foreground"
+                      : "text-foreground"
                   }
                 `}
               >

@@ -35,13 +35,13 @@ export default function PaymentMethodsSidebar({
   return (
     <div
       className={`${
-        isMobileOverlay ? "fixed inset-0 z-50 bg-black/40 flex justify-end" : ""
+        isMobileOverlay ? "fixed inset-0 z-50 bg-black/40 flex justify-end safe-area " : ""
       }`}
       onClick={(e) => {
         if (isMobileOverlay && e.target === e.currentTarget) onClose();
       }}
     >
-      <div className="w-[300px] h-full bg-background flex flex-col border-l border-border shadow-lg safe-area">
+      <div className="w-[300px] h-full bg-background flex flex-col border-l rounded shadow-lg">
       
 
         {/* Methods */}

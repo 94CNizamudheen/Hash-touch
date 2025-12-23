@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
+
 import { useState } from "react";
 import { FormProvider, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -8,12 +8,10 @@ import { authService } from "@services/auth/auth.service";
 import TenantForm from "./TenantForm";
 import Logo from "@assets/logo/logo.png";
 import LogoDark from "@assets/logo/logo_dark.png";
-import { useTheme } from "@ui/context/theme/useTheme";
+import { useTheme } from "@/ui/context/ThemeContext"; 
 import { cn } from "@/lib/utils";
 
-/* =========================
-   Schema (Backend aligned)
-========================= */
+
 const tenantSchema = z.object({
   domain: z.string().min(2, "Tenant is required"),
   email: z

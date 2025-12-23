@@ -1,4 +1,4 @@
-import BoardHeaderDineIn from "./BoardHeaderDineIn";
+// import BoardHeaderDineIn from "./BoardHeaderDineIn";
 import BoardFooterDineIn from "./BoardFooterDineIn";
 import BoardContentDineIn from "./BoardContentDineIn";
 
@@ -7,9 +7,9 @@ const BoardDineIn = () => {
   return (
     <section className="w-full h-full flex flex-col bg-background overflow-hidden">
       {/* Header */}
-      <div className="shrink-0">
+      {/* <div className="shrink-0">
         <BoardHeaderDineIn />
-      </div>
+      </div> */}
 
       {/* Content & Footer */}
       <div className="flex-1 flex flex-col overflow-hidden">

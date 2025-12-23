@@ -20,4 +20,7 @@ export const productLocal = {
   getAll():Promise<DbProduct[]> {
     return invoke("get_products");
   },
+  clearCache():Promise<void>{
+    return invoke("clear_products_cache")
+  }
 };

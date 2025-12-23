@@ -50,8 +50,8 @@
 
     --sidebar-hover: #d9dce5;
     --sidebar-active: #5ca3ff;
-    --card-header-bg:  #3a21e2 ;
-    --card-footer-bg:#8bb7fa 0%;
+    --card-header-bg: #3a21e2;
+    --card-footer-bg: #8bb7fa 0%;
 
   }
 
@@ -365,7 +365,7 @@ body {
 
   .btn-secondary {
     background-color: var(--secondary) !important;
-    color: var(--secondary-foreground)!important;
+    color: var(--secondary-foreground) !important;
   }
 
   .btn-secondary:hover {

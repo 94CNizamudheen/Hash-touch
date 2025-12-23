@@ -1,7 +1,7 @@
-import { Button } from "@/components/ui/button";
+import { Button } from "@/ui/shadcn/components/ui/button"; 
 import { Minus, Plus, Trash2 } from "lucide-react";
 import EmptyCartImage from "@/assets/empty-cart.png";
-import { CartItem } from "@db/types";
+import type { CartItem } from "@/types/common";
 
 interface CartProps {
   items: CartItem[];
@@ -38,7 +38,7 @@ const Cart = ({
 
       {/* Cart Drawer */}
       <div
-        className={`flex flex-col bg-white border-2 w-72 sm:w-80 md:w-72 lg:w-80 h-screen md:h-full md:block md:static md:translate-x-0
+        className={`safe-area flex flex-col bg-white border-2 w-72 sm:w-80 md:w-72 lg:w-80 h-screen md:h-full md:block md:static md:translate-x-0
           ${
             isOpen
               ? "fixed right-0 top-0 z-50 translate-x-0 transition-transform duration-300 ease-in-out"

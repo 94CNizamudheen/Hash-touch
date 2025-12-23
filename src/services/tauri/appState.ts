@@ -12,14 +12,21 @@ export const appStateApi = {
     return invoke("set_tenant", { domain, token });
   },
 
-  setLocation(locationId: string, brandId: string): Promise<void> {
-    return invoke("set_location", { locationId, brandId });
+  setLocation(locationId: string, brandId: string,locationName:string): Promise<void> {
+    return invoke("set_location", { locationId, brandId ,locationName});
   },
 
   setDeviceRole(role: DeviceRole): Promise<void> {
     return invoke("set_device_role", { role });
   },
-  setOrderModeIds(orderModeIds: string[]): Promise<void> {
-    return invoke("set_order_mode_ids", { orderModeIds });
-  }
+  setOrderMode(orderModeIds: string[],orderModeNames:string[],defaultModeId:string,defaultModeName:string): Promise<void> {
+    return invoke("set_order_modes", { orderModeIds ,orderModeNames,defaultModeId,defaultModeName});
+  },
+  setTheme(theme: string): Promise<void> {
+    return invoke("set_theme", { theme });
+  },
+
+  setLanguage(language: string): Promise<void> {
+    return invoke("set_language", { language });
+  },
 };

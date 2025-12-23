@@ -1,3 +1,4 @@
+
 use tauri::AppHandle;
 use crate::db::migrate;
 use crate::db::models::app_state_repo;
@@ -30,6 +31,7 @@ pub fn set_location(
     app: AppHandle,
     location_id: String,
     brand_id: String,
+    location_name:String
 ) -> Result<(), String> {
     let conn = migrate::connection(&app);
 
@@ -38,6 +40,10 @@ pub fn set_location(
 
     app_state_repo::update_app_state(&conn, "brand_id", &brand_id)
         .map_err(|e| e.to_string())?;
+
+     app_state_repo::update_app_state(&conn, "selected_location_name", &location_name)
+        .map_err(|e| e.to_string())?;
+
 
     Ok(())
 }
@@ -56,17 +62,49 @@ pub fn set_device_role(
 }
 
 #[tauri::command]
-pub fn set_order_mode_ids(
+pub fn set_order_modes(
     app: AppHandle,
     order_mode_ids: Vec<String>,
+    order_mode_names: Vec<String>,
+    default_mode_id:String,
+    default_mode_name:String,
 ) -> Result<(), String> {
     let conn = migrate::connection(&app);
 
-    let json = serde_json::to_string(&order_mode_ids)
+    let ids_json = serde_json::to_string(&order_mode_ids)
         .map_err(|e| e.to_string())?;
 
-    app_state_repo::update_app_state(&conn, "order_mode_ids", &json)
+    let names_json = serde_json::to_string(&order_mode_names)
         .map_err(|e| e.to_string())?;
+
+    app_state_repo::update_app_state(&conn, "order_mode_ids", &ids_json)
+        .map_err(|e| e.to_string())?;
+
+    app_state_repo::update_app_state(&conn, "order_mode_names", &names_json)
+        .map_err(|e| e.to_string())?;
+
+     app_state_repo::update_app_state( &conn, "selected_order_mode_id",&default_mode_id,)
+    .map_err(|e| e.to_string())?;
+
+    app_state_repo::update_app_state( &conn, "selected_order_mode_name", &default_mode_name,)
+    .map_err(|e| e.to_string())?;
 
     Ok(())
 }
+
+#[tauri::command]
+pub fn set_theme(app: AppHandle, theme: String) -> Result<(), String> {
+    let conn = migrate::connection(&app);
+    app_state_repo::update_app_state(&conn, "theme", &theme)
+        .map_err(|e| e.to_string())?;
+    Ok(())
+}
+
+#[tauri::command]
+pub fn set_language(app: AppHandle, language: String) -> Result<(), String> {
+    let conn = migrate::connection(&app);
+    app_state_repo::update_app_state(&conn, "language", &language)
+        .map_err(|e| e.to_string())?;
+    Ok(())
+}
+

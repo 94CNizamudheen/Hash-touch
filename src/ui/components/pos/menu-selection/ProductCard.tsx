@@ -29,14 +29,14 @@ export default function ProductCard({
       </div>
 
  
-      <div className="relative bg-primary text-white px-4 py-3 h-20 flex flex-col justify-between rounded-b-2xl">
+      <div className="relative bg-primary text-background px-4 py-3 h-20 flex flex-col justify-between rounded-b-2xl">
         {/* Product Name */}
         <h3 className="text-sm font-semibold  ">
           {name}
         </h3>
 
 
-        <span className="absolute bottom-1 right-1 bg-white text-blue-600 px-3 py-1 rounded-lg text-sm font-bold shadow">
+        <span className="absolute bottom-1 right-1 text-background px-3 py-1 rounded-lg text-sm font-bold shadow">
           ${price.toFixed(2)}
         </span>
       </div>

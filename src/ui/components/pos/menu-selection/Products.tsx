@@ -93,10 +93,10 @@ export default function Products({
           </div>
         </div>
       ) : (
-        /* ================= tempStyle = false (Figma) ================= */
+
         <>
 
-          <div className="shrink-0 px-4 pt-4 pb-2 border-b border-border bg-background">
+          <div className="shrink-0 px-4  3 bg-background">
             <CategoryTabs direction="horizontal" />
           </div>
 

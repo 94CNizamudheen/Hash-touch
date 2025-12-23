@@ -10,9 +10,13 @@ export const appStateSqlite = sqliteTable("app_state", {
 
   selectedLocationId: text("selected_location_id"),
   brandId: text("brand_id"),
-
-  orderModeIds: text("order_mode_ids").default("[]"), 
+  orderModeNames: text("order_mode_names").default("[]"),
+  orderModeIds: text("order_mode_ids").default("[]"),
   
+  selectedOrderModeId: text("selected_order_mode_id"),
+  selectedOrderModeName: text("selected_order_mode_name"),
+
+  selectedLocationName: text("selected_location_name"),
   deviceRole: text("device_role", {
     enum: ["POS", "KIOSK", "QUEUE", "KDS"],
   }),
@@ -21,6 +25,8 @@ export const appStateSqlite = sqliteTable("app_state", {
     enum: ["IDLE", "SYNCING", "DONE", "FAILED"],
   }).default("IDLE"),
 
+  theme: text("theme").default("light"),
+  language: text("language").default("en"),
   createdAt: integer("created_at", { mode: "timestamp" })
     .default(sql`CURRENT_TIMESTAMP`),
 

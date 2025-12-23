@@ -79,3 +79,15 @@ pub fn get_products(conn: &Connection) -> anyhow::Result<Vec<Product>> {
 
     Ok(rows.filter_map(Result::ok).collect())
 }
+pub fn clear_all(conn: &mut Connection) -> anyhow::Result<()> {
+    let tx = conn.transaction()?;
+
+    tx.execute("DELETE FROM product_tags", [])?;
+    tx.execute("DELETE FROM product_tag_groups", [])?;
+    tx.execute("DELETE FROM products", [])?;
+    tx.execute("DELETE FROM product_group_categories", [])?;
+    tx.execute("DELETE FROM product_groups", [])?;
+
+    tx.commit()?;
+    Ok(())
+}

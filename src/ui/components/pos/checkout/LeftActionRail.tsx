@@ -11,7 +11,7 @@ const LeftActionRail = ({ onBackToMenu }: LeftActionRailProps) => {
   const navigate = useNavigate();
 
   return (
-    <div className="w-36 h-full bg-background border-r border-border flex flex-col items-center py-3 gap-3">
+    <div className="w-36 h-full bg-background border-r border-border flex flex-col items-center py-3 gap-3 safe-area ">
       {/* Big action buttons */}
       <button className="w-32 h-68 rounded-xl bg-primary text-primary-foreground font-semibold text-sm flex items-center justify-center text-center">
         Discount %

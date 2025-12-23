@@ -9,13 +9,21 @@ import { cn } from "@/lib/utils";
 import { useWorkShift } from "@/ui/context/WorkShiftContext";
 
 import EndShiftConfirmModal from "../modal/work-shift/EndShiftConfirmModal";
+import { useTheme } from "@/ui/context/ThemeContext";
+import { Moon, Sun } from "lucide-react";
+import { useAppState } from "@/ui/hooks/useAppState";
+import { productLocal } from "@/services/local/product.local.service";
+import { initialSync } from "@/services/data/initialSync.service";
+
 
 const MenuSelectionSidebar = ({
   onChangeStyle,
   style,
+
 }: {
   onChangeStyle: (value: boolean) => void;
   style: boolean;
+
 }) => {
   const { t } = useTranslation();
   const router = useNavigate();
@@ -27,13 +35,23 @@ const MenuSelectionSidebar = ({
   const [modalContent, setModalContent] = useState("");
   const [showDineInBoard, setShowDineInBoard] = useState(false);
   const [showEndShift, setShowEndShift] = useState(false);
+  const { theme, setTheme, isHydrated } = useTheme();
+  const { state: appState, loading, setOrderMode } = useAppState();
+
+  if (!isHydrated || loading) return null;
+
+
+  const locationName = appState?.selected_location_name ?? "";
+  const selectedOrderModeName =
+    appState?.selected_order_mode_name ?? "";
 
   const openModal = (content: string) => {
+
     switch (content) {
       case "change-table":
         router("/pos/table-layout");
         break;
-      case "change-style":
+      case "layout":
         onChangeStyle(!style);
         break;
       case "dineIn":
@@ -50,17 +68,39 @@ const MenuSelectionSidebar = ({
     }
   };
 
+  const toggleTheme = () => { setTheme(theme === "dark" ? "light" : "dark"); };
+
+  const handleOrderModeSelect = async (mode: { id: string; name: string; }) => {
+    if (!appState) return;
+
+    const { tenant_domain, access_token, device_role, selected_location_id, brand_id, order_mode_ids, order_mode_names, } = appState;
+
+    if (!tenant_domain || !access_token || !selected_location_id || !brand_id || !order_mode_ids || !order_mode_names) {
+      return;
+    }
+
+
+    await setOrderMode(order_mode_ids, order_mode_names, mode.id, mode.name);
+
+
+    await productLocal.clearCache();
+
+    await initialSync(tenant_domain, access_token, {
+      channel: device_role ?? "POS",
+      locationId: selected_location_id,
+      brandId: brand_id,
+      orderModeIds: [mode.id],
+    });
+
+    setShowDineInBoard(false);
+  };
+
+
   return (
     <>
       {/* Existing modals */}
       {isModalOpen && modalContent === "void" && (
         <ModalReasonVoid
-          isModal={isModalOpen}
-          onClose={() => setIsModalOpen(false)}
-        />
-      )}
-      {isModalOpen && modalContent === "dineIn" && (
-        <ModalDepartment
           isModal={isModalOpen}
           onClose={() => setIsModalOpen(false)}
         />
@@ -72,26 +112,40 @@ const MenuSelectionSidebar = ({
 
       <div
         className={cn(
-          "group flex flex-col justify-between h-full transition-all duration-300",
+          "group flex flex-col justify-between h-full transition-all duration-300 safe-area",
           "w-16 lg:w-36 "
         )}
       >
         {/* ===== Top Navigation ===== */}
-        <div className="flex flex-col gap-3">
+        <div className="flex flex-col gap-1">
           {MENUSELECTIONNAVIGATION.map(
             (item) =>
               item.position === "Top" && (
                 <div
                   key={item.id}
                   onClick={() => {
+                    if (item.title === "Dark Mode") {
+                      toggleTheme();
+                      return;
+                    }
                     if (item.action) item.action(openModal);
                     if (item.link) router(item.link);
                   }}
+
                   className={cn(
                     "flex items-center gap-2 p-2 xl:p-3 rounded-lg cursor-pointer hover:bg-sidebar-hover"
                   )}
                 >
-                  {item.icon}
+                  {item.title === "Dark Mode" ? (
+                    theme === "dark" ? (
+                      <Sun className="lg:w-5 lg:h-5 w-6 h-6 stroke-primary" />
+                    ) : (
+                      <Moon className="lg:w-5 lg:h-5 w-6 h-6 stroke-primary" />
+                    )
+                  ) : (
+                    item.icon
+                  )}
+
                   <p
                     className={cn(
                       "text-navigation font-medium whitespace-nowrap transition-all duration-200",
@@ -100,7 +154,7 @@ const MenuSelectionSidebar = ({
                       "lg:opacity-100 lg:w-auto"
                     )}
                   >
-                    {t(item.title)}
+                    {item.title === "Dark Mode" ? theme === "dark" ? t("Light Mode") : t("Dark Mode") : t(item.title)}
                   </p>
                 </div>
               )
@@ -109,8 +163,12 @@ const MenuSelectionSidebar = ({
 
         {/* ===== Bottom ===== */}
         {showDineInBoard ? (
-          <div className="flex-1 overflow-y-auto no-scrollbar mt-3 rounded-md border border-border bg-secondary/30">
-            helloi
+          <div className="flex-1 overflow-y-auto no-scrollbar mt-3 rounded-md border border-border bg-secondary/30 p-3">
+            <ModalDepartment
+              isModal={showDineInBoard}
+              onClose={() => setShowDineInBoard(false)}
+              onSelect={handleOrderModeSelect}
+            />
           </div>
         ) : (
           <div className="flex flex-col gap-3 mt-auto">
@@ -141,8 +199,13 @@ const MenuSelectionSidebar = ({
                           : "text-left"
                       )}
                     >
-                      {t(item.title)}
+                      {item.title === "Location"
+                        ? locationName
+                        : item.title === "Dine In"
+                          ? selectedOrderModeName || t("Select Mode")
+                          : t(item.title)}
                     </p>
+
                   </div>
                 )
             )}

@@ -16,7 +16,7 @@ const MenuLayout = () => {
   const shouldShowStart = !shift?.isOpen;
 
   return (
-    <main className="absolute inset-0 z-40 bg-black/40 backdrop-blur-md">
+    <main className="absolute inset-0 z-40 bg-black/40 backdrop-blur-md  ">
       {shouldShowStart && (
         <StartShiftModal
           onClose={() => {}}
