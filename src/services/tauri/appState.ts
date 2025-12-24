@@ -29,4 +29,7 @@ export const appStateApi = {
   setLanguage(language: string): Promise<void> {
     return invoke("set_language", { language });
   },
+  clear():Promise<void>{
+    return invoke("clear_app_state");
+  }
 };

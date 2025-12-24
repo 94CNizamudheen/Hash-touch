@@ -8,6 +8,7 @@ import { cn } from "@/lib/utils";
 import ProductGroupTabs from "./ProductGroupTabs";
 import tempImage from "@assets/dish-placeholder.jpg"
 
+
 export default function Products({
   onAddToOrder,
   tempStyle,
@@ -23,6 +24,7 @@ export default function Products({
     loading,
   } = useProducts();
 
+
   const productGridRef = useRef<HTMLDivElement | null>(null);
 
   function getProductImage(media?: string) {
@@ -35,6 +37,7 @@ export default function Products({
     }
   }
 
+
   useEffect(() => {
     productGridRef.current?.scrollTo({
       top: 0,
@@ -45,7 +48,7 @@ export default function Products({
 
   return (
     <section className="w-full h-full flex flex-col bg-background overflow-hidden transition-all duration-300">
-      {/* 🔍 Search + Product Groups (Common) */}
+
       <div className="p-4 border-b border-border bg-background sticky top-0 z-10 space-y-3">
         <InputFilter
           className="w-full"

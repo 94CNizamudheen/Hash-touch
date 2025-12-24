@@ -9,7 +9,6 @@ export default function ProductGroupTabs() {
   } = useProducts();
 
   if (!productGroups?.length) return null;
-  console.log("productGroups", productGroups)
 
   return (
     <div className="w-full overflow-x-auto no-scrollbar">

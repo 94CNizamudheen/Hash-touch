@@ -108,3 +108,29 @@ pub fn set_language(app: AppHandle, language: String) -> Result<(), String> {
     Ok(())
 }
 
+#[tauri::command]
+pub fn clear_app_state(app: AppHandle) -> Result<(), String> {
+    let conn = migrate::connection(&app);
+
+    conn.execute(
+        r#"
+        UPDATE app_state SET
+          tenant_domain = NULL,
+          access_token = NULL,
+          selected_location_id = NULL,
+          selected_location_name = NULL,
+          brand_id = NULL,
+          order_mode_ids = '[]',
+          order_mode_names = '[]',
+          selected_order_mode_id = NULL,
+          selected_order_mode_name = NULL,
+          device_role = NULL,
+          sync_status = 'IDLE'
+        WHERE id = 1
+        "#,
+        [],
+    )
+    .map_err(|e| e.to_string())?;
+
+    Ok(())
+}

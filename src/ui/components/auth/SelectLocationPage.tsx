@@ -25,7 +25,7 @@ export default function SelectLocationPage({
       {
         id: "ad98450c-a4da-4971-870e-295d33e1904b",
         brand_id: "95e0791c-6cd2-4c4f-a77e-4f62eeb3573d",
-        name: "Green Valley",
+        name: "Port Lewisview",
         active: 1,
         selected: 0,
       },

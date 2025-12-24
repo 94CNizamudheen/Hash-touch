@@ -5,15 +5,29 @@ use super::product::Product;
 pub fn save_products(conn: &mut Connection, items: &[Product]) -> anyhow::Result<()> {
     let tx = conn.transaction()?;
 
+    // Debug: Log products with overrides
+    let with_overrides: Vec<_> = items.iter()
+        .filter(|p| p.overrides.is_some() && !p.overrides.as_ref().unwrap().is_empty() && p.overrides.as_ref().unwrap() != "[]")
+        .collect();
+
+    if !with_overrides.is_empty() {
+        println!("🦀 Rust: Saving {} products with overrides (out of {} total)", with_overrides.len(), items.len());
+        if let Some(sample) = with_overrides.first() {
+            println!("🦀 Rust: Sample product: {} - overrides: {:?}", sample.name, sample.overrides);
+        }
+    } else {
+        println!("🦀 Rust: No products with overrides found in batch of {}", items.len());
+    }
+
     for p in items {
         tx.execute(
             r#"
             INSERT INTO products (
               id, name, code, description, category_id,
               price, active, sort_order,
-              created_at, updated_at, deleted_at, media
+              created_at, updated_at, deleted_at, media, overrides
             )
-            VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12)
+            VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13)
             ON CONFLICT(id) DO UPDATE SET
               name = excluded.name,
               code = excluded.code,
@@ -24,7 +38,8 @@ pub fn save_products(conn: &mut Connection, items: &[Product]) -> anyhow::Result
               sort_order = excluded.sort_order,
               updated_at = excluded.updated_at,
               deleted_at = excluded.deleted_at,
-              media = excluded.media
+              media = excluded.media,
+              overrides=excluded.overrides
             "#,
             params![
                 p.id,
@@ -38,7 +53,8 @@ pub fn save_products(conn: &mut Connection, items: &[Product]) -> anyhow::Result
                 p.created_at,
                 p.updated_at,
                 p.deleted_at,
-                p.media
+                p.media,
+                p.overrides
             ],
         )?;
     }
@@ -53,7 +69,7 @@ pub fn get_products(conn: &Connection) -> anyhow::Result<Vec<Product>> {
         SELECT
           id, name, code, description, category_id,
           price, active, sort_order,
-          created_at, updated_at, deleted_at, media
+          created_at, updated_at, deleted_at, media, overrides
         FROM products
         WHERE deleted_at IS NULL
         ORDER BY sort_order, name
@@ -74,6 +90,7 @@ pub fn get_products(conn: &Connection) -> anyhow::Result<Vec<Product>> {
             updated_at: row.get(9)?,
             deleted_at: row.get(10)?,
             media: row.get(11)?,
+            overrides:row.get(12)?,
         })
     })?;
 

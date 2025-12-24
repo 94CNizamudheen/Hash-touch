@@ -4,7 +4,7 @@ export interface GetProductsPayload {
   channel: string;
   location_id: string;
   brand_id: string;
-  order_mode_ids: string[];
+  order_mode_id: string[]; // Note: Backend expects 'order_mode_id' (singular) not 'order_mode_ids'
 }
 export interface GetOrderModesPayload{
   channel:string;
@@ -16,21 +16,36 @@ export interface GetOrderModesPayload{
 
 
 async function post(domain: string, path: string, token: string,body?:Record<string,any>) {
-  const res = await fetch(`${API_BASE}/api/${domain}/outbound/${path}`, {
+  const url = `${API_BASE}/api/${domain}/outbound/${path}`;
+  const requestBody = body ? JSON.stringify(body) : undefined;
+
+  console.log(`📡 POST ${url}`);
+  console.log(`📡 Request body:`, requestBody);
+
+  const res = await fetch(url, {
     method: "POST",
     headers: {
       Authorization: `Bearer ${token}`,
       Accept: "application/json",
       'Content-type':'application/json'
     },
-    body: body? JSON.stringify(body):undefined,
+    body: requestBody,
   });
 
   if (!res.ok) {
-    throw new Error(`Failed to fetch ${path}`);
+    throw new Error(`Failed to fetch ${path}: ${res.status} ${res.statusText}`);
   }
 
-  return res.json();
+  const data = await res.json();
+
+  // Don't log full response for large datasets, just metadata
+  if (path === 'product-combinations') {
+    console.log(`📡 Response from ${path}: ${data?.length || 0} groups`);
+  } else {
+    console.log(`📡 Response from ${path}:`, data);
+  }
+
+  return data;
 }
 
 export const commonDataService = {
@@ -48,6 +63,7 @@ export const commonDataService = {
     return post(domain, "product-groups", token,payload);
   },
   getCombinations(domain: string, token: string,payload:GetProductsPayload) {
+    console.log("📡 Calling product-combinations API with payload:", payload);
     return post(domain, "product-combinations", token,payload);
   },
   getOrderModes(domain: string, token: string,payload:GetOrderModesPayload) {

@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/exhaustive-deps */
 import {
   createContext,
   useContext,
@@ -17,10 +18,12 @@ import { productLocal } from "@/services/local/product.local.service";
 import { getProductWithCombinations } from "@/services/local/product-combo.local.service";
 import { productGroupLocal } from "@/services/local/product-group.local.service";
 import { productGroupCategoryLocal } from "@/services/local/product-group-category.local.service";
+import { buildOverrideKey, getEffectiveProduct } from "../utils/overrides";
+import { useAppState } from "../hooks/useAppState";
 
 interface ProductContextType {
   items: Product[];
-
+  rawItems: Product[];
   productGroups: ProductGroup[];
   groupCategories: ProductGroupCategory[];
 
@@ -36,6 +39,7 @@ interface ProductContextType {
   filteredItems: Product[];
   loading: boolean;
 
+  applyOverrides: (orderModeId: string) => void;
   loadProductWithCombinations: (
     productId: string
   ) => Promise<ProductWithCombinations>;
@@ -45,20 +49,35 @@ const ProductContext = createContext<ProductContextType | null>(null);
 
 export const ProductProvider = ({ children }: { children: React.ReactNode }) => {
   const [items, setItems] = useState<Product[]>([]);
+  const [rawItems, setRawItems] = useState<Product[]>([]);
   const [productGroups, setProductGroups] = useState<ProductGroup[]>([]);
   const [groupCategories, setGroupCategories] = useState<ProductGroupCategory[]>([]);
-
-  const [selectedGroup, setSelectedGroup] = useState<string>("");
-  const [selectedCategory, setSelectedCategory] = useState<string>("");
-
+  const [selectedGroup, setSelectedGroup] = useState("");
+  const [selectedCategory, setSelectedCategory] = useState("");
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);
 
+  const { state: appState } = useAppState();
+
+  console.log("🟢 ProductProvider rendered, appState.selected_order_mode_id:", appState?.selected_order_mode_id);
+
   /* ----------------------------------------
-        Fetch from SQLite on app load
+     Debug: Track appState changes
   ----------------------------------------- */
   useEffect(() => {
-    const fetchData = async () => {
+    console.log("🎯 AppState changed:", {
+      selected_order_mode_id: appState?.selected_order_mode_id,
+      brand_id: appState?.brand_id,
+      location_id: appState?.selected_location_id,
+      device_role: appState?.device_role,
+    });
+  }, [appState]);
+
+  /* ----------------------------------------
+     Load products ONCE on mount
+  ----------------------------------------- */
+  useEffect(() => {
+    const fetchInitialData = async () => {
       try {
         setLoading(true);
 
@@ -68,72 +87,153 @@ export const ProductProvider = ({ children }: { children: React.ReactNode }) => 
           productGroupCategoryLocal.getAll(),
         ]);
 
-        setItems(prods);
+        console.log("📦 Initial load: products from DB:", prods.length);
+
+        // Debug: Check if products have overrides
+        const productsWithOverrides = prods.filter(p => {
+          if (!p.overrides) return false;
+          try {
+            const parsed = typeof p.overrides === 'string' ? JSON.parse(p.overrides) : p.overrides;
+            return Array.isArray(parsed) && parsed.length > 0;
+          } catch {
+            return false;
+          }
+        });
+
+        console.log(`📊 Products with overrides: ${productsWithOverrides.length} / ${prods.length}`);
+        if (productsWithOverrides.length > 0) {
+          const sample = productsWithOverrides[0];
+          console.log(`📋 Sample product with overrides:`, {
+            name: sample.name,
+            price: sample.price,
+            overrides: sample.overrides
+            
+          });
+        }
+
+        setRawItems(prods);
         setProductGroups(groups);
         setGroupCategories(groupCats);
-
-      
-        if (groups.length) {
-          const firstGroupId = groups[0].id;
-          setSelectedGroup(firstGroupId);
-
-          const firstCat = groupCats
-            .filter((c) => c.product_group_id === firstGroupId && c.active === 1)
-            .sort((a, b) => a.sort_order - b.sort_order)[0];
-
-          if (firstCat) {
-            setSelectedCategory(firstCat.id);
-          }
-        }
-      } catch (err) {
-        console.error("ProductContext fetch error:", err);
       } finally {
         setLoading(false);
       }
     };
 
-    fetchData();
-  }, []);
+    fetchInitialData();
+  }, []); // Only run once on mount
 
   /* ----------------------------------------
-        When group changes → reset category
+     Apply overrides when order mode changes
+  ----------------------------------------- */
+  useEffect(() => {
+    console.log("🔄 ========== OVERRIDES EFFECT FIRED ==========");
+    console.log("   Order mode ID:", appState?.selected_order_mode_id);
+    console.log("   Brand ID:", appState?.brand_id);
+    console.log("   Location ID:", appState?.selected_location_id);
+    console.log("   Device Role:", appState?.device_role);
+    console.log("   Raw items count:", rawItems.length);
+    console.log("   AppState object:", appState);
+
+    if (!appState || rawItems.length === 0) {
+      console.log("⚠️ No appState or no raw items, skipping override application");
+      return;
+    }
+
+    if (
+      appState.brand_id &&
+      appState.selected_location_id &&
+      appState.device_role &&
+      appState.selected_order_mode_id
+    ) {
+      const key = buildOverrideKey({
+        channel: appState.device_role,
+        brandId: appState.brand_id,
+        locationId: appState.selected_location_id,
+        orderModeId: appState.selected_order_mode_id,
+      });
+
+      console.log("🔑 Built override key:", key);
+      console.log("🔄 Applying overrides to", rawItems.length, "products");
+
+      const effectiveProducts = rawItems.map(p => getEffectiveProduct(p, key));
+
+      // Debug: Check if products actually changed
+      const changedProducts = effectiveProducts.filter((ep, idx) => {
+        const raw = rawItems[idx];
+        return raw && (raw.price !== ep.price || raw.name !== ep.name);
+      });
+
+      console.log(`✅ Override application complete. ${changedProducts.length} products changed.`);
+      if (changedProducts.length > 0) {
+        console.log("📊 Sample changed product:", {
+          name: changedProducts[0].name,
+          oldPrice: rawItems.find(r => r.id === changedProducts[0].id)?.price,
+          newPrice: changedProducts[0].price
+        });
+      }
+
+      setItems(effectiveProducts);
+    } else {
+      console.log("⚠️ Missing app state values, using raw products");
+      setItems(rawItems);
+    }
+  }, [
+    appState?.selected_order_mode_id,
+    appState?.brand_id,
+    appState?.selected_location_id,
+    appState?.device_role,
+    rawItems.length // Use length instead of the array itself to avoid unnecessary re-renders
+  ]);
+
+  /* ----------------------------------------
+     Select first product group by default
+  ----------------------------------------- */
+  useEffect(() => {
+    if (selectedGroup || !productGroups.length) return;
+
+    const firstActiveGroup = productGroups
+      .filter(g => g.active === 1)
+      .sort((a, b) => a.sort_order - b.sort_order)[0];
+
+    if (firstActiveGroup) {
+      console.log("🎯 Auto-selecting first product group:", firstActiveGroup.name);
+      setSelectedGroup(firstActiveGroup.id);
+    }
+  }, [productGroups, selectedGroup]);
+
+  /* ----------------------------------------
+     Reset category when group changes
   ----------------------------------------- */
   useEffect(() => {
     if (!selectedGroup) return;
 
     const firstCat = groupCategories
-      .filter((c) => c.product_group_id === selectedGroup && c.active === 1)
+      .filter(c => c.product_group_id === selectedGroup && c.active === 1)
       .sort((a, b) => a.sort_order - b.sort_order)[0];
 
-    if (firstCat) {
-      setSelectedCategory(firstCat.id);
-    }
+    if (firstCat) setSelectedCategory(firstCat.id);
   }, [selectedGroup, groupCategories]);
 
   /* ----------------------------------------
-        Filter products
+     Filter products for UI
   ----------------------------------------- */
   const filteredItems = useMemo(() => {
     let result = [...items];
 
     if (selectedCategory) {
-      result = result.filter(
-        (p) => p.category_id === selectedCategory
-      );
+      result = result.filter(p => p.category_id === selectedCategory);
     }
 
     if (search.trim()) {
       const term = search.toLowerCase();
-      result = result.filter((p) =>
-        p.name.toLowerCase().includes(term)
-      );
+      result = result.filter(p => p.name.toLowerCase().includes(term));
     }
 
     return result;
   }, [items, selectedCategory, search]);
 
   /* ----------------------------------------
-        Load combos for ONE product
+     Load combos for one product
   ----------------------------------------- */
   const loadProductWithCombinations = async (
     productId: string
@@ -146,17 +246,35 @@ export const ProductProvider = ({ children }: { children: React.ReactNode }) => 
     } as ProductWithCombinations;
   };
 
+  /* ----------------------------------------
+     Manually apply overrides (optional)
+  ----------------------------------------- */
+  const applyOverrides = (orderModeId: string) => {
+    if (!appState) return;
+
+    const key = buildOverrideKey({
+      channel: appState.device_role ?? "POS",
+      brandId: appState.brand_id!,
+      locationId: appState.selected_location_id!,
+      orderModeId,
+    });
+
+    console.log("⚡ applyOverrides called with key:", key);
+
+    const effective = rawItems.map(p => getEffectiveProduct(p, key));
+    setItems(effective);
+  };
+
   return (
     <ProductContext.Provider
       value={{
         items,
-
+        rawItems,
         productGroups,
         groupCategories,
 
         selectedGroup,
         setSelectedGroup,
-
         selectedCategory,
         setSelectedCategory,
 
@@ -167,6 +285,7 @@ export const ProductProvider = ({ children }: { children: React.ReactNode }) => 
         loading,
 
         loadProductWithCombinations,
+        applyOverrides,
       }}
     >
       {children}

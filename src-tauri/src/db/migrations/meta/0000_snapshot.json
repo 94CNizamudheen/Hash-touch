@@ -1,7 +1,7 @@
 {
   "version": "6",
   "dialect": "sqlite",
-  "id": "1f6b1bd0-233d-4768-b0b9-ccacb16224ed",
+  "id": "198680be-de24-455b-9a66-7fc9c3ef0da1",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "tables": {
     "app_state": {
@@ -826,6 +826,13 @@
         },
         "media": {
           "name": "media",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "overrides": {
+          "name": "overrides",
           "type": "text",
           "primaryKey": false,
           "notNull": false,

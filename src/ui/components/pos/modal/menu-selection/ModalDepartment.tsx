@@ -92,6 +92,7 @@ const ModalDepartment = ({
                 console.warn("Selected mode not found:", choose);
                 return;
               }
+              console.log("🟦 Selected order mode:", mode.id);
               onSelect({ id: mode.id, name: mode.title });
               onClose();
             }}

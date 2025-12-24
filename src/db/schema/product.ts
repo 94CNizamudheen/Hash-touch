@@ -19,4 +19,5 @@ export const productSqlite = sqliteTable("products", {
   deletedAt: text("deleted_at"),
 
   media: text("media"), 
+  overrides: text("overrides"), 
 });

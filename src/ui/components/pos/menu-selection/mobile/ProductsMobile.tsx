@@ -1,4 +1,4 @@
-import { useCallback } from "react";
+import { useCallback,  } from "react";
 import { useProducts } from "@/ui/context/ProductContext";
 import { useCart } from "@/ui/context/CartContext";
 import ProductCardMobile from "./ProductCardMobile";
@@ -6,6 +6,7 @@ import MobileCategoryTab from "./MobileCategoryTab";
 import MobileProductGroupTabs from "./MobileProductGroupTabs";
 import InputFilter from "@/ui/components/common/InputFilter";
 import type { Product } from "@/types/products";
+import { useAppState } from "@/ui/hooks/useAppState";
 
 const ProductsMobile = () => {
   const {
@@ -16,6 +17,7 @@ const ProductsMobile = () => {
   } = useProducts();
 
   const { addItem } = useCart();
+  const { state: appState } = useAppState();
 
   const handleAddToOrder = useCallback(
     (item: Product) => addItem(item),
@@ -23,7 +25,7 @@ const ProductsMobile = () => {
   );
 
   return (
-    <section className="w-full min-h-full flex flex-col bg-background">
+    <section key={appState?.selected_order_mode_id} className="w-full min-h-full flex flex-col bg-background">
       {/* 🔝 Sticky Top Controls */}
       <div className="sticky top-0 z-10 p-3 flex flex-col gap-3 border-b border-border bg-background">
         <InputFilter

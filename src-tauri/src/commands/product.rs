@@ -6,6 +6,27 @@ use crate::db::models::product_repo;
 
 #[tauri::command]
 pub fn save_products(app: AppHandle, items: Vec<Product>) -> Result<(), String> {
+    println!("🦀 Rust Command: save_products called with {} items", items.len());
+
+    // Debug: Check first few items for overrides
+    let with_overrides: Vec<_> = items.iter()
+        .filter(|p| p.overrides.is_some() && !p.overrides.as_ref().unwrap().is_empty() && p.overrides.as_ref().unwrap() != "[]")
+        .take(3)
+        .collect();
+
+    if !with_overrides.is_empty() {
+        println!("🦀 Rust Command: Found {} products with overrides", with_overrides.len());
+        for product in with_overrides {
+            println!("🦀 Rust Command: {} - overrides: {:?}", product.name, product.overrides);
+        }
+    } else {
+        println!("🦀 Rust Command: ⚠️ NO PRODUCTS WITH OVERRIDES RECEIVED");
+        // Sample first product to see what we got
+        if let Some(first) = items.first() {
+            println!("🦀 Rust Command: First product: name={}, overrides={:?}", first.name, first.overrides);
+        }
+    }
+
     let mut conn = migrate::connection(&app);
     product_repo::save_products(&mut conn, &items)
         .map_err(|e| e.to_string())

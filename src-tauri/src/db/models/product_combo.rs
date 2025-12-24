@@ -8,7 +8,7 @@ pub struct ProductWithCombinations {
     pub price: f64,
     pub description: Option<String>,
     pub media: Option<String>,
-
+    pub overrides:Option<String>,
     pub combinations: Vec<TagGroupWithTags>,
 }
 

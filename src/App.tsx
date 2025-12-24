@@ -89,7 +89,6 @@ export default function App() {
     const orderModeIds = orderModesResponse.map((om: any) => om.id);
     const orderModeNames = orderModesResponse.map((om: any) => om.name);
     const defaultMode = orderModesResponse[0];
-
     await appStateApi.setOrderMode(orderModeIds, orderModeNames, defaultMode.id, defaultMode.name);
 
     await initialSync(appState.tenant_domain, appState.access_token, {

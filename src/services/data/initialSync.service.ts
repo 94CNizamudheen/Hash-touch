@@ -9,14 +9,9 @@ import { productGroupCategoryLocal } from "../local/product-group-category.local
 export async function initialSync(
   domain: string,
   token: string,
-  context: {
-    channel: string;
-    locationId: string;
-    brandId: string;
-    orderModeIds: string[] | null;
-  }
-) {
-  console.log("Initial sync started (from combinations)");
+  context: { channel: string; locationId: string; brandId: string;orderModeIds: string[] | null; }) {
+  console.log("🚀 Initial sync started (from combinations)");
+  console.log("📡 Sync context:", context);
 
   const combinationsResponse = await commonDataService.getCombinations(
     domain,
@@ -25,15 +20,50 @@ export async function initialSync(
       channel: context.channel,
       location_id: context.locationId,
       brand_id: context.brandId,
-      order_mode_ids: context.orderModeIds ?? [],
+      order_mode_id: context.orderModeIds ?? [], // Changed from order_mode_ids to order_mode_id
     }
   );
 
-  console.log(" combinations count:", combinationsResponse.length);
+  console.log("📦 Combinations received:", combinationsResponse.length);
 
-  /* ======================================================
-      1️⃣ PRODUCT GROUPS
-  ====================================================== */
+  // Debug: Log raw structure of first product
+  if (combinationsResponse.length > 0 &&
+      combinationsResponse[0].categories?.length > 0 &&
+      combinationsResponse[0].categories[0].products?.length > 0) {
+    const firstProduct = combinationsResponse[0].categories[0].products[0];
+    console.log("🔍 RAW First Product from API:", firstProduct);
+    console.log("🔍 RAW First Product overrides field:", firstProduct.overrides);
+    console.log("🔍 RAW First Product overrides type:", typeof firstProduct.overrides);
+    console.log("🔍 RAW First Product overrides isArray:", Array.isArray(firstProduct.overrides));
+  }
+
+  // Debug: Count all products with overrides in the API response
+  let totalProducts = 0;
+  let productsWithOverrides = 0;
+
+  combinationsResponse.forEach((g: any) => {
+    (g.categories ?? []).forEach((c: any) => {
+      (c.products ?? []).forEach((p: any) => {
+        totalProducts++;
+        if (p.overrides && Array.isArray(p.overrides) && p.overrides.length > 0) {
+          productsWithOverrides++;
+          if (productsWithOverrides === 1) {
+            // Log the first product with overrides
+            console.log("🔍 First product with overrides from API:", {
+              name: p.name,
+              price: p.price,
+              overridesCount: p.overrides.length,
+              overrides: p.overrides
+            });
+          }
+        }
+      });
+    });
+  });
+
+  console.log(`📊 API Response Summary: ${productsWithOverrides} products with overrides out of ${totalProducts} total products`);
+
+
   const dbProductGroups = combinationsResponse.map((g: any) => ({
     id: g.id,
     name: g.name,
@@ -90,30 +120,63 @@ export async function initialSync(
 
   const dbProducts = combinationsResponse.flatMap((g: any) =>
   (g.categories ?? []).flatMap((c: any) =>
-    (c.products ?? []).map((p: any) => ({
-      id: p.id,
-      name: p.name,
-      code: p.code ?? null,
-      description: p.description ?? null,
+    (c.products ?? []).map((p: any) => {
+      const overridesStr = JSON.stringify(p.overrides ?? []);
 
-      category_id: c.id,
+      // Debug logging for products with overrides
+      if (p.overrides && p.overrides.length > 0) {
+        console.log(`💾 Saving product "${p.name}" with overrides:`, p.overrides);
+        console.log(`   Stringified:`, overridesStr);
+      }
 
-      price: Number(p.price ?? 0),
-      active: Boolean(p.active),
-      sort_order: Number(p.sort_order ?? 0), 
+      return {
+        id: p.id,
+        name: p.name,
+        code: p.code ?? null,
+        description: p.description ?? null,
 
-      created_at: p.created_at ?? null,
-      updated_at: p.updated_at ?? null,
-      deleted_at: p.deleted_at ?? null,
+        category_id: c.id,
 
-      media: JSON.stringify(p.media ?? []),
-    }))
+        price: Number(p.price ?? 0),
+        active: Boolean(p.active),
+        sort_order: Number(p.sort_order ?? 0),
+
+        created_at: p.created_at ?? null,
+        updated_at: p.updated_at ?? null,
+        deleted_at: p.deleted_at ?? null,
+
+        media: JSON.stringify(p.media ?? []),
+        overrides: overridesStr,
+      };
+    })
   )
 );
 
 
+  console.log(`💾 About to save ${dbProducts.length} products to database`);
+
+  // Debug: Check how many products have overrides before saving
+  const productsWithOverridesBeforeSave = dbProducts.filter(p => {
+    try {
+      const parsed = JSON.parse(p.overrides || '[]');
+      return Array.isArray(parsed) && parsed.length > 0;
+    } catch {
+      return false;
+    }
+  });
+
+  console.log(`📊 Products with overrides before save: ${productsWithOverridesBeforeSave.length} / ${dbProducts.length}`);
+
+  if (productsWithOverridesBeforeSave.length > 0) {
+    const sample = productsWithOverridesBeforeSave[0];
+    console.log(`📋 Sample product before save:`, {
+      name: sample.name,
+      overrides: sample.overrides
+    });
+  }
+
   await productLocal.save(dbProducts);
-  console.log(`Products synced: ${dbProducts.length}`);
+  console.log(`✅ Products synced: ${dbProducts.length}`);
 
 
   const dbTagGroups = combinationsResponse.flatMap((g: any) =>

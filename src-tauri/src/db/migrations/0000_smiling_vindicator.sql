@@ -126,7 +126,8 @@ CREATE TABLE `products` (
 	`created_at` text,
 	`updated_at` text,
 	`deleted_at` text,
-	`media` text
+	`media` text,
+	`overrides` text
 );
 --> statement-breakpoint
 CREATE TABLE `work_shift_draft` (

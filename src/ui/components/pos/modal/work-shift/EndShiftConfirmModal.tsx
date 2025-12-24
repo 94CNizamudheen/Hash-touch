@@ -4,8 +4,10 @@ import { useWorkShift } from "@/ui/context/WorkShiftContext";
 
 export default function EndShiftConfirmModal({
   onClose,
+  onConfirm
 }: {
-  onClose: () => void;
+  onClose:()=>void;
+  onConfirm?: () => void;
 }) {
   const { endShift } = useWorkShift();
 
@@ -38,6 +40,7 @@ export default function EndShiftConfirmModal({
             onClick={() => {
               endShift("Admin");
               onClose();
+               onConfirm?.()
             }}
             className="flex-1 bg-red-600 text-white font-medium rounded-lg py-3 hover:bg-red-700 transition-colors"
           >

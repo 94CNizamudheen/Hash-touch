@@ -13,9 +13,6 @@ import { Moon, Sun } from "lucide-react";
 import { useWorkShift } from "@/ui/context/WorkShiftContext";
 import { useAppState } from "@/ui/hooks/useAppState";
 
-import { productLocal } from "@/services/local/product.local.service";
-import { initialSync } from "@/services/data/initialSync.service";
-
 const MenuSelectionSidebarMobile = () => {
   const { t } = useTranslation();
   const router = useNavigate();
@@ -66,36 +63,21 @@ const MenuSelectionSidebarMobile = () => {
   }) => {
     if (!appState) return;
 
-    const {
-      tenant_domain,
-      access_token,
-      device_role,
-      selected_location_id,
-      brand_id,
-      order_mode_ids,
-      order_mode_names,
-    } = appState;
+    const { order_mode_ids, order_mode_names } = appState;
 
-    if (
-      !tenant_domain ||
-      !access_token ||
-      !selected_location_id ||
-      !brand_id ||
-      !order_mode_ids ||
-      !order_mode_names
-    ) {
-      return;
-    }
+    if (!order_mode_ids || !order_mode_names) return;
 
-    await setOrderMode(order_mode_ids, order_mode_names, mode.id, mode.name);
-    await productLocal.clearCache();
+    console.log("🟦 Mobile: Calling setOrderMode with:", mode.id);
 
-    await initialSync(tenant_domain, access_token, {
-      channel: device_role ?? "POS",
-      locationId: selected_location_id,
-      brandId: brand_id,
-      orderModeIds: [mode.id],
-    });
+    await setOrderMode(
+      order_mode_ids ?? [],
+      order_mode_names ?? [],
+      mode.id,
+      mode.name
+    );
+
+    // ProductContext will automatically apply overrides via useEffect
+    // when appState.selected_order_mode_id changes
 
     setShowDineInBoard(false);
   };

@@ -1,4 +1,14 @@
 
+export interface ProductOverride {
+  key: string; 
+  price?: string | number;
+  name?: string;
+  description?: string;
+  code?: string;
+  active?: boolean;
+  media?: any; 
+}
+
 export interface Product {
   id: string;
   name: string;
@@ -9,6 +19,7 @@ export interface Product {
   active: boolean;
   sort_order: number;
   media?: string;
+  overrides?: string | ProductOverride[];
 }
 
 export interface Category {
@@ -31,10 +42,8 @@ export interface ProductGroup {
   name: string;
   code?: string;
   description?: string;
-
   active: number;
   sort_order: number;
-
   created_at?: string;
   updated_at?: string;
   deleted_at?: string;
@@ -85,3 +94,6 @@ export interface ProductGroupCategory {
   media?: string;
 }
 
+export interface ProductWithParsedOverrides extends Omit<Product, 'overrides'> {
+  overrides: ProductOverride[];
+}

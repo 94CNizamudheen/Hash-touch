@@ -19,7 +19,7 @@ pub fn get_product_with_combinations(
     let product: Product = conn.query_row(
         r#"
         SELECT
-          id, name, description, price, media
+          id, name, description, price, media, overrides
         FROM products
         WHERE id = ? AND deleted_at IS NULL
         "#,
@@ -31,6 +31,7 @@ pub fn get_product_with_combinations(
                 description: row.get(2)?,
                 price: row.get(3)?,
                 media: row.get(4)?,
+                overrides:row.get(5)?,
                 code: None,
                 category_id: None,
                 active: true,
@@ -114,6 +115,7 @@ pub fn get_product_with_combinations(
         price: product.price,
         description: product.description,
         media: product.media,
+        overrides:product.overrides,
         combinations: groups_with_tags,
     })
 }

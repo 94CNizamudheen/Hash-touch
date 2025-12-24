@@ -10,16 +10,18 @@ import WorkShiftSuccessModal from "../modal/work-shift/WorkShiftSuccessModal";
 const MenuLayout = () => {
   const { shift, isHydrated } = useWorkShift();
   const [showSuccess, setShowSuccess] = useState(false);
+  const [suppressStartShift, setSuppressStartShift] = useState(false);
 
   if (!isHydrated) return null;
 
-  const shouldShowStart = !shift?.isOpen;
+  const shouldShowStart = !shift?.isOpen && !suppressStartShift;
+
 
   return (
     <main className="absolute inset-0 z-40 bg-black/40 backdrop-blur-md  ">
       {shouldShowStart && (
         <StartShiftModal
-          onClose={() => {}}
+          onClose={() => { }}
           onSuccess={() => setShowSuccess(true)}
         />
       )}
@@ -28,12 +30,12 @@ const MenuLayout = () => {
       {showSuccess && shift?.isOpen && (
         <WorkShiftSuccessModal onClose={() => setShowSuccess(false)} />
       )}
-
       {shift?.isOpen && !showSuccess && (
-        <MenuSelectionLayout>
+        <MenuSelectionLayout setSuppressStartShift={setSuppressStartShift}>
           <Outlet />
         </MenuSelectionLayout>
       )}
+
     </main>
   );
 };

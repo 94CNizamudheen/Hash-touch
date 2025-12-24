@@ -13,7 +13,9 @@ import { useTheme } from "@/ui/context/ThemeContext";
 import { Moon, Sun } from "lucide-react";
 import { useAppState } from "@/ui/hooks/useAppState";
 import { productLocal } from "@/services/local/product.local.service";
-import { initialSync } from "@/services/data/initialSync.service";
+import { appStateApi } from "@/services/tauri/appState";
+import LogoutConfirmModal from "../modal/LogoutConfirmModal";
+
 
 
 const MenuSelectionSidebar = ({
@@ -35,6 +37,8 @@ const MenuSelectionSidebar = ({
   const [modalContent, setModalContent] = useState("");
   const [showDineInBoard, setShowDineInBoard] = useState(false);
   const [showEndShift, setShowEndShift] = useState(false);
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
+
   const { theme, setTheme, isHydrated } = useTheme();
   const { state: appState, loading, setOrderMode } = useAppState();
 
@@ -68,32 +72,50 @@ const MenuSelectionSidebar = ({
     }
   };
 
+  const handleLogoutClick = () => {
+    if (isShiftOpen) {
+      setShowLogoutConfirm(true)
+    } else {
+      setShowLogoutConfirm(true);
+    }
+  };
+
   const toggleTheme = () => { setTheme(theme === "dark" ? "light" : "dark"); };
 
-  const handleOrderModeSelect = async (mode: { id: string; name: string; }) => {
+  const handleOrderModeSelect = async (mode: { id: string; name: string }) => {
     if (!appState) return;
 
-    const { tenant_domain, access_token, device_role, selected_location_id, brand_id, order_mode_ids, order_mode_names, } = appState;
+    const {  order_mode_ids,  order_mode_names, } = appState;
 
-    if (!tenant_domain || !access_token || !selected_location_id || !brand_id || !order_mode_ids || !order_mode_names) {
-      return;
-    }
+    if (!order_mode_ids || !order_mode_names) return;
+    console.log("🟦 Calling setOrderMode with:", mode.id);
 
+    await setOrderMode(
+      order_mode_ids ?? [],
+      order_mode_names ?? [] ,
+      mode.id,
+      mode.name
+    );
 
-    await setOrderMode(order_mode_ids, order_mode_names, mode.id, mode.name);
-
-
-    await productLocal.clearCache();
-
-    await initialSync(tenant_domain, access_token, {
-      channel: device_role ?? "POS",
-      locationId: selected_location_id,
-      brandId: brand_id,
-      orderModeIds: [mode.id],
-    });
+    // ProductContext will automatically apply overrides via useEffect
+    // when appState.selected_order_mode_id changes
 
     setShowDineInBoard(false);
   };
+
+
+
+  const handleConfirmLogout = async () => {
+    try {
+      await productLocal.clearCache();
+      await appStateApi.clear();
+      router("/");
+      window.location.reload();
+    } catch (e) {
+      console.error("Logout failed:", e);
+    }
+  };
+
 
 
   return (
@@ -107,9 +129,20 @@ const MenuSelectionSidebar = ({
       )}
 
       {showEndShift && (
-        <EndShiftConfirmModal onClose={() => setShowEndShift(false)} />
+        <EndShiftConfirmModal
+          onClose={() => setShowEndShift(false)}
+          onConfirm={() => {
+            setShowEndShift(false);
+            setShowLogoutConfirm(true);
+          }}
+        />
       )}
-
+      {showLogoutConfirm && (
+        <LogoutConfirmModal
+          onClose={() => setShowLogoutConfirm(false)}
+          onConfirm={handleConfirmLogout}
+        />
+      )}
       <div
         className={cn(
           "group flex flex-col justify-between h-full transition-all duration-300 safe-area",
@@ -130,6 +163,10 @@ const MenuSelectionSidebar = ({
                     }
                     if (item.action) item.action(openModal);
                     if (item.link) router(item.link);
+                    if (item.title === "Logout") {
+                      handleLogoutClick();
+                      return;
+                    };
                   }}
 
                   className={cn(
@@ -170,6 +207,7 @@ const MenuSelectionSidebar = ({
               onSelect={handleOrderModeSelect}
             />
           </div>
+          
         ) : (
           <div className="flex flex-col gap-3 mt-auto">
             {MENUSELECTIONNAVIGATION.map(
