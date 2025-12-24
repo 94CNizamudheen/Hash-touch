@@ -7,6 +7,7 @@ import { PersistGate } from 'redux-persist/integration/react';
 import { persistor, store } from './ui/store/store.ts';
 import { Provider } from "react-redux";
 import { ThemeProvider } from './ui/context/ThemeContext.tsx'
+import { AppStateProvider } from './ui/hooks/useAppState.ts'
 
 createRoot(document.getElementById('root')!).render(
 
@@ -15,7 +16,9 @@ createRoot(document.getElementById('root')!).render(
         <PersistGate loading={null} persistor={persistor}>
           <div className="safe-area" >
             <ThemeProvider>
-              <App />
+              <AppStateProvider>
+                <App />
+              </AppStateProvider>
             </ThemeProvider>
           </div>
         </PersistGate>
