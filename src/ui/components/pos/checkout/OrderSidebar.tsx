@@ -2,9 +2,11 @@ import { X } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import CardDineIn from "../common/card/CardDineIn";
 import { useCart } from "@/ui/context/CartContext";
+import { useCharges } from "@/ui/hooks/useCharges";
+import type { CartItem } from "@/types/cart";
 
 interface OrderSidebarProps {
-  items: { id: string; name: string; quantity: number; price: number }[];
+  items: CartItem[];
   total: number;
   isOpen: boolean;
   onClose: () => void;
@@ -20,13 +22,13 @@ export default function OrderSidebar({
   const { t } = useTranslation();
   const isMobileOverlay = isOpen && window.innerWidth < 1024;
 
+  const { increment, decrement, remove } = useCart();
+  const { charges, totalCharges, totalTax } = useCharges(items, total);
+
   const subtotal = total;
-  const tax = 0;
-  const grandTotal = subtotal + tax;
+  const grandTotal = subtotal + totalCharges;
   const paymentTotal = grandTotal;
   const balance = grandTotal - paymentTotal;
-
-  const { increment, decrement, remove, } = useCart();
 
 
   return (
@@ -74,11 +76,26 @@ export default function OrderSidebar({
               <span>{t("subtotal")}</span>
               <span>${subtotal.toFixed(2)}</span>
             </div>
-            <div className="flex justify-between">
-              <span>{t("tax")}</span>
-              <span>${tax.toFixed(2)}</span>
-            </div>
-            <div className="flex justify-between font-semibold text-sm">
+
+            {/* Display individual charges */}
+            {charges.map((charge) => (
+              <div key={charge.id} className="flex justify-between text-muted-foreground">
+                <span>
+                  {charge.name} ({charge.percentage}%)
+                </span>
+                <span>${charge.amount.toFixed(2)}</span>
+              </div>
+            ))}
+
+            {/* Display total tax if there are any tax charges */}
+            {totalTax > 0 && (
+              <div className="flex justify-between font-medium">
+                <span>{t("total_tax")}</span>
+                <span>${totalTax.toFixed(2)}</span>
+              </div>
+            )}
+
+            <div className="flex justify-between font-semibold text-sm pt-1 border-t border-border">
               <span>{t("grand_total")}</span>
               <span>${grandTotal.toFixed(2)}</span>
             </div>

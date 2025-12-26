@@ -1,8 +1,9 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import DrawerOpenedModal from "../DrowerOpenedModal";
 
 import { useCart } from "@/ui/context/CartContext";
+import { useCharges } from "@/ui/hooks/useCharges";
 import LeftActionRail from "./LeftActionRail";
 import OrderSidebar from "./OrderSidebar";
 import CenterPaymentContent from "./CenterPaymentContent";
@@ -13,7 +14,9 @@ export default function PaymentDesktop() {
   const navigate = useNavigate();
   const { items, clear, isHydrated } = useCart();
 
-  const total = items.reduce((s, i) => s + i.price * i.quantity, 0);
+  const subtotal = items.reduce((s, i) => s + i.price * i.quantity, 0);
+  const { totalCharges } = useCharges(items, subtotal);
+  const total = subtotal + totalCharges;
 
   const [inputValue, setInputValue] = useState(() => total.toFixed(2));
   const [selectedMethod, setSelectedMethod] = useState("Cash");
@@ -21,6 +24,11 @@ export default function PaymentDesktop() {
   const [showSuccess, setShowSuccess] = useState(false);
   const [loading, setLoading] = useState(false);
   const [final, setFinal] = useState({ total: 0, balance: 0 });
+
+  // Update inputValue when total changes
+  useEffect(() => {
+    setInputValue(total.toFixed(2));
+  }, [total]);
 
   if (!isHydrated) return null;
 
@@ -53,7 +61,7 @@ export default function PaymentDesktop() {
 
       <OrderSidebar
         items={items}
-        total={total}
+        total={subtotal}
         isOpen
         onClose={() => {}}
         onBackToMenu={() => navigate("/pos")}

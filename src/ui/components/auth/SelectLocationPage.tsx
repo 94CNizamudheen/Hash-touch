@@ -1,6 +1,5 @@
-
 import { useMemo, useState } from "react";
-import { ChevronDown } from "lucide-react";
+import { ChevronDown, Loader2 } from "lucide-react";
 
 interface Location {
   id: string;
@@ -16,6 +15,7 @@ export default function SelectLocationPage({
 }) {
   const [selected, setSelected] = useState<Location | null>(null);
   const [isOpen, setIsOpen] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
 
   /* =========================
      Mock source data
@@ -47,21 +47,33 @@ export default function SelectLocationPage({
     []
   );
 
-
   const locations = useMemo(
     () =>
       sourceData
         .filter((l) => l.active)
-        .map((l) => ({ id: l.id,brand_id:l.brand_id , name: l.name, active: Boolean(l.active) })),
+        .map((l) => ({
+          id: l.id,
+          brand_id: l.brand_id,
+          name: l.name,
+          active: Boolean(l.active),
+        })),
     [sourceData]
   );
 
-  const handleLogin = () => {
+  const handleLogin = async () => {
     if (!selected) {
       alert("Please select a location.");
       return;
     }
-    onSelect(selected);
+
+    try {
+      setIsLoading(true);
+      // simulate API / async work
+      await new Promise((r) => setTimeout(r, 1000));
+      onSelect(selected);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -70,46 +82,65 @@ export default function SelectLocationPage({
 
       {/* Dropdown */}
       <div className="relative w-full">
-        <label className="absolute -top-2 left-3 bg-white text-primary text-sm px-1">
+        <label className="absolute -top-2 left-3 bg-background text-primary text-sm px-1">
           Location
         </label>
 
         <button
+          disabled={isLoading}
           onClick={() => setIsOpen(!isOpen)}
-          className="w-full flex items-center justify-between px-4 py-3 border rounded-md bg-white"
+          className="w-full flex items-center justify-between px-4 py-3 border rounded-md bg-background disabled:opacity-60"
         >
           {selected?.name || "Select Location"}
           <ChevronDown
-            className={`w-5 h-5 transition-transform ${isOpen ? "rotate-180" : ""
-              }`}
+            className={`w-5 h-5 transition-transform ${
+              isOpen ? "rotate-180" : ""
+            }`}
           />
         </button>
 
         {isOpen && (
-          <ul className="absolute z-10 mt-1 w-full bg-white border rounded-md shadow-md max-h-56 overflow-y-auto">
-            {locations.map((loc) => (
-              <li
-                key={loc.id}
-                onClick={() => {
-                  setSelected(loc);
-                  setIsOpen(false);
-                }}
-                className={`px-4 py-2 cursor-pointer hover:bg-primary/10 ${selected?.id === loc.id ? "bg-primary text-white" : ""
-                  }`}
-              >
-                {loc.name}
+          <ul className="absolute z-10 mt-1 w-full bg-background border rounded-md shadow-md max-h-56 overflow-y-auto">
+            {locations.length === 0 ? (
+              <li className="px-4 py-3 text-sm text-muted-foreground">
+                Loading locations...
               </li>
-            ))}
+            ) : (
+              locations.map((loc) => (
+                <li
+                  key={loc.id}
+                  onClick={() => {
+                    setSelected(loc);
+                    setIsOpen(false);
+                  }}
+                  className={`px-4 py-2 cursor-pointer hover:bg-primary/10 ${
+                    selected?.id === loc.id
+                      ? "bg-primary text-white"
+                      : ""
+                  }`}
+                >
+                  {loc.name}
+                </li>
+              ))
+            )}
           </ul>
         )}
       </div>
 
-      {/* Confirm Button */}
+      {/* Confirm Button with fallback UI */}
       <button
         onClick={handleLogin}
-        className="w-full py-3 bg-primary text-white rounded-md"
+        disabled={isLoading}
+        className="w-full py-3 bg-primary text-white rounded-md flex items-center justify-center gap-2 disabled:opacity-60"
       >
-        Continue
+        {isLoading ? (
+          <>
+            <Loader2 className="w-5 h-5 animate-spin" />
+            Loading...
+          </>
+        ) : (
+          "Continue"
+        )}
       </button>
     </section>
   );

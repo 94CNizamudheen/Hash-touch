@@ -1,14 +1,13 @@
 import type { Product } from "@/types/products";
 import { useAnimation } from "@/ui/context/AnimationContext";
-import tempImage from "@assets/dish-placeholder.jpg"
 
-function getImageFromMedia(media?: string) {
+function getImageFromMedia(media?: string): string | undefined {
   try {
-    if (!media) return tempImage;
+    if (!media) return undefined;
     const arr = JSON.parse(media);
-    return arr?.[0]?.filepath || tempImage
+    return arr?.[0]?.filepath || undefined;
   } catch {
-    return tempImage
+    return undefined;
   }
 }
 
@@ -24,15 +23,18 @@ const ProductCardMobile = ({
   const { triggerAnimation } = useAnimation();
 
   const image = getImageFromMedia(item.media);
+  const hasImage = image && image !== "";
 
   const handleClick = (
     e: React.MouseEvent<HTMLDivElement>
   ) => {
-    const target = e.currentTarget;
-    const img = target.querySelector("img");
+    if (hasImage) {
+      const target = e.currentTarget;
+      const img = target.querySelector("img");
 
-    if (img) {
-      triggerAnimation(img, image);
+      if (img) {
+        triggerAnimation(img, image);
+      }
     }
 
     setTimeout(() => {
@@ -42,31 +44,57 @@ const ProductCardMobile = ({
 
   return (
     <div
-      className="group bg-white rounded-xl overflow-hidden border border-gray-200 shadow-sm cursor-pointer hover:shadow-lg transition-all duration-300 hover:-translate-y-0.5 active:scale-[0.98]"
+      className="
+      group bg-background rounded-lg overflow-hidden border border-gray-200 shadow-sm
+      cursor-pointer transition-all duration-300
+      hover:shadow-md hover:-translate-y-0.5 active:scale-[0.98]
+      flex flex-col
+    "
       onClick={handleClick}
     >
-      <div className="relative h-40 overflow-hidden bg-gray-100">
-        <img
-          src={image}
-          alt={item.name}
-          className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110"
-          loading="lazy"
-        />
-        <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-      </div>
+      {hasImage && (
+        <div
+          className="
+          relative w-full overflow-hidden bg-gray-100
+          h-24 sm:h-28 lg:h-32   /* smaller on mobile, bigger on desktop */
+        "
+        >
+          <img
+            src={image}
+            alt={item.name}
+            className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110"
+            loading="lazy"
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+        </div>
+      )}
 
-      <div className="relative bg-primary text-white p-3 h-20 flex flex-col">
-        <div className="flex items-start justify-between gap-2 mb-1.5">
-          <p className="font-bold text-sm line-clamp-1 flex-1 group-hover:text-blue-100 transition-colors">
-            {item.name}
-          </p>
-          <span className=" absolute bottom-2 right-1 flex-shrink-0 bg-white text-primary px-2 py-0.5 rounded-md text-xs font-bold shadow-sm">
-            ${item.price.toFixed(2)}
+      <div
+        className="
+        relative bg-background
+        p-2 sm:p-3          /* tighter on mobile */
+        min-h-[52px] sm:min-h-[60px]
+        flex flex-col justify-between
+      "
+      >
+        <p
+          className="
+          font-semibold text-xs sm:text-sm lg:text-sm
+          text-gray-900 line-clamp-2 mb-1
+        "
+        >
+          {item.name}
+        </p>
+
+        <div className="flex items-center justify-end mt-auto">
+          <span className="text-blue-600 text-xs sm:text-sm font-bold">
+            {item.price.toFixed(2)}
           </span>
         </div>
       </div>
     </div>
   );
+
 };
 
 export default ProductCardMobile;

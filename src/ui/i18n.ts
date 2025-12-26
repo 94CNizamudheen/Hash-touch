@@ -3,9 +3,23 @@ import { initReactI18next } from "react-i18next";
 
 import enTranslation from "./locales/en/translation.json";
 import arTranslation from "./locales/ar/translation.json";
+import { appStateApi } from "@/services/tauri/appState";
 
-const savedLanguage = localStorage.getItem("language") || "en";
-document.body.dir = savedLanguage === "ar" ? "rtl" : "ltr";
+// Initialize with default language
+let savedLanguage = "en";
+
+// Fetch language from appState
+appStateApi.get().then((appState) => {
+  const language = appState.language || "en";
+  savedLanguage = language;
+  document.body.dir = language === "ar" ? "rtl" : "ltr";
+  if (i18n.isInitialized) {
+    i18n.changeLanguage(language);
+  }
+}).catch(() => {
+  // If appState fetch fails, use default
+  savedLanguage = "en";
+});
 
 i18n.use(initReactI18next).init({
   resources: {

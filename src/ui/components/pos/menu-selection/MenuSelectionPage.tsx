@@ -2,19 +2,21 @@ import DineIn from "../_components/DineIn";
 import Products from "./Products";
 import { useCart } from "@/ui/context/CartContext";
 import MenuSelectionSidebar from "./MenuSelectionSidebar";
+import { useState } from "react";
 
-const MenuSelectionPage = ({ tempStyle }: { tempStyle: boolean }) => {
+const MenuSelectionPage = () => {
   const { addItem } = useCart();
+  const [tempStyle, setTempStyle] = useState(false);
 
   return (
     <div className="flex w-full h-full overflow-hidden">
       {/* Left Sidebar - Menu Selection */}
       <div className="h-full overflow-hidden border-r border-border flex-shrink-0 bg-background">
-        <MenuSelectionSidebar 
+        <MenuSelectionSidebar
           onChangeStyle={(value) => {
-            console.log("Change style to:", value);
-          }} 
-          style={tempStyle} 
+            setTempStyle(value);
+          }}
+          style={tempStyle}
         />
       </div>
 

@@ -1,6 +1,8 @@
 import ModalDepartment from "../../modal/menu-selection/ModalDepartment";
 import ModalReasonVoid from "../../modal/menu-selection/ModalReasonVoid";
 import EndShiftConfirmModal from "../../modal/work-shift/EndShiftConfirmModal";
+import LogoutConfirmModal from "../../modal/LogoutConfirmModal";
+import LanguageModal from "../../modal/LanguageModal";
 
 import { MENUSELECTIONNAVIGATION } from "@/ui/constants/menu-selections";
 
@@ -12,14 +14,16 @@ import { useTheme } from "@/ui/context/ThemeContext";
 import { Moon, Sun } from "lucide-react";
 import { useWorkShift } from "@/ui/context/WorkShiftContext";
 import { useAppState } from "@/ui/hooks/useAppState";
+import { productLocal } from "@/services/local/product.local.service";
+import { appStateApi } from "@/services/tauri/appState";
 
 const MenuSelectionSidebarMobile = () => {
   const { t } = useTranslation();
   const router = useNavigate();
 
   const { theme, setTheme } = useTheme();
-  const { shift } = useWorkShift();
   const { state: appState, loading, setOrderMode } = useAppState();
+  const { shift, clear: clearShift } = useWorkShift();
 
   const isShiftOpen = !!shift?.isOpen;
 
@@ -27,6 +31,8 @@ const MenuSelectionSidebarMobile = () => {
   const [modalContent, setModalContent] = useState("");
   const [showDineInBoard, setShowDineInBoard] = useState(false);
   const [showEndShift, setShowEndShift] = useState(false);
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
+  const [showLanguageModal, setShowLanguageModal] = useState(false);
 
   const locationName = appState?.selected_location_name ?? "";
   const selectedOrderModeName =
@@ -37,7 +43,6 @@ const MenuSelectionSidebarMobile = () => {
   const toggleTheme = () => {
     setTheme(theme === "dark" ? "light" : "dark");
   };
-
 
   const openModal = (content: string) => {
     switch (content) {
@@ -75,11 +80,27 @@ const MenuSelectionSidebarMobile = () => {
       mode.id,
       mode.name
     );
-
-    // ProductContext will automatically apply overrides via useEffect
-    // when appState.selected_order_mode_id changes
-
     setShowDineInBoard(false);
+  };
+
+  const handleLogoutClick = () => {
+    if (isShiftOpen) {
+      setShowEndShift(true);
+    } else {
+      setShowLogoutConfirm(true);
+    }
+  };
+
+  const handleConfirmLogout = async () => {
+    try {
+      await productLocal.clearCache();
+      await appStateApi.clear();
+      await clearShift();
+      router("/");
+      window.location.reload();
+    } catch (e) {
+      console.error("Logout failed:", e);
+    }
   };
 
   return (
@@ -92,7 +113,13 @@ const MenuSelectionSidebarMobile = () => {
       )}
 
       {showEndShift && (
-        <EndShiftConfirmModal onClose={() => setShowEndShift(false)} />
+        <EndShiftConfirmModal
+          onClose={() => setShowEndShift(false)}
+          onConfirm={() => {
+            setShowEndShift(false);
+            setShowLogoutConfirm(true);
+          }}
+        />
       )}
 
       {showDineInBoard && (
@@ -103,9 +130,21 @@ const MenuSelectionSidebarMobile = () => {
         />
       )}
 
+      {showLogoutConfirm && (
+        <LogoutConfirmModal
+          onClose={() => setShowLogoutConfirm(false)}
+          onConfirm={handleConfirmLogout}
+        />
+      )}
+
+      <LanguageModal
+        isOpen={showLanguageModal}
+        onClose={() => setShowLanguageModal(false)}
+      />
+
       {/* Drawer – keep safe area unchanged */}
       <div
-        className="safe-area fixed right-0 top-0 bottom-0 w-60
+        className="safe-area fixed right-0 top-0 bottom-0 w-60  
                    bg-background z-40 shadow-xl flex flex-col
                    rounded-l-2xl"
       >
@@ -118,9 +157,9 @@ const MenuSelectionSidebarMobile = () => {
           {/* Dark mode toggle */}
           <button onClick={toggleTheme}>
             {theme === "dark" ? (
-              <Sun className="w-5 h-5 stroke-primary" />
+              <Sun className="w-5 h-5 stroke-primary" strokeWidth={2.5} />
             ) : (
-              <Moon className="w-5 h-5 stroke-primary" />
+              <Moon className="w-5 h-5 stroke-primary" strokeWidth={2.5} />
             )}
           </button>
         </div>
@@ -138,6 +177,17 @@ const MenuSelectionSidebarMobile = () => {
                     toggleTheme();
                     return;
                   }
+                  
+                  if (item.title === "Logout") {
+                    handleLogoutClick();
+                    return;
+                  }
+
+                  if (item.title === "Language") {
+                    setShowLanguageModal(true);
+                    return;
+                  }
+
                   item.action?.(openModal);
                   if (item.link) router(item.link);
                 }}
@@ -145,8 +195,8 @@ const MenuSelectionSidebarMobile = () => {
               >
                 {item.title === "Dark Mode"
                   ? theme === "dark"
-                    ? <Sun className="w-5 h-5 stroke-primary" />
-                    : <Moon className="w-5 h-5 stroke-primary" />
+                    ? <Sun className="w-5 h-5" strokeWidth={2.5} />
+                    : <Moon className="w-5 h-5" strokeWidth={2.5} />
                   : item.icon}
 
                 <p className="text-navigation font-medium text-sm">

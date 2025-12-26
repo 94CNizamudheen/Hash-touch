@@ -8,7 +8,8 @@ import {
 
 import type { Product } from "@/types/products";
 import { cartLocal } from "@/services/local/cart.local.service";
-import type { CartItem } from "@/types/common";
+import type { CartItem } from "@/types/cart";
+import { productGroupCategoryLocal } from "@/services/local/product-group-category.local.service";
 
 
 interface CartContextType {
@@ -27,6 +28,7 @@ const CartContext = createContext<CartContextType | null>(null);
 export const CartProvider = ({ children }: { children: ReactNode }) => {
   const [items, setItems] = useState<CartItem[]>([]);
   const [isHydrated, setIsHydrated] = useState(false);
+  const [categories, setCategories] = useState<Map<string, string>>(new Map());
 
   /* -------------------------------
       🔁 Hydrate from SQLite
@@ -34,7 +36,18 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
   useEffect(() => {
     const hydrate = async () => {
       try {
-        const draft = await cartLocal.getDraft();
+        const [draft, cats] = await Promise.all([
+          cartLocal.getDraft(),
+          productGroupCategoryLocal.getAll(),
+        ]);
+
+        // Build category_id -> product_group_id map
+        const categoryMap = new Map<string, string>();
+        cats.forEach((cat) => {
+          categoryMap.set(cat.id, cat.product_group_id);
+        });
+        setCategories(categoryMap);
+
         if (draft) {
           setItems(draft);
         }
@@ -69,7 +82,24 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
             : p
         );
       }
-      return [...prev, { ...item, quantity: 1 }];
+
+      // Get product_group_id from category mapping
+      const product_group_id = item.category_id
+        ? categories.get(item.category_id) || null
+        : null;
+
+      return [
+        ...prev,
+        {
+          id: item.id,
+          name: item.name,
+          price: item.price,
+          quantity: 1,
+          category_id: item.category_id || null,
+          product_group_id,
+          image_url: null,
+        },
+      ];
     });
   };
 

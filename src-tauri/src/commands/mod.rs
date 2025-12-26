@@ -11,3 +11,4 @@ pub mod prouct_combo;
 pub mod category;
 pub mod cart_store;
 pub mod work_shift;
+pub mod charges;

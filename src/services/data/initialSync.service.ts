@@ -5,6 +5,7 @@ import { productTagGroupLocal } from "../local/product-tag-group.local.service";
 import { productTagLocal } from "../local/product-tag.local.service";
 import { productGroupLocal } from "../local/product-group.local.service";
 import { productGroupCategoryLocal } from "../local/product-group-category.local.service";
+import { chargesLocal } from "../local/charges.local.service";
 
 export async function initialSync(
   domain: string,
@@ -20,22 +21,12 @@ export async function initialSync(
       channel: context.channel,
       location_id: context.locationId,
       brand_id: context.brandId,
-      order_mode_id: context.orderModeIds ?? [], // Changed from order_mode_ids to order_mode_id
+      order_mode_id: context.orderModeIds ?? [], 
     }
   );
 
   console.log("📦 Combinations received:", combinationsResponse.length);
 
-  // Debug: Log raw structure of first product
-  if (combinationsResponse.length > 0 &&
-      combinationsResponse[0].categories?.length > 0 &&
-      combinationsResponse[0].categories[0].products?.length > 0) {
-    const firstProduct = combinationsResponse[0].categories[0].products[0];
-    console.log("🔍 RAW First Product from API:", firstProduct);
-    console.log("🔍 RAW First Product overrides field:", firstProduct.overrides);
-    console.log("🔍 RAW First Product overrides type:", typeof firstProduct.overrides);
-    console.log("🔍 RAW First Product overrides isArray:", Array.isArray(firstProduct.overrides));
-  }
 
   // Debug: Count all products with overrides in the API response
   let totalProducts = 0;
@@ -231,6 +222,58 @@ export async function initialSync(
 
   await productTagLocal.save(dbProductTags);
   console.log(` Product tags synced: ${dbProductTags.length}`);
+
+  // Sync charges
+  const chargesResponse = await commonDataService.getCharges(domain, token, {
+    channel: context.channel,
+    location_id: context.locationId,
+    brand_id: context.brandId,
+    order_mode_id: context.orderModeIds ?? [],
+  });
+
+  console.log("📦 Charges received:", chargesResponse.length);
+
+  const dbCharges = chargesResponse.map((c: any) => ({
+    id: c.id,
+    code: c.code ?? null,
+    name: c.name,
+    percentage: c.percentage ?? null,
+    is_tax: c.is_tax ? 1 : 0,
+    transaction_type_id: c.transaction_type_id ?? null,
+    parent_charge_id: c.parent_charge_id ?? null,
+    active: c.active ? 1 : 0,
+    sort_order: c.sort_order ?? 0,
+    created_at: c.created_at ?? null,
+    updated_at: c.updated_at ?? null,
+    deleted_at: c.deleted_at ?? null,
+    created_by: c.created_by ?? null,
+    updated_by: c.updated_by ?? null,
+    deleted_by: c.deleted_by ?? null,
+  }));
+
+  await chargesLocal.saveCharges(dbCharges);
+  console.log(`✅ Charges synced: ${dbCharges.length}`);
+
+  const dbChargeMappings = chargesResponse.flatMap((c: any) =>
+    (c.mappings ?? []).map((m: any) => ({
+      id: m.id,
+      charge_id: c.id,
+      category_id: m.category_id ?? null,
+      product_id: m.product_id ?? null,
+      product_group_id: m.product_group_id ?? null,
+      active: m.active ? 1 : 0,
+      sort_order: m.sort_order ?? 0,
+      created_at: m.created_at ?? null,
+      updated_at: m.updated_at ?? null,
+      deleted_at: m.deleted_at ?? null,
+      created_by: m.created_by ?? null,
+      updated_by: m.updated_by ?? null,
+      deleted_by: m.deleted_by ?? null,
+    }))
+  );
+
+  await chargesLocal.saveMappings(dbChargeMappings);
+  console.log(`✅ Charge mappings synced: ${dbChargeMappings.length}`);
 
   console.log(" Initial sync completed successfully (from combinations)");
 }

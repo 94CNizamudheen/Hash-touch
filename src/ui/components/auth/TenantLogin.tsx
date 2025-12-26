@@ -80,7 +80,7 @@ export default function TenantLogin({
   return (
     <section
       className={cn(
-        "max-w-sm md:max-w-md mx-auto flex flex-col justify-center items-center gap-5 transition-all duration-300",
+        " max-w-sm md:max-w-md mx-auto flex flex-col justify-center items-center gap-5 transition-all duration-300",
         showKeyboard
           ? "min-h-[calc(100vh-336px)] h-full"
           : "min-h-screen h-screen"

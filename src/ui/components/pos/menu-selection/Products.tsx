@@ -6,7 +6,6 @@ import CategoryTabs from "./CategoryTabs";
 import ProductCard from "./ProductCard";
 import { cn } from "@/lib/utils";
 import ProductGroupTabs from "./ProductGroupTabs";
-import tempImage from "@assets/dish-placeholder.jpg"
 
 
 export default function Products({
@@ -27,13 +26,13 @@ export default function Products({
 
   const productGridRef = useRef<HTMLDivElement | null>(null);
 
-  function getProductImage(media?: string) {
+  function getProductImage(media?: string): string | undefined {
     try {
-      if (!media) return tempImage
+      if (!media) return undefined;
       const arr = JSON.parse(media);
-      return arr?.[0]?.filepath || tempImage;
+      return arr?.[0]?.filepath || undefined;
     } catch {
-      return tempImage
+      return undefined;
     }
   }
 
@@ -77,7 +76,7 @@ export default function Products({
                 Loading products...
               </div>
             ) : filteredItems.length > 0 ? (
-              <div className="grid gap-4 grid-cols-2 sm:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4 content-start">
+              <div className="grid gap-4 grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 content-start">
                 {filteredItems.map((item) => (
                   <ProductCard
                     key={item.id}
@@ -107,9 +106,10 @@ export default function Products({
             ref={productGridRef}
             className={cn(
               "flex-1 overflow-y-auto no-scrollbar p-5 bg-background",
-              "grid gap-4 grid-cols-2 sm:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4 content-start"
+              "grid gap-4 grid-cols-2 sm:grid-cols-3 lg:grid-cols-3 content-start"
             )}
           >
+
             {loading ? (
               <div className="col-span-full text-center py-10 text-muted-foreground">
                 Loading products...

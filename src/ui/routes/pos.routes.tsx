@@ -16,10 +16,10 @@ export default function PosRoutes() {
       <ProductProvider>
         <AnimationProvider>
           <WorkShiftProvider>
-         
+
               <Routes>
                 <Route element={<MenuLayout />}>
-                  <Route index element={<MenuSelectionPage tempStyle={false} />} />
+                  <Route index element={<MenuSelectionPage />} />
                 </Route>
                 <Route path="payment-panel" element={<PaymentPanel />} />
 

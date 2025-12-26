@@ -55,7 +55,7 @@ export default function CategoryTabs({
           ${isVertical ? "flex flex-col" : "flex flex-row"}
           gap-3 p-3
           bg-background   shadow-sm
-          ${isVertical ? "h-[14rem] overflow-y-auto overflow-x-hidden" : "h-[5.5rem] overflow-x-auto overflow-y-hidden"}
+          ${isVertical ? "h-full overflow-y-auto overflow-x-hidden" : "h-[5.5rem] overflow-x-auto overflow-y-hidden"}
           overscroll-contain no-scrollbar 
         `}
       >

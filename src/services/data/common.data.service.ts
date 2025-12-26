@@ -69,8 +69,8 @@ export const commonDataService = {
   getOrderModes(domain: string, token: string,payload:GetOrderModesPayload) {
     return post(domain, "order-modes", token,payload);
   },
-  getCharges(domain: string, token: string) {
-    return post(domain, "charges", token);
+  getCharges(domain: string, token: string, payload:GetProductsPayload) {
+    return post(domain, "charges", token,payload);
   },
   getPaymentTypes(domain: string, token: string) {
     return post(domain, "payment-types", token);

@@ -15,7 +15,7 @@ export default function TenantForm({
   return (
     <form
       onSubmit={onSubmit}
-      className="w-full flex flex-col gap-4 bg-white dark:bg-zinc-900 p-8 rounded-2xl shadow-lg max-w-sm"
+      className="w-full flex flex-col gap-4  p-8 rounded-2xl shadow-lg max-w-sm"
     >
       {/* Tenant Name */}
       <TenantInput
