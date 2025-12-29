@@ -81,6 +81,7 @@ version = "0.1.0"
 dependencies = [
  "anyhow",
  "chrono",
+ "futures-util",
  "log",
  "once_cell",
  "rusqlite",

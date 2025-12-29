@@ -7,6 +7,8 @@ import { useCharges } from "@/ui/hooks/useCharges";
 import { useAppState } from "@/ui/hooks/useAppState";
 import { buildTicketRequest } from "@/ui/utils/ticketBuilder";
 import { ticketService } from "@/services/data/ticket.service";
+import { printerService, type ReceiptData } from "@/services/local/printer.local.service";
+import { websocketService } from "@services/websocket/websocket.service";
 import LeftActionRail from "./LeftActionRail";
 import OrderSidebar from "./OrderSidebar";
 import CenterPaymentContent from "./CenterPaymentContent";
@@ -96,6 +98,27 @@ export default function PaymentDesktop() {
         console.log("✅ Ticket created successfully online");
       }
 
+      // Broadcast order to KDS and Queue displays via WebSocket
+      try {
+        await websocketService.broadcastOrder({
+          ticket_id: result.ticketId || `offline-${Date.now()}`,
+          ticket_number: ticketRequest.ticket.ticket_number,
+          order_mode: appState.selected_order_mode_name,
+          location: appState.selected_location_name,
+          items: items.map(item => ({
+            name: item.name,
+            quantity: item.quantity,
+            price: item.price,
+            modifiers: item.modifiers || [],
+          })),
+          created_at: new Date().toISOString(),
+        });
+        console.log("📡 Order broadcasted to KDS and Queue displays");
+      } catch (error) {
+        console.error("❌ Failed to broadcast order:", error);
+        // Don't fail the entire transaction if broadcast fails
+      }
+
       setShowDrawer(true);
     } catch (error) {
       console.error("❌ Failed to create ticket:", error);
@@ -112,6 +135,38 @@ export default function PaymentDesktop() {
     setShowSuccess(true);
     await clear();
     setLoading(false);
+  };
+
+  const handlePrintReceipt = async () => {
+    try {
+      const receiptData: ReceiptData = {
+        ticket_number: `TKT-${Date.now()}`,
+        location_name: appState?.selected_location_name || "Unknown Location",
+        order_mode: appState?.selected_order_mode_name || "POS",
+        items: items.map(item => ({
+          name: item.name,
+          quantity: item.quantity,
+          price: item.price,
+          total: item.price * item.quantity,
+        })),
+        subtotal,
+        charges: charges.map(charge => ({
+          name: charge.name,
+          amount: charge.amount,
+        })),
+        total: final.total,
+        payment_method: selectedMethod,
+        tendered: final.total + final.balance,
+        change: final.balance,
+        timestamp: new Date().toLocaleString(),
+      };
+
+      await printerService.printReceiptToAllActive(receiptData);
+      alert("Receipt printed successfully!");
+    } catch (error) {
+      console.error("Failed to print receipt:", error);
+      alert(`Failed to print receipt: ${error}`);
+    }
   };
 
   return (
@@ -158,7 +213,7 @@ export default function PaymentDesktop() {
         isOpen={showSuccess}
         total={final.total}
         balance={final.balance}
-        onPrintReceipt={() => {}}
+        onPrintReceipt={handlePrintReceipt}
         onNewOrder={() => navigate("/pos")}
       />
     </div>

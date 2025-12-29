@@ -1,5 +1,5 @@
 
-import { useEffect, useState } from "react";
+import  { useCallback, useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { Routes, Route } from "react-router-dom";
 
@@ -8,8 +8,6 @@ import SelectLocationPage from "@/ui/components/auth/SelectLocationPage";
 import Home from "@/ui/Home";
 import RoleRouter from "@/ui/routes/RoleRouter";
 import SplashScreen from "@/ui/components/common/SplashScreen";
-
-
 
 import { initialSync } from "@/services/data/initialSync.service";
 import { appStateApi } from "@/services/tauri/appState";
@@ -26,6 +24,9 @@ import KioskRoutes from "./ui/routes/kiosk.routes";
 import KdsRoutes from "./ui/routes/kds.routes";
 import QueueRoutes from "./ui/routes/queue.routes";
 import { useAppState } from "@/ui/hooks/useAppState";
+import { deviceService } from "./services/local/device.local.service";
+import { WebSocketClient } from "@services/websocket/WebSocketClient";
+import { websocketService } from "@services/websocket/websocket.service";
 
 
 /* =========================
@@ -46,6 +47,12 @@ export default function App() {
   const [loadingTenant, setLoadingTenant] = useState(false);
   const [loadingLocation, setLoadingLocation] = useState(false);
   const [loadingRole, setLoadingRole] = useState(false);
+  const [deviceId, setDeviceId] = useState<string>("");
+
+  // WebSocket state
+  const [wsReady, setWsReady] = useState(false);
+  const [wsStatus, setWsStatus] = useState<"connecting" | "connected" | "failed" | "retrying">("connecting");
+  const [wsRetryCount, setWsRetryCount] = useState(0);
 
   /* =========================
      BOOTSTRAP (Rust → Redux)
@@ -56,10 +63,71 @@ export default function App() {
       dispatch(hydrateAppState(state));
       await refreshAppStateContext();
 
+      // Get or create device ID
+      const device = await deviceService.getDevice();
+      if (device) {
+        setDeviceId(device.id);
+      }
+
       setBooting(false);
     }
     bootstrap();
   }, [dispatch, refreshAppStateContext]);
+
+
+  const initializeWebSocket = useCallback(async () => {
+    if (!appState.device_role || !deviceId) return;
+
+    console.log("[App] Initializing WebSocket...");
+    setWsStatus("connecting");
+    setWsReady(false);
+
+    const maxRetries = 5;
+    let attempts = 0;
+
+    const attemptConnection = async (): Promise<boolean> => {
+      try {
+        const wsUrl = "ws://localhost:9001";
+        console.log(`[App] Connecting to: ${wsUrl} (Attempt ${attempts + 1}/${maxRetries})`);
+
+        const client = new WebSocketClient(wsUrl, deviceId, appState.device_role || "POS");
+        await client.connect();
+
+        // Store client in service for global access
+        websocketService.setClient(client);
+
+        console.log("✅ WebSocket connected successfully");
+        setWsStatus("connected");
+
+        // Give brief moment before transitioning
+        setTimeout(() => setWsReady(true), 800);
+        return true;
+      } catch (error) {
+        console.error(`❌ WebSocket connection failed (Attempt ${attempts + 1}):`, error);
+        attempts++;
+
+        if (attempts < maxRetries) {
+          setWsStatus("retrying");
+          setWsRetryCount(attempts);
+          console.log(`[App] Retrying in 3s... (${attempts}/${maxRetries})`);
+          await new Promise((resolve) => setTimeout(resolve, 3000));
+          return attemptConnection();
+        } else {
+          setWsStatus("failed");
+          return false;
+        }
+      }
+    };
+
+    await attemptConnection();
+  }, [appState.device_role, deviceId]);
+
+  // Initialize WebSocket after role is selected
+  useEffect(() => {
+    if (appState.device_role && deviceId && !wsReady && wsStatus === "connecting") {
+      initializeWebSocket();
+    }
+  }, [appState.device_role, deviceId,wsReady,wsStatus,initializeWebSocket]);
 
   /* =========================
      HANDLERS
@@ -185,12 +253,22 @@ export default function App() {
     return <Home onRoleSelected={handleRoleSelected} />;
   }
 
+  // Show WebSocket connection screen
+  if (!wsReady) {
+    return (
+      <SplashScreen
+        type={3}
+        connectionStatus={wsStatus}
+        retryCount={wsRetryCount}
+        onRetry={initializeWebSocket}
+      />
+    );
+  }
+
   /* =========================
      ROUTER (ROLE BASED)
   ========================= */
-
   return (
-
     <Routes>
       {/* Entry: decides where to go */}
       <Route path="/" element={<RoleRouter />} />
@@ -200,6 +278,5 @@ export default function App() {
       <Route path="/kds/*" element={<KdsRoutes />} />
       <Route path="/queue/*" element={<QueueRoutes />} />
     </Routes>
-
   );
 }

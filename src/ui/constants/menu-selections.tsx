@@ -38,7 +38,7 @@ export const MENUSELECTIONNAVIGATION = [
     title: "Settings",
     icon: <Settings className="lg:w-5 lg:h-5 w-6 h-6" strokeWidth={2.5} />,
     position: "Top",
-    // link: "/settings",
+    link: "/pos/settings",
   },
   {
     id: 9,
