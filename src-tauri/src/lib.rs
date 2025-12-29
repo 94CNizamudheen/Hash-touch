@@ -74,6 +74,14 @@ pub fn run() {
             commands::charges::get_charges,
             commands::charges::get_charge_mappings,
             commands::charges::clear_charges_cache,
+
+            commands::ticket::save_ticket,
+            commands::ticket::get_all_tickets,
+            commands::ticket::get_pending_tickets,
+            commands::ticket::update_ticket_sync_status,
+            commands::ticket::delete_ticket,
+            commands::ticket::get_sync_stats,
+            commands::ticket::clear_all_tickets,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

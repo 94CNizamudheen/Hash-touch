@@ -1,5 +1,4 @@
-
-const API_BASE = "https://development.hc.hashtape.com";
+import { API_BASE } from "@/config/env";
 
 export const locationService = {
   async fetchLocations(domain: string, token: string) {

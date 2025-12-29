@@ -1,5 +1,4 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
-
+  
 export type DeviceRole = "POS" | "KIOSK" | "QUEUE" | "KDS";
 export type SyncStatus = "PENDING" | "SYNCED" | "FAILED";
 export type OrderStatus = "PLACED" | "PAID" | "READY" | "COMPLETED" | "CANCELLED";

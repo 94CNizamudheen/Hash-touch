@@ -1,4 +1,4 @@
-import { useTheme } from "@/ui/context/theme/useTheme"; 
+import { useTheme } from "@/ui/context/ThemeContext"; 
 import Logo from "../../../assets/logo_2.png";
 import LogoDark from "../../../assets/logo_dark_2.png";
 

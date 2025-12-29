@@ -43,8 +43,8 @@ export default function TenantLogin({
     resolver: zodResolver(tenantSchema),
     defaultValues: {
       domain: "default_tenant",
-      email: "admin@default_tenant.com",
-      password: "password",
+      email: "",
+      password: "",
     },
   });
 
@@ -61,13 +61,11 @@ export default function TenantLogin({
       password: data.password,
     });
 
-    console.log("✅ Tenant login success",result);
 
     // PASS domain + token UPWARD (do not store here)
     await onTenantSelected(data.domain, result.access_token);
 
   } catch (err: any) {
-    console.error("❌ Tenant login failed:", err);
     alert(err?.message || "Tenant login failed");
   } finally {
     setIsLoading(false);

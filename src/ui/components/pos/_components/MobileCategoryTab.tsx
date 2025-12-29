@@ -1,11 +1,6 @@
 
-import {
-  DropdownMenu,
-  DropdownMenuTrigger,
-  DropdownMenuContent,
-  DropdownMenuItem,
-} from "@/components/ui/dropdown-menu";
-import { Button } from "@/components/ui/button";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/ui/shadcn/components/ui/dropdown-menu";
+import { Button } from "@/ui/shadcn/components/ui/button";
 import { useState } from "react";
 
 const categories = ["Appetizers", "Soups", "Sushi", "Cakes", "Desserts", "All"];

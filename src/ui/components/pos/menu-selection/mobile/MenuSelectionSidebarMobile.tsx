@@ -6,7 +6,7 @@ import LanguageModal from "../../modal/LanguageModal";
 
 import { MENUSELECTIONNAVIGATION } from "@/ui/constants/menu-selections";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 
@@ -16,14 +16,26 @@ import { useWorkShift } from "@/ui/context/WorkShiftContext";
 import { useAppState } from "@/ui/hooks/useAppState";
 import { productLocal } from "@/services/local/product.local.service";
 import { appStateApi } from "@/services/tauri/appState";
+import { ticketLocal } from "@/services/local/ticket.local.service";
+import { useLogoutGuard, type LogoutBlocks } from "@/ui/hooks/useLogoutGuard";
+import LogoutBlockerModal from "../../modal/LogoutBlockerModal";
+import SplashScreen from "@/ui/components/common/SplashScreen";
+import { useLogout } from "@/ui/context/LogoutContext";
 
 const MenuSelectionSidebarMobile = () => {
   const { t } = useTranslation();
   const router = useNavigate();
 
   const { theme, setTheme } = useTheme();
-  const { state: appState, loading, setOrderMode } = useAppState();
+  const {
+    state: appState,
+    loading,
+    setOrderMode,
+    selectedLocationName,
+    selectedOrderModeName
+  } = useAppState();
   const { shift, clear: clearShift } = useWorkShift();
+  const { checkBlocks } = useLogoutGuard();
 
   const isShiftOpen = !!shift?.isOpen;
 
@@ -33,10 +45,28 @@ const MenuSelectionSidebarMobile = () => {
   const [showEndShift, setShowEndShift] = useState(false);
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const [showLanguageModal, setShowLanguageModal] = useState(false);
+  const [pendingTicketsCount, setPendingTicketsCount] = useState(0);
+  const [showLogoutBlocker, setShowLogoutBlocker] = useState(false);
+  const [logoutBlocks, setLogoutBlocks] = useState<LogoutBlocks | null>(null);
+  const { isLoggingOut, setIsLoggingOut } = useLogout();
 
-  const locationName = appState?.selected_location_name ?? "";
-  const selectedOrderModeName =
-    appState?.selected_order_mode_name ?? "";
+  // Load pending tickets count
+  useEffect(() => {
+    const loadPendingCount = async () => {
+      try {
+        const stats = await ticketLocal.getSyncStats();
+        setPendingTicketsCount(stats.pending);
+      } catch (error) {
+        console.error("Failed to load pending tickets count:", error);
+      }
+    };
+
+    loadPendingCount();
+
+    // Refresh count every 30 seconds
+    const interval = setInterval(loadPendingCount, 30000);
+    return () => clearInterval(interval);
+  }, []);
 
   if (loading) return null;
 
@@ -44,7 +74,7 @@ const MenuSelectionSidebarMobile = () => {
     setTheme(theme === "dark" ? "light" : "dark");
   };
 
-  const openModal = (content: string) => {
+  const openModal = async (content: string) => {
     switch (content) {
       case "change-table":
         router("/pos/table-layout");
@@ -53,7 +83,16 @@ const MenuSelectionSidebarMobile = () => {
         setShowDineInBoard(true);
         break;
       case "shift":
-        if (isShiftOpen) setShowEndShift(true);
+        if (isShiftOpen) {
+          // Check for pending syncs before allowing shift end
+          const blocks = await checkBlocks();
+          if (blocks.totalSyncs > 0) {
+            setLogoutBlocks(blocks);
+            setShowLogoutBlocker(true);
+          } else {
+            setShowEndShift(true);
+          }
+        }
         break;
       default:
         setModalContent(content);
@@ -83,25 +122,41 @@ const MenuSelectionSidebarMobile = () => {
     setShowDineInBoard(false);
   };
 
-  const handleLogoutClick = () => {
-    if (isShiftOpen) {
-      setShowEndShift(true);
+  const handleLogoutClick = async () => {
+    const blocks = await checkBlocks();
+
+    if (!blocks.canLogout) {
+      setLogoutBlocks(blocks);
+      setShowLogoutBlocker(true);
     } else {
       setShowLogoutConfirm(true);
     }
   };
 
   const handleConfirmLogout = async () => {
+    setIsLoggingOut(true);
     try {
+      // Clear all data
       await productLocal.clearCache();
+      await ticketLocal.clearAll();
       await appStateApi.clear();
       await clearShift();
-      router("/");
-      window.location.reload();
+
+      // Small delay to show splash screen
+      await new Promise(resolve => setTimeout(resolve, 300));
+
+      // Full page navigation/reload to avoid UI flash
+      window.location.href = "/";
     } catch (e) {
       console.error("Logout failed:", e);
+      setIsLoggingOut(false);
     }
   };
+
+  // Show splash screen during logout
+  if (isLoggingOut) {
+    return <SplashScreen type={1} />;
+  }
 
   return (
     <>
@@ -115,9 +170,35 @@ const MenuSelectionSidebarMobile = () => {
       {showEndShift && (
         <EndShiftConfirmModal
           onClose={() => setShowEndShift(false)}
-          onConfirm={() => {
+          onConfirm={async () => {
             setShowEndShift(false);
-            setShowLogoutConfirm(true);
+
+            // After ending shift, check only for pending syncs
+            // (shift is now closed, so no need to check it again)
+            const blocks = await checkBlocks();
+            if (blocks.totalSyncs > 0) {
+              // Still have pending syncs
+              setLogoutBlocks(blocks);
+              setShowLogoutBlocker(true);
+            } else {
+              // All clear, proceed to logout
+              setShowLogoutConfirm(true);
+            }
+          }}
+        />
+      )}
+
+      {showLogoutBlocker && logoutBlocks && (
+        <LogoutBlockerModal
+          blocks={logoutBlocks}
+          onClose={() => setShowLogoutBlocker(false)}
+          onEndShift={() => {
+            setShowLogoutBlocker(false);
+            setShowEndShift(true);
+          }}
+          onGoToActivity={() => {
+            setShowLogoutBlocker(false);
+            router("/pos/activity");
           }}
         />
       )}
@@ -190,6 +271,7 @@ const MenuSelectionSidebarMobile = () => {
 
                   item.action?.(openModal);
                   if (item.link) router(item.link);
+                  
                 }}
                 className="flex items-center gap-3 p-3 bg-navigation rounded-lg cursor-pointer active:scale-[0.98]"
               >
@@ -206,6 +288,11 @@ const MenuSelectionSidebarMobile = () => {
                       : t("Dark Mode")
                     : t(item.title)}
                 </p>
+                {item.title === "Activities" && pendingTicketsCount > 0 && (
+                      <span className="-right-1 bg-destructive text-background text-xs rounded-full w-4 h-4 flex items-center justify-center">
+                        {pendingTicketsCount > 9 ? "9+" : pendingTicketsCount}
+                      </span>
+                    )}
               </div>
             ))}
           </div>
@@ -228,7 +315,7 @@ const MenuSelectionSidebarMobile = () => {
                 {item.icon}
                 <p className="text-body font-medium text-sm">
                   {item.title === "Location"
-                    ? locationName
+                    ? selectedLocationName
                     : item.title === "Dine In"
                       ? selectedOrderModeName || t("Select Mode")
                       : t(item.title)}

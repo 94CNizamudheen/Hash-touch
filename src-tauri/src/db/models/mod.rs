@@ -19,3 +19,5 @@ pub mod category;
 pub mod category_repo;
 pub mod charges;
 pub mod charges_repo;
+pub mod ticket;
+pub mod ticket_repo;

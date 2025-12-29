@@ -7,7 +7,7 @@ import { useMediaQuery } from "usehooks-ts";
 import { Link, useLocation } from "react-router-dom";
 import Logo from "@/assets/logo.png";
 import LogoDark from "@/assets/logo_dark.png";
-import { useTheme } from "@/ui/context/theme/useTheme";
+import { useTheme } from "@/ui/context/ThemeContext"; 
 import { useTranslation } from "react-i18next";
 import SelectFilter from "../../../common/SelectFilter";
 import { MENU_NAVIGATION } from "@/ui/constants/menu";

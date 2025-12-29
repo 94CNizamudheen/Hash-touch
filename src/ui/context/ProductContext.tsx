@@ -65,7 +65,7 @@ export const ProductProvider = ({ children }: { children: React.ReactNode }) => 
      Debug: Track appState changes
   ----------------------------------------- */
   useEffect(() => {
-    console.log("🎯 AppState changed:", {
+    console.log("AppState changed:", {
       selected_order_mode_id: appState?.selected_order_mode_id,
       brand_id: appState?.brand_id,
       location_id: appState?.selected_location_id,
@@ -87,7 +87,7 @@ export const ProductProvider = ({ children }: { children: React.ReactNode }) => 
           productGroupCategoryLocal.getAll(),
         ]);
 
-        console.log("📦 Initial load: products from DB:", prods.length);
+        console.log(" Initial load: products from DB:", prods.length);
 
         // Debug: Check if products have overrides
         const productsWithOverrides = prods.filter(p => {
@@ -100,10 +100,10 @@ export const ProductProvider = ({ children }: { children: React.ReactNode }) => 
           }
         });
 
-        console.log(`📊 Products with overrides: ${productsWithOverrides.length} / ${prods.length}`);
+        console.log(`Products with overrides: ${productsWithOverrides.length} / ${prods.length}`);
         if (productsWithOverrides.length > 0) {
           const sample = productsWithOverrides[0];
-          console.log(`📋 Sample product with overrides:`, {
+          console.log(`Sample product with overrides:`, {
             name: sample.name,
             price: sample.price,
             overrides: sample.overrides
@@ -126,7 +126,6 @@ export const ProductProvider = ({ children }: { children: React.ReactNode }) => 
      Apply overrides when order mode changes
   ----------------------------------------- */
   useEffect(() => {
-    console.log("🔄 ========== OVERRIDES EFFECT FIRED ==========");
     console.log("   Order mode ID:", appState?.selected_order_mode_id);
     console.log("   Brand ID:", appState?.brand_id);
     console.log("   Location ID:", appState?.selected_location_id);
@@ -152,25 +151,8 @@ export const ProductProvider = ({ children }: { children: React.ReactNode }) => 
         orderModeId: appState.selected_order_mode_id,
       });
 
-      console.log("🔑 Built override key:", key);
-      console.log("🔄 Applying overrides to", rawItems.length, "products");
 
       const effectiveProducts = rawItems.map(p => getEffectiveProduct(p, key));
-
-      // Debug: Check if products actually changed
-      const changedProducts = effectiveProducts.filter((ep, idx) => {
-        const raw = rawItems[idx];
-        return raw && (raw.price !== ep.price || raw.name !== ep.name);
-      });
-
-      console.log(`✅ Override application complete. ${changedProducts.length} products changed.`);
-      if (changedProducts.length > 0) {
-        console.log("📊 Sample changed product:", {
-          name: changedProducts[0].name,
-          oldPrice: rawItems.find(r => r.id === changedProducts[0].id)?.price,
-          newPrice: changedProducts[0].price
-        });
-      }
 
       setItems(effectiveProducts);
     } else {

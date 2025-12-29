@@ -30,6 +30,7 @@ export const MENUSELECTIONNAVIGATION = [
     title: "Activities",
     icon: <ChartBarBigIcon className="lg:w-5 lg:h-5 w-6 h-6" strokeWidth={2.5} />,
     position: "Top",
+    link: "/pos/activity",
   },
 
   {

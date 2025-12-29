@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useState, useCallback } from "react";
+import { createContext, useContext, useEffect, useState, useCallback, useMemo } from "react";
 import { appStateApi } from "@/services/tauri/appState";
 import type { AppState } from "@/types/app-state";
 
@@ -41,12 +41,12 @@ export const AppStateProvider = ({ children }: { children: React.ReactNode }) =>
     load();
   }, [load]);
 
-  const refresh = async () => {
+  const refresh = useCallback(async () => {
     setLoading(true);
     await load();
-  };
+  }, [load]);
 
-  const setOrderMode = async (
+  const setOrderMode = useCallback(async (
     orderModeIds: string[],
     orderModeNames: string[],
     selectedId: string,
@@ -89,42 +89,46 @@ export const AppStateProvider = ({ children }: { children: React.ReactNode }) =>
     });
 
     console.log("✅ State update complete, new order_mode_id:", selectedId);
-  };
+  }, []);
 
-  const setTheme = async (theme: string) => {
+  const setTheme = useCallback(async (theme: string) => {
     await appStateApi.setTheme(theme);
     setState((prev) =>
       prev ? { ...prev, theme } : prev
     );
-  };
+  }, []);
 
-  const setLanguage = async (language: string) => {
+  const setLanguage = useCallback(async (language: string) => {
     await appStateApi.setLanguage(language);
     setState((prev) =>
       prev ? { ...prev, language } : prev
     );
-  };
+  }, []);
+
+  const value = useMemo(
+    () => ({
+      state,
+      loading,
+      selectedLocationName: state?.selected_location_name ?? "",
+      orderModeNames: state?.order_mode_names ?? [],
+      selectedOrderModeId: state?.selected_order_mode_id ?? null,
+      selectedOrderModeName: state?.selected_order_mode_name ?? null,
+      refresh,
+      setOrderMode,
+      setTheme,
+      setLanguage,
+    }),
+    [state, loading, refresh, setOrderMode, setTheme, setLanguage]
+  );
 
   return (
-    <AppStateContext.Provider
-      value={{
-        state,
-        loading,
-        selectedLocationName: state?.selected_location_name ?? "",
-        orderModeNames: state?.order_mode_names ?? [],
-        selectedOrderModeId: state?.selected_order_mode_id ?? null,
-        selectedOrderModeName: state?.selected_order_mode_name ?? null,
-        refresh,
-        setOrderMode,
-        setTheme,
-        setLanguage,
-      }}
-    >
+    <AppStateContext.Provider value={value}>
       {children}
     </AppStateContext.Provider>
   );
 };
 
+// eslint-disable-next-line react-refresh/only-export-components
 export const useAppState = () => {
   const ctx = useContext(AppStateContext);
   if (!ctx) {

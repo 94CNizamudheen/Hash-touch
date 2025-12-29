@@ -3,7 +3,7 @@ import { TextAlignJustifyIcon } from "@radix-ui/react-icons";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import ModalSidebar from "../common/modals/ModalSidebar";
-import { useTheme } from "@/ui/context/theme/useTheme";
+import { useTheme } from "@/ui/context/ThemeContext";
 import { cn } from "@/lib/utils";
 
 const MobileMenu = () => {

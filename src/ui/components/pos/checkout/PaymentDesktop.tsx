@@ -4,6 +4,9 @@ import DrawerOpenedModal from "../DrowerOpenedModal";
 
 import { useCart } from "@/ui/context/CartContext";
 import { useCharges } from "@/ui/hooks/useCharges";
+import { useAppState } from "@/ui/hooks/useAppState";
+import { buildTicketRequest } from "@/ui/utils/ticketBuilder";
+import { ticketService } from "@/services/data/ticket.service";
 import LeftActionRail from "./LeftActionRail";
 import OrderSidebar from "./OrderSidebar";
 import CenterPaymentContent from "./CenterPaymentContent";
@@ -13,9 +16,10 @@ import PaymentSuccessModal from "./PaymentSuccessModal";
 export default function PaymentDesktop() {
   const navigate = useNavigate();
   const { items, clear, isHydrated } = useCart();
+  const { state: appState } = useAppState();
 
   const subtotal = items.reduce((s, i) => s + i.price * i.quantity, 0);
-  const { totalCharges } = useCharges(items, subtotal);
+  const { charges, totalCharges } = useCharges(items, subtotal);
   const total = subtotal + totalCharges;
 
   const [inputValue, setInputValue] = useState(() => total.toFixed(2));
@@ -41,9 +45,64 @@ export default function PaymentDesktop() {
     setInputValue((p) => (p === "0.00" || p === "0" ? k : p + k));
   };
 
-  const onPay = () => {
-    if (tendered < total) return alert("Insufficient payment");
-    setShowDrawer(true);
+  const onPay = async () => {
+    if (tendered < total) {
+      alert("Insufficient payment");
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      // Validate appState
+      if (
+        !appState?.tenant_domain ||
+        !appState?.access_token ||
+        !appState?.selected_location_id ||
+        !appState?.selected_location_name ||
+        !appState?.selected_order_mode_name
+      ) {
+        throw new Error("Missing required application state");
+      }
+
+      // Build ticket request
+      const ticketRequest = buildTicketRequest({
+        items,
+        charges,
+        subtotal,
+        total,
+        paymentMethod: selectedMethod,
+        tenderedAmount: tendered,
+        locationId: appState.selected_location_id,
+        locationName: appState.selected_location_name,
+        orderModeName: appState.selected_order_mode_name,
+        channelName: "POS",
+        userName: "POS User",
+      });
+
+      console.log("📝 Creating ticket:", ticketRequest);
+
+      // Create ticket (will handle online/offline automatically)
+      const result = await ticketService.createTicket(
+        appState.tenant_domain,
+        appState.access_token,
+        ticketRequest
+      );
+
+      if (result.offline) {
+        console.log("📴 Ticket saved offline for later sync");
+        alert("Ticket saved offline and will sync when internet is available");
+      } else {
+        console.log("✅ Ticket created successfully online");
+      }
+
+      setShowDrawer(true);
+    } catch (error) {
+      console.error("❌ Failed to create ticket:", error);
+      alert(`Failed to create ticket: ${error instanceof Error ? error.message : "Unknown error"}`);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const onComplete = async () => {

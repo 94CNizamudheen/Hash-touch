@@ -5,7 +5,7 @@ import { motion } from "framer-motion";
 import { useTranslation } from "react-i18next";
 import { Icons } from "../icons";
 import { cn } from "@/lib/utils";
-import { useTheme } from "@/ui/context/theme/useTheme";
+import { useTheme } from "@/ui/context/ThemeContext";
 
 const spring = {
   type: "spring" as const,

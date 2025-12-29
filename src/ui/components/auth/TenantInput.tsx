@@ -14,6 +14,7 @@ interface TenantInputProps {
   label: string;
   type?: string;
   icon?: keyof typeof ICONS;
+  placeholder?: string;
   onShowKeyboard: (v: boolean) => void;
 }
 
@@ -22,6 +23,7 @@ export default function TenantInput({
   label,
   type = "text",
   icon,
+  placeholder,
   onShowKeyboard,
 }: TenantInputProps) {
   const form = useFormContext();
@@ -71,6 +73,7 @@ export default function TenantInput({
                   type={type}
                   {...field}
                   value={field.value || ""}
+                  placeholder={placeholder}
                   autoComplete="off"
                   className="border-none bg-transparent focus-visible:ring-0 text-sm placeholder:text-zinc-500 dark:text-black"
                   onFocus={() => {

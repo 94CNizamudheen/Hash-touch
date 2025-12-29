@@ -7,6 +7,7 @@ import TenantLogin from "@/ui/components/auth/TenantLogin";
 import SelectLocationPage from "@/ui/components/auth/SelectLocationPage";
 import Home from "@/ui/Home";
 import RoleRouter from "@/ui/routes/RoleRouter";
+import SplashScreen from "@/ui/components/common/SplashScreen";
 
 
 
@@ -24,6 +25,7 @@ import PosRoutes from "./ui/routes/pos.routes";
 import KioskRoutes from "./ui/routes/kiosk.routes";
 import KdsRoutes from "./ui/routes/kds.routes";
 import QueueRoutes from "./ui/routes/queue.routes";
+import { useAppState } from "@/ui/hooks/useAppState";
 
 
 /* =========================
@@ -39,7 +41,11 @@ interface Location {
 export default function App() {
   const dispatch = useDispatch<AppDispatch>();
   const appState = useSelector((state: RootState) => state.appState);
+  const { refresh: refreshAppStateContext } = useAppState();
   const [booting, setBooting] = useState(true);
+  const [loadingTenant, setLoadingTenant] = useState(false);
+  const [loadingLocation, setLoadingLocation] = useState(false);
+  const [loadingRole, setLoadingRole] = useState(false);
 
   /* =========================
      BOOTSTRAP (Rust → Redux)
@@ -48,24 +54,31 @@ export default function App() {
     async function bootstrap() {
       const state: AppState = await appStateApi.get();
       dispatch(hydrateAppState(state));
+      await refreshAppStateContext();
+
       setBooting(false);
     }
     bootstrap();
-  }, [dispatch]);
+  }, [dispatch, refreshAppStateContext]);
 
   /* =========================
      HANDLERS
   ========================= */
 
   const handleTenantSelected = async (domain: string, token: string) => {
-    await appStateApi.setTenant(domain, token);
-    dispatch(
-      hydrateAppState({
-        ...appState,
-        tenant_domain: domain,
-        access_token: token,
-      })
-    );
+    setLoadingTenant(true);
+    try {
+      await appStateApi.setTenant(domain, token);
+      dispatch(
+        hydrateAppState({
+          ...appState,
+          tenant_domain: domain,
+          access_token: token,
+        })
+      );
+    } finally {
+      setLoadingTenant(false);
+    }
   };
 
   const handleLocationSelected = async (location: Location) => {
@@ -73,48 +86,62 @@ export default function App() {
       throw new Error("Missing tenant or token");
     }
 
-    await appStateApi.setLocation(location.id, location.brand_id, location.name);
+    setLoadingLocation(true);
+    try {
+      await appStateApi.setLocation(location.id, location.brand_id, location.name);
 
-    const orderModesResponse = await commonDataService.getOrderModes(
-      appState.tenant_domain,
-      appState.access_token,
-      {
+      const orderModesResponse = await commonDataService.getOrderModes(
+        appState.tenant_domain,
+        appState.access_token,
+        {
+          channel: appState.device_role ?? "POS",
+          location_id: location.id,
+          brand_id: location.brand_id,
+        }
+      );
+
+
+      const orderModeIds = orderModesResponse.map((om: any) => om.id);
+      const orderModeNames = orderModesResponse.map((om: any) => om.name);
+      const defaultMode = orderModesResponse[0];
+      await appStateApi.setOrderMode(orderModeIds, orderModeNames, defaultMode.id, defaultMode.name);
+
+      await initialSync(appState.tenant_domain, appState.access_token, {
         channel: appState.device_role ?? "POS",
-        location_id: location.id,
-        brand_id: location.brand_id,
-      }
-    );
+        locationId: location.id,
+        brandId: location.brand_id,
+        orderModeIds,
+      });
 
+      dispatch(
+        hydrateAppState({
+          ...appState,
+          selected_location_id: location.id,
+          selected_location_name: location.name,
+          brand_id: location.brand_id,
+          order_mode_ids: orderModeIds,
+          order_mode_names: orderModeNames,
+          selected_order_mode_id: defaultMode.id,
+          selected_order_mode_name: defaultMode.name,
+        })
+      );
 
-    const orderModeIds = orderModesResponse.map((om: any) => om.id);
-    const orderModeNames = orderModesResponse.map((om: any) => om.name);
-    const defaultMode = orderModesResponse[0];
-    await appStateApi.setOrderMode(orderModeIds, orderModeNames, defaultMode.id, defaultMode.name);
-
-    await initialSync(appState.tenant_domain, appState.access_token, {
-      channel: appState.device_role ?? "POS",
-      locationId: location.id,
-      brandId: location.brand_id,
-      orderModeIds,
-    });
-
-    dispatch(
-      hydrateAppState({
-        ...appState,
-        selected_location_id: location.id,
-        selected_location_name: location.name,
-        brand_id: location.brand_id,
-        order_mode_ids: orderModeIds,
-        order_mode_names: orderModeNames,
-        selected_order_mode_id: defaultMode.id,
-        selected_order_mode_name: defaultMode.name,
-      })
-    );
+      await refreshAppStateContext();
+    } finally {
+      setLoadingLocation(false);
+    }
   };
 
   const handleRoleSelected = async (role: DeviceRole) => {
-    await appStateApi.setDeviceRole(role);
-    dispatch(setDeviceRole(role));
+    setLoadingRole(true);
+    try {
+      await appStateApi.setDeviceRole(role);
+      dispatch(setDeviceRole(role));
+      await refreshAppStateContext();
+    } finally {
+      // Keep loading true until navigation completes
+      setTimeout(() => setLoadingRole(false), 500);
+    }
   };
 
   /* =========================
@@ -122,19 +149,36 @@ export default function App() {
   ========================= */
 
   if (booting) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        Booting device…
-      </div>
-    );
+    return <SplashScreen type={1} />;
+  }
+
+  // Show loading after tenant login
+  if (loadingTenant) {
+    return <SplashScreen type={1} />;
   }
 
   if (!appState.tenant_domain) {
     return <TenantLogin onTenantSelected={handleTenantSelected} />;
   }
 
+  // Show loading after location selection (during initial sync)
+  if (loadingLocation) {
+    return <SplashScreen type={1} />;
+  }
+
   if (!appState.selected_location_id) {
-    return <SelectLocationPage onSelect={handleLocationSelected} />;
+    return (
+      <SelectLocationPage
+        onSelect={handleLocationSelected}
+        tenantDomain={appState.tenant_domain!}
+        accessToken={appState.access_token!}
+      />
+    );
+  }
+
+  // Show loading after role selection
+  if (loadingRole) {
+    return <SplashScreen type={1} />;
   }
 
   if (!appState.device_role) {

@@ -1,4 +1,4 @@
-const API_BASE = "https://development.hc.hashtape.com";
+import { API_BASE } from "@/config/env";
 
 export interface GetProductsPayload {
   channel: string;
@@ -63,7 +63,6 @@ export const commonDataService = {
     return post(domain, "product-groups", token,payload);
   },
   getCombinations(domain: string, token: string,payload:GetProductsPayload) {
-    console.log("📡 Calling product-combinations API with payload:", payload);
     return post(domain, "product-combinations", token,payload);
   },
   getOrderModes(domain: string, token: string,payload:GetOrderModesPayload) {
@@ -78,4 +77,8 @@ export const commonDataService = {
   getTransactionTypes(domain: string, token: string) {
     return post(domain, "transaction-types", token);
   },
+  getLocations(domain:string,token:string){
+    return post(domain, "locations",token);
+  }
 };
+

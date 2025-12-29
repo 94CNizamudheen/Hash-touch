@@ -8,27 +8,32 @@ import { AnimationProvider } from "@/ui/context/AnimationContext";
 import MenuSelectionPage from "../components/pos/menu-selection/MenuSelectionPage";
 import PaymentPanel from "../components/pos/checkout/PaymentPanel";
 import { WorkShiftProvider } from "../context/WorkShiftContext";
+import { LogoutProvider } from "../context/LogoutContext";
+import ActivityPage from "../components/pos/activity/ActivityPage";
 
 
 export default function PosRoutes() {
   return (
-    <CartProvider>
-      <ProductProvider>
-        <AnimationProvider>
-          <WorkShiftProvider>
+    <LogoutProvider>
+      <CartProvider>
+        <ProductProvider>
+          <AnimationProvider>
+            <WorkShiftProvider>
 
-              <Routes>
-                <Route element={<MenuLayout />}>
-                  <Route index element={<MenuSelectionPage />} />
-                </Route>
-                <Route path="payment-panel" element={<PaymentPanel />} />
+                <Routes>
+                  <Route element={<MenuLayout />}>
+                    <Route index element={<MenuSelectionPage />} />
+                  </Route>
+                  <Route path="payment-panel" element={<PaymentPanel />} />
+                  <Route path="activity" element={<ActivityPage />} />
 
-                <Route path="*" element={<Navigate to="" replace />} />
-              </Routes>
-          </WorkShiftProvider>
+                  <Route path="*" element={<Navigate to="" replace />} />
+                </Routes>
+            </WorkShiftProvider>
 
-        </AnimationProvider>
-      </ProductProvider>
-    </CartProvider>
+          </AnimationProvider>
+        </ProductProvider>
+      </CartProvider>
+    </LogoutProvider>
   );
 }

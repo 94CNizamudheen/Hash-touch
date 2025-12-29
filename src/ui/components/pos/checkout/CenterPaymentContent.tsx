@@ -65,7 +65,7 @@ export default function CenterPaymentContent({
       {/* Actions */}
       <div className="grid grid-cols-3 gap-2 mb-3 ">
         <Button onClick={onPay} className="bg-blue-600 hover:bg-blue-700 text-white h-12 ">
-          {t("all")}
+          {t("All")}
         </Button>
         <Button variant="outline" className="h-12">{t("split")}</Button>
         <Button variant="outline" className="h-12">{t("divide")}</Button>

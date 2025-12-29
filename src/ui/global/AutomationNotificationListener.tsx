@@ -1,23 +1,23 @@
 
-import { useEffect } from "react";
-import { useNotification } from "../context/NotificationContext";
-import { eventBus } from "@core/events/local-event-bus";
+// import { useEffect } from "react";
+// import { useNotification } from "../context/NotificationContext";
+// import { eventBus } from "@core/events/local-event-bus";
 
-export default function AutomationNotificationListener() {
-  const { showNotification } = useNotification();
+// export default function AutomationNotificationListener() {
+//   const { showNotification } = useNotification();
 
-useEffect(() => {
-  type NotificationKey = "success" | "error" | "warning" | "info";
+// useEffect(() => {
+//   type NotificationKey = "success" | "error" | "warning" | "info";
 
-  const handler = (payload: { Type?: NotificationKey; Message: string }) => {
-    const type: NotificationKey = payload.Type ?? "info";
-    showNotification[type](payload.Message);
-  };
+//   const handler = (payload: { Type?: NotificationKey; Message: string }) => {
+//     const type: NotificationKey = payload.Type ?? "info";
+//     showNotification[type](payload.Message);
+//   };
 
-  eventBus.on("notify", handler);
-  return () => eventBus.off("notify", handler);
-}, []);
+//   eventBus.on("notify", handler);
+//   return () => eventBus.off("notify", handler);
+// }, []);
 
 
-  return null;
-}
+//   return null;
+// }

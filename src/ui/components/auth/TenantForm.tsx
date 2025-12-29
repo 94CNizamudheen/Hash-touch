@@ -22,6 +22,7 @@ export default function TenantForm({
         name="domain"
         label="Tenant Name"
         icon="home"
+        placeholder="Enter tenant name"
         onShowKeyboard={setShowKeyboard}
       />
 
@@ -29,6 +30,7 @@ export default function TenantForm({
         name="email"
         label="Email"
         icon="user"
+        placeholder="Enter your email"
         onShowKeyboard={setShowKeyboard}
       />
 
@@ -37,6 +39,7 @@ export default function TenantForm({
         label="Password"
         type="password"
         icon="lock"
+        placeholder="Enter your password"
         onShowKeyboard={setShowKeyboard}
       />
 
