@@ -61,8 +61,8 @@ export default function Products({
       {/* ================= tempStyle = true ================= */}
       {tempStyle ? (
         <div className="flex flex-1 overflow-hidden">
-          <aside className="w-[230px] border-r border-border bg-background flex flex-col">
-            <div className="flex-1 overflow-y-auto no-scrollbar p-3">
+          <aside className="">
+            <div className="">
               <CategoryTabs direction="vertical" />
             </div>
           </aside>
@@ -98,7 +98,7 @@ export default function Products({
 
         <>
 
-          <div className="shrink-0 px-4  3 bg-background">
+          <div className=" w-full overflow-auto bg-background">
             <CategoryTabs direction="horizontal" />
           </div>
 

@@ -70,7 +70,7 @@ export default function OrderSidebar({
           )}
         </div>
 
-        <div className="shrink-0 bg-background border-t border-border">
+        <div className="shrink-0 bg-background border-t border-border safe-area">
           <div className="px-4 py-3 space-y-1 text-xs">
             <div className="flex justify-between">
               <span>{t("subtotal")}</span>

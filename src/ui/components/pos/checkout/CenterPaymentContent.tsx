@@ -37,6 +37,7 @@ export default function CenterPaymentContent({
           </span>
         </div>
       </div>
+      
 
       {/* Tender */}
       <div className="mb-3">

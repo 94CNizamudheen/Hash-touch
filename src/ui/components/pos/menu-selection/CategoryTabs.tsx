@@ -49,71 +49,108 @@ export default function CategoryTabs({
       onValueChange={(val: string) => setSelectedCategory(val)}
       className="w-full min-h-0"
     >
-      <TabsList
-        style={{ WebkitOverflowScrolling: "touch" }}
-        className={`
-          ${isVertical ? "flex flex-col" : "flex flex-row"}
-          gap-3 p-3
-          bg-background   shadow-sm
-          ${isVertical ? "h-full overflow-y-auto overflow-x-hidden" : "h-[5.5rem] overflow-x-auto overflow-y-hidden"}
-          overscroll-contain no-scrollbar 
-        `}
-      >
-        {categoriesList.map((cat) => {
-          const isActive = selectedCategory === cat.value;
+      {isVertical ? (
+        // Vertical layout
+        <TabsList
+          style={{ WebkitOverflowScrolling: "touch" }}
+          className="flex flex-col gap-3 p-3 bg-background shadow-sm h-full overflow-y-auto overflow-x-hidden overscroll-contain"
+        >
+          {categoriesList.map((cat) => {
+            const isActive = selectedCategory === cat.value;
 
-          return (
-            <TabsTrigger
-              key={cat.value}
-              value={cat.value}
-              className={`shrink-0 flex items-center gap-3 px-4 py-2
-                border transition-all duration-200 cursor-pointer
-                ${isVertical ? "w-full" : "min-w-[180px]"}
-                ${
-                  isActive
-                    ? "bg-primary text-primary-foreground border-border shadow-md"
-                    : "bg-navigation text-foreground border-border hover:bg-primary-hover hover:text-background"
-                }
-              `}
-            >
-              {/* Image */}
-              {cat.image ? (
-                <div className="w-10 h-10 rounded-lg overflow-hidden  flex-shrink-0">
-                  <img
-                    src={cat.image}
-                    alt={cat.label}
-                    className="w-full h-full object-cover"
-                  />
-                </div>
-              ) : (
-                <div
-                  className={`w-10 h-10 flex items-center justify-center text-lg font-bold rounded-lg flex-shrink-0
-                    ${
-                      isActive
-                        ? "bg-secondary text-secondary-foreground"
-                        : "bg-accent text-accent-foreground"
-                    }`}
-                >
-                  {cat.label.charAt(0).toUpperCase()}
-                </div>
-              )}
-
-              {/* Name */}
-              <span
-                className={`font-semibold text-sm whitespace-nowrap
+            return (
+              <TabsTrigger
+                key={cat.value}
+                value={cat.value}
+                className={`w-full flex items-center gap-3 px-4 py-2 border transition-all duration-200 cursor-pointer
                   ${
                     isActive
-                      ? "text-primary-foreground"
-                      : "text-foreground"
+                      ? "bg-primary text-primary-foreground border-border shadow-md"
+                      : "bg-navigation text-foreground border-border hover:bg-primary-hover hover:text-background"
                   }
                 `}
               >
-                {cat.label}
-              </span>
-            </TabsTrigger>
-          );
-        })}
-      </TabsList>
+                {/* Image */}
+                {cat.image ? (
+                  <div className="w-10 h-10 rounded-lg overflow-hidden flex-shrink-0">
+                    <img
+                      src={cat.image}
+                      alt={cat.label}
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                ) : (
+                  <div
+                    className={`w-10 h-10 flex items-center justify-center text-lg font-bold rounded-lg flex-shrink-0
+                      ${
+                        isActive
+                          ? "bg-secondary text-secondary-foreground"
+                          : "bg-accent text-accent-foreground"
+                      }`}
+                  >
+                    {cat.label.charAt(0).toUpperCase()}
+                  </div>
+                )}
+
+                {/* Name */}
+                <span className={`font-semibold text-sm whitespace-nowrap`}>
+                  {cat.label}
+                </span>
+              </TabsTrigger>
+            );
+          })}
+        </TabsList>
+      ) : (
+        // Horizontal layout - using the same pattern as ProductGroupTabs
+        <div className="w-full h-[5.5rem] overflow-x-auto no-scrollbar bg-background shadow-sm">
+          <div className="flex gap-3 p-3 min-w-max h-full">
+            {categoriesList.map((cat) => {
+              const isActive = selectedCategory === cat.value;
+
+              return (
+                <button
+                  key={cat.value}
+                  onClick={() => setSelectedCategory(cat.value)}
+                  className={`flex items-center gap-3 px-4 py-2 border rounded transition-all duration-200 cursor-pointer whitespace-nowrap
+                    ${
+                      isActive
+                        ? "bg-primary text-primary-foreground border-border shadow-md"
+                        : "bg-navigation text-foreground border-border hover:bg-primary-hover hover:text-background"
+                    }
+                  `}
+                >
+                  {/* Image */}
+                  {cat.image ? (
+                    <div className="w-10 h-10 rounded-lg overflow-hidden flex-shrink-0">
+                      <img
+                        src={cat.image}
+                        alt={cat.label}
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
+                  ) : (
+                    <div
+                      className={`w-10 h-10 flex items-center justify-center text-lg font-bold rounded-lg flex-shrink-0
+                        ${
+                          isActive
+                            ? "bg-secondary text-secondary-foreground"
+                            : "bg-accent text-accent-foreground"
+                        }`}
+                    >
+                      {cat.label.charAt(0).toUpperCase()}
+                    </div>
+                  )}
+
+                  {/* Name */}
+                  <span className="font-semibold text-sm">
+                    {cat.label}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
     </Tabs>
   );
 }

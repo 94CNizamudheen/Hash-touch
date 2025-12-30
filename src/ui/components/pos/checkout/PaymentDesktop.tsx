@@ -181,7 +181,7 @@ export default function PaymentDesktop() {
         onBackToMenu={() => navigate("/pos")}
       />
 
-      <div className="flex-1 p-6 overflow-hidden">
+      <div className="flex-1 p-6 overflow-hidden safe-area">
         <CenterPaymentContent
           total={total}
           balance={balance}

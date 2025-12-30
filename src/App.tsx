@@ -87,7 +87,12 @@ export default function App() {
 
     const attemptConnection = async (): Promise<boolean> => {
       try {
-        const wsUrl = "ws://localhost:9001";
+        // The WebSocket server runs as part of the Tauri app (on the same device)
+        // So we always connect to localhost, regardless of platform
+        const wsUrl = import.meta.env.VITE_WS_URL || "ws://localhost:9001";
+
+        const isAndroid = navigator.userAgent.toLowerCase().includes('android');
+        console.log(`[App] Platform: ${isAndroid ? 'Android' : 'Desktop'}`);
         console.log(`[App] Connecting to: ${wsUrl} (Attempt ${attempts + 1}/${maxRetries})`);
 
         const client = new WebSocketClient(wsUrl, deviceId, appState.device_role || "POS");

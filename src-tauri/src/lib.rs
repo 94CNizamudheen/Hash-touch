@@ -66,17 +66,16 @@ pub fn run() {
                 event_bus_clone.start().await;
             });
 
-            // Bind address safely
-            #[cfg(desktop)]
             let ws_addr = "0.0.0.0:9001";
 
-            #[cfg(mobile)]
-            let ws_addr = "127.0.0.1:9001";
+            log::info!("🔧 Starting WebSocket server on {}", ws_addr);
 
             // Start WebSocket server
             tauri::async_runtime::spawn(async move {
-                if let Err(e) = ws_server.start(ws_addr).await {
-                    log::error!("❌ WebSocket server error: {}", e);
+                log::info!("🚀 WebSocket server task started, binding to {}", ws_addr);
+                match ws_server.start(ws_addr).await {
+                    Ok(_) => log::info!("✅ WebSocket server stopped gracefully"),
+                    Err(e) => log::error!("❌ WebSocket server error: {}", e),
                 }
             });
 

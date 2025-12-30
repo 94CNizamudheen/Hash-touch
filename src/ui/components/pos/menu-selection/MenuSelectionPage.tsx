@@ -42,7 +42,7 @@ const MenuSelectionPage = () => {
       )}
 
       {shouldShowMainUI && !showSuccess && (
-        <div className="flex w-full h-full overflow-hidden">
+        <div className="flex w-full h-full overflow-hidden safe-area">
           {/* Left Sidebar - Menu Selection */}
           <div className="h-full overflow-hidden border-r border-border flex-shrink-0 bg-background">
             <MenuSelectionSidebar
@@ -54,7 +54,7 @@ const MenuSelectionPage = () => {
           </div>
 
           {/* Middle Panel - Dine In */}
-          <div className="flex-[4] h-full overflow-hidden border-r border-border">
+          <div className="flex-[4] h-full overflow-hidden border-r border-border ">
             <DineIn />
           </div>
 

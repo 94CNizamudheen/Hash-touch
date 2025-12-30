@@ -27,11 +27,22 @@ export class WebSocketClient {
   connect(): Promise<void> {
     return new Promise((resolve, reject) => {
       try {
+        console.log(`[WebSocketClient] Attempting to connect to: ${this.url}`);
         this.ws = new WebSocket(this.url);
         this.isIntentionallyClosed = false;
 
+        // Add connection timeout (10 seconds)
+        const connectionTimeout = setTimeout(() => {
+          if (this.ws && this.ws.readyState !== WebSocket.OPEN) {
+            console.error("❌ WebSocket connection timeout");
+            this.ws.close();
+            reject(new Error("Connection timeout"));
+          }
+        }, 10000);
+
         this.ws.onopen = () => {
-          console.log("✅ WebSocket connected");
+          clearTimeout(connectionTimeout);
+          console.log("✅ WebSocket connected successfully");
           this.reconnectAttempts = 0;
 
           // Register device
@@ -48,6 +59,7 @@ export class WebSocketClient {
         this.ws.onmessage = (event) => {
           try {
             const message: DeviceMessage = JSON.parse(event.data);
+            console.log("📨 Received message:", message.message_type);
             this.handleMessage(message);
           } catch (error) {
             console.error("❌ Failed to parse message:", error);
@@ -55,12 +67,20 @@ export class WebSocketClient {
         };
 
         this.ws.onerror = (error) => {
+          clearTimeout(connectionTimeout);
           console.error("❌ WebSocket error:", error);
+          console.error("❌ WebSocket URL:", this.url);
+          console.error("❌ WebSocket readyState:", this.ws?.readyState);
           reject(error);
         };
 
-        this.ws.onclose = () => {
-          console.log("🔌 WebSocket disconnected");
+        this.ws.onclose = (event) => {
+          clearTimeout(connectionTimeout);
+          console.log("🔌 WebSocket disconnected", {
+            code: event.code,
+            reason: event.reason,
+            wasClean: event.wasClean
+          });
 
           if (!this.isIntentionallyClosed && this.reconnectAttempts < this.maxReconnectAttempts) {
             setTimeout(() => {
@@ -71,6 +91,7 @@ export class WebSocketClient {
           }
         };
       } catch (error) {
+        console.error("❌ WebSocket connection error:", error);
         reject(error);
       }
     });
