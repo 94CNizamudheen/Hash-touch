@@ -18,6 +18,7 @@ async function post(domain: string, path: string, token: string, body: any) {
     },
     body: JSON.stringify(body),
   });
+  console.log("response of ticket fetch",res)
 
   if (!res.ok) {
     const errorText = await res.text();

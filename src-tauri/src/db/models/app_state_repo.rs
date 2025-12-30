@@ -16,7 +16,9 @@ pub fn get_app_state(conn: &Connection) -> anyhow::Result<AppState> {
                device_role,
                sync_status,
                theme,
-               language
+               language,
+               kds_view_mode,
+               kds_settings
         FROM app_state
         WHERE id = 1
         "#,
@@ -44,6 +46,8 @@ pub fn get_app_state(conn: &Connection) -> anyhow::Result<AppState> {
                 sync_status: row.get(10)?,
                 theme: row.get(11)?,
                 language: row.get(12)?,
+                kds_view_mode: row.get(13)?,
+                kds_settings: row.get(14)?,
             })
         },
     ) {
@@ -52,7 +56,7 @@ pub fn get_app_state(conn: &Connection) -> anyhow::Result<AppState> {
         Err(rusqlite::Error::QueryReturnedNoRows) => {
             // Initialize row if not exists
             conn.execute(
-                "INSERT INTO app_state (id, sync_status) VALUES (1, 'IDLE')",
+                "INSERT INTO app_state (id, sync_status, kds_view_mode, kds_settings) VALUES (1, 'IDLE', 'grid', '{}')",
                 [],
             )?;
 
@@ -70,6 +74,8 @@ pub fn get_app_state(conn: &Connection) -> anyhow::Result<AppState> {
                 sync_status: Some("IDLE".to_string()),
                 theme: Some("light".to_string()),
                 language: Some("en".to_string()),
+                kds_view_mode: Some("grid".to_string()),
+                kds_settings: Some("{}".to_string()),
             })
         }
 
@@ -87,5 +93,28 @@ pub fn update_app_state(
         field
     );
     conn.execute(&sql, params![value])?;
+    Ok(())
+}
+
+/// Clear device-specific data on logout
+/// Resets location, order modes, device role, but keeps tenant/auth info
+pub fn clear_device_data(conn: &Connection) -> anyhow::Result<()> {
+    conn.execute(
+        r#"
+        UPDATE app_state
+        SET selected_location_id = NULL,
+            selected_location_name = NULL,
+            order_mode_ids = NULL,
+            order_mode_names = NULL,
+            selected_order_mode_id = NULL,
+            selected_order_mode_name = NULL,
+            device_role = NULL,
+            kds_view_mode = 'grid',
+            kds_settings = '{}',
+            updated_at = CURRENT_TIMESTAMP
+        WHERE id = 1
+        "#,
+        [],
+    )?;
     Ok(())
 }

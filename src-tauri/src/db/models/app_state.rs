@@ -15,4 +15,6 @@ pub struct AppState {
     pub sync_status: Option<String>,
     pub theme: Option<String>,
     pub language: Option<String>,
+    pub kds_view_mode: Option<String>,
+    pub kds_settings: Option<String>,
 }

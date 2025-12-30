@@ -97,6 +97,10 @@ pub fn run() {
             commands::app_state::set_device_role,
             commands::app_state::set_theme,
             commands::app_state::set_language,
+            commands::app_state::get_kds_settings,
+            commands::app_state::set_kds_settings,
+            commands::app_state::get_kds_view_mode,
+            commands::app_state::set_kds_view_mode,
 
             // Device
             commands::device::get_devices,
@@ -156,6 +160,14 @@ pub fn run() {
             commands::ticket::delete_ticket,
             commands::ticket::get_sync_stats,
             commands::ticket::clear_all_tickets,
+
+            // KDS Tickets
+            commands::kds_ticket::save_kds_ticket,
+            commands::kds_ticket::get_all_kds_tickets,
+            commands::kds_ticket::get_active_kds_tickets,
+            commands::kds_ticket::get_kds_tickets_by_status,
+            commands::kds_ticket::update_kds_ticket_status,
+            commands::kds_ticket::delete_kds_ticket,
 
             // Printers
             commands::printer::get_printers,

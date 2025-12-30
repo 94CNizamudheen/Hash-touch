@@ -21,6 +21,7 @@ import { useLogoutGuard, type LogoutBlocks } from "@/ui/hooks/useLogoutGuard";
 import LogoutBlockerModal from "../modal/LogoutBlockerModal";
 import SplashScreen from "@/ui/components/common/SplashScreen";
 import { useLogout } from "@/ui/context/LogoutContext";
+import { deviceService } from "@/services/device/device.service";
 
 
 
@@ -153,6 +154,9 @@ const MenuSelectionSidebar = ({
       await ticketLocal.clearAll();
       await appStateApi.clear();
       await clearShift();
+
+      // Clear device-specific data (KDS tickets, settings, cart, etc.)
+      await deviceService.clearDeviceData();
 
       // Small delay to show splash screen
       await new Promise(resolve => setTimeout(resolve, 300));

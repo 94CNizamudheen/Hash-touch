@@ -69,4 +69,8 @@ export const LocalEventTypes = {
   RECEIPT_PRINTED: "receipt:printed",
   DEVICE_CONNECTED: "device:connected",
   DEVICE_DISCONNECTED: "device:disconnected",
+  // KDS Events
+  KDS_TICKET_REMOVED: "kds:ticket_removed",
+  KDS_STATUS_CHANGED: "kds:status_changed",
+  KDS_TICKET_UPDATED: "kds:ticket_updated",
 } as const;

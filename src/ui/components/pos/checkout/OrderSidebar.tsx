@@ -50,6 +50,7 @@ export default function OrderSidebar({
         </div>
 
 
+
         <div className="flex-1 overflow-y-auto px-3 py-3 space-y-2 items-center ">
           {items.length > 0 ? (
             items.map((item) => (
@@ -70,7 +71,7 @@ export default function OrderSidebar({
           )}
         </div>
 
-        <div className="shrink-0 bg-background border-t border-border safe-area">
+        <div className="shrink-0 bg-background border-t border-border safe-bottom">
           <div className="px-4 py-3 space-y-1 text-xs">
             <div className="flex justify-between">
               <span>{t("subtotal")}</span>

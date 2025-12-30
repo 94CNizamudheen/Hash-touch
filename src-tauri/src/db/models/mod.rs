@@ -21,5 +21,7 @@ pub mod charges;
 pub mod charges_repo;
 pub mod ticket;
 pub mod ticket_repo;
+pub mod kds_ticket;
+pub mod kds_ticket_repo;
 pub mod printer;
 pub mod printer_repo;

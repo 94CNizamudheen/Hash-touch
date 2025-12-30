@@ -1,11 +1,10 @@
 import { Routes, Route, Navigate } from "react-router-dom";
-
-const KdsHome = () => <div>KDS Screen</div>;
+import KDSTicketsLayout from "@/ui/components/kds/layouts/KDSTicketsLayout";
 
 export default function KdsRoutes() {
   return (
     <Routes>
-      <Route index element={<KdsHome />} />
+      <Route index element={<KDSTicketsLayout />} />
       <Route path="*" element={<Navigate to="" replace />} />
     </Routes>
   );

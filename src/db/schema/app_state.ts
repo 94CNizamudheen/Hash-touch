@@ -27,6 +27,11 @@ export const appStateSqlite = sqliteTable("app_state", {
 
   theme: text("theme").default("light"),
   language: text("language").default("en"),
+
+  // KDS Settings
+  kdsViewMode: text("kds_view_mode").default("grid"),
+  kdsSettings: text("kds_settings").default("{}"),
+
   createdAt: integer("created_at", { mode: "timestamp" })
     .default(sql`CURRENT_TIMESTAMP`),
 

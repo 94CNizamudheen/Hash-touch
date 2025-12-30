@@ -109,6 +109,36 @@ pub fn set_language(app: AppHandle, language: String) -> Result<(), String> {
 }
 
 #[tauri::command]
+pub fn get_kds_settings(app: AppHandle) -> Result<String, String> {
+    let conn = migrate::connection(&app);
+    let state = app_state_repo::get_app_state(&conn).map_err(|e| e.to_string())?;
+    Ok(state.kds_settings.unwrap_or_else(|| "{}".to_string()))
+}
+
+#[tauri::command]
+pub fn set_kds_settings(app: AppHandle, settings: String) -> Result<(), String> {
+    let conn = migrate::connection(&app);
+    app_state_repo::update_app_state(&conn, "kds_settings", &settings)
+        .map_err(|e| e.to_string())?;
+    Ok(())
+}
+
+#[tauri::command]
+pub fn get_kds_view_mode(app: AppHandle) -> Result<String, String> {
+    let conn = migrate::connection(&app);
+    let state = app_state_repo::get_app_state(&conn).map_err(|e| e.to_string())?;
+    Ok(state.kds_view_mode.unwrap_or_else(|| "grid".to_string()))
+}
+
+#[tauri::command]
+pub fn set_kds_view_mode(app: AppHandle, mode: String) -> Result<(), String> {
+    let conn = migrate::connection(&app);
+    app_state_repo::update_app_state(&conn, "kds_view_mode", &mode)
+        .map_err(|e| e.to_string())?;
+    Ok(())
+}
+
+#[tauri::command]
 pub fn clear_app_state(app: AppHandle) -> Result<(), String> {
     let conn = migrate::connection(&app);
 
@@ -125,7 +155,9 @@ pub fn clear_app_state(app: AppHandle) -> Result<(), String> {
           selected_order_mode_id = NULL,
           selected_order_mode_name = NULL,
           device_role = NULL,
-          sync_status = 'IDLE'
+          sync_status = 'IDLE',
+          kds_view_mode = 'grid',
+          kds_settings = '{}'
         WHERE id = 1
         "#,
         [],

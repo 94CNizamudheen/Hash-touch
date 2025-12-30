@@ -11,7 +11,7 @@ import { useTheme } from "@/ui/context/ThemeContext";
 import { useTranslation } from "react-i18next";
 import SelectFilter from "../../../common/SelectFilter";
 import { MENU_NAVIGATION } from "@/ui/constants/menu";
-// import { deviceService }
+import { deviceService } from "@/services/device/device.service";
 import { LogOut, RotateCcw } from "lucide-react";
 // import { useDispatch } from "react-redux";
 // import { clearUser } from "@/store/slices/authSlice";
@@ -66,12 +66,17 @@ const ModalSidebar = ({
     }
   };
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
     if (confirm("Are you sure you want to logout ")) {
-      localStorage.removeItem("user_session");
-      localStorage.removeItem('user');
-      // dispatch(clearUser());
-      window.location.href = "/select-terminal";
+      try {
+        // Clear device-specific data (KDS tickets, settings, cart, etc.)
+        await deviceService.clearDeviceData();
+
+        // Navigate to terminal selection
+        window.location.href = "/select-terminal";
+      } catch (error) {
+        console.error("Logout failed:", error);
+      }
     }
   }
 

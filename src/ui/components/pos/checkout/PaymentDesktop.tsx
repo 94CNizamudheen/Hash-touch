@@ -9,6 +9,7 @@ import { buildTicketRequest } from "@/ui/utils/ticketBuilder";
 import { ticketService } from "@/services/data/ticket.service";
 import { printerService, type ReceiptData } from "@/services/local/printer.local.service";
 import { websocketService } from "@services/websocket/websocket.service";
+import { kdsTicketLocal } from "@/services/local/kds-ticket.local.service";
 import LeftActionRail from "./LeftActionRail";
 import OrderSidebar from "./OrderSidebar";
 import CenterPaymentContent from "./CenterPaymentContent";
@@ -119,6 +120,32 @@ export default function PaymentDesktop() {
         // Don't fail the entire transaction if broadcast fails
       }
 
+      // Save to KDS tickets table for local display
+      try {
+        await kdsTicketLocal.saveTicket({
+          id: `kds-${Date.now()}`,
+          ticketNumber: ticketRequest.ticket.ticket_number.toString(),
+          orderId: result.ticketId || `offline-${Date.now()}`,
+          locationId: appState.selected_location_id,
+          orderModeName: appState.selected_order_mode_name,
+          status: 'PENDING',
+          items: JSON.stringify(items.map(item => ({
+            name: item.name,
+            quantity: item.quantity,
+            price: item.price,
+            modifiers: item.modifiers || [],
+          }))),
+          totalAmount: Math.round(total * 100),
+          tokenNumber: ticketRequest.ticket.queue_number,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        });
+        console.log("💾 Saved ticket to KDS table");
+      } catch (error) {
+        console.error("❌ Failed to save to KDS table:", error);
+        // Don't fail the entire transaction if KDS save fails
+      }
+
       setShowDrawer(true);
     } catch (error) {
       console.error("❌ Failed to create ticket:", error);
@@ -181,7 +208,7 @@ export default function PaymentDesktop() {
         onBackToMenu={() => navigate("/pos")}
       />
 
-      <div className="flex-1 p-6 overflow-hidden safe-area">
+      <div className="flex-1 p-6 overflow-hidden ">
         <CenterPaymentContent
           total={total}
           balance={balance}
