@@ -1,4 +1,4 @@
-import { Minus, Plus } from "lucide-react";
+import { Minus, Plus, Trash2 } from "lucide-react";
 
 interface CardDineInProps {
   menu: string;
@@ -15,14 +15,23 @@ const CardDineIn = ({
   price,
   onIncrement,
   onDecrement,
+  onRemove,
 }: CardDineInProps) => {
   const totalPrice = quantity * price;
   
   return (
-    <div className="bg-navigation rounded-lg p-4">
+    <div className="bg-secondary rounded-lg p-4">
       <div className="flex justify-between items-start mb-3">
         <h3 className=" font-semibold">{menu}</h3>
-        <span className="font-semibold">${totalPrice.toFixed(2)}</span>
+        <div className="flex items-center gap-2">
+          <span className="font-semibold">${totalPrice.toFixed(2)}</span>
+          <button
+            onClick={onRemove}
+            className="w-6 h-6 rounded bg-destructive hover:bg-destructive/90 text-destructive-foreground flex items-center justify-center"
+          >
+            <Trash2 size={14} />
+          </button>
+        </div>
       </div>
       
 

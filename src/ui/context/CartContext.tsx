@@ -21,6 +21,7 @@ interface CartContextType {
   decrement: (id: string) => void;
   remove: (id: string) => void;
   clear: () => Promise<void>;
+  clearCart: () => Promise<void>;
 }
 
 const CartContext = createContext<CartContextType | null>(null);
@@ -142,6 +143,7 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
         decrement,
         remove,
         clear,
+        clearCart: clear,
       }}
     >
       {children}

@@ -3,7 +3,7 @@ import { type FormEvent, useEffect, useRef, useState } from "react";
 import Keyboard from "./keyboard";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useMediaQuery } from "usehooks-ts";
-import { Search } from "lucide-react";
+import { Search, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Input } from "@/ui/shadcn/components/ui/input";
 
@@ -35,6 +35,13 @@ const InputFilter = ({
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (onChange) onChange(e);
     else setInternalValue(e.target.value);
+  };
+
+  const handleClear = () => {
+    const fakeEvent = {
+      target: { value: "" },
+    } as React.ChangeEvent<HTMLInputElement>;
+    handleChange(fakeEvent);
   };
 
   const onSubmit = (e: FormEvent<HTMLFormElement>) => {
@@ -80,10 +87,19 @@ const InputFilter = ({
         className="bg-transparent p-0 border-none shadow-none outline-none focus:ring-0 focus:outline-none focus-visible:ring-0 text-accent"
         onFocus={() => setShowKeyboard(true)}
       />
+      {value && (
+        <button
+          type="button"
+          onClick={handleClear}
+          className="flex-shrink-0 p-1 hover:bg-accent/10 rounded-full transition-colors"
+        >
+          <X className="w-5 h-5 stroke-body-foreground" />
+        </button>
+      )}
       {matches && showKeyboard && (
         <div
           ref={keyboardRef}
-          className="fixed bottom-0 left-0 w-full min-h-[300px] px-44 py-10 bg-navigation-foreground z-50"
+          className="fixed bottom-0 left-0 w-full min-h-[300px] px-44 py-10 bg-background z-50"
         >
           <Keyboard
             onChange={(val) => {

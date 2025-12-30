@@ -6,6 +6,7 @@ import { productTagLocal } from "../local/product-tag.local.service";
 import { productGroupLocal } from "../local/product-group.local.service";
 import { productGroupCategoryLocal } from "../local/product-group-category.local.service";
 import { chargesLocal } from "../local/charges.local.service";
+import { paymentMethodLocal } from "../local/payment-method.local.service";
 
 export async function initialSync(
   domain: string,
@@ -274,6 +275,34 @@ export async function initialSync(
 
   await chargesLocal.saveMappings(dbChargeMappings);
   console.log(`✅ Charge mappings synced: ${dbChargeMappings.length}`);
+
+  // Sync payment methods
+  const paymentMethodsResponse = await commonDataService.getPaymentTypes(domain, token, {
+    channel: context.channel,
+    location_id: context.locationId,
+    brand_id: context.brandId,
+    order_mode_id: context.orderModeIds ?? [],
+  });
+
+  console.log("📦 Payment methods received:", paymentMethodsResponse.length);
+
+  const dbPaymentMethods = paymentMethodsResponse.map((pm: any) => ({
+    id: pm.id,
+    code: pm.code ?? null,
+    name: pm.name,
+    processor: pm.processor ?? null,
+    active: pm.active ? 1 : 0,
+    sort_order: pm.sort_order ?? 0,
+    created_at: pm.created_at ?? null,
+    updated_at: pm.updated_at ?? null,
+    deleted_at: pm.deleted_at ?? null,
+    created_by: pm.created_by ?? null,
+    updated_by: pm.updated_by ?? null,
+    deleted_by: pm.deleted_by ?? null,
+  }));
+
+  await paymentMethodLocal.savePaymentMethods(dbPaymentMethods);
+  console.log(`✅ Payment methods synced: ${dbPaymentMethods.length}`);
 
   console.log(" Initial sync completed successfully (from combinations)");
 }

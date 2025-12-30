@@ -5,6 +5,7 @@ import DrawerOpenedModal from "../DrowerOpenedModal";
 import { useCart } from "@/ui/context/CartContext";
 import { useCharges } from "@/ui/hooks/useCharges";
 import { useAppState } from "@/ui/hooks/useAppState";
+import { usePaymentMethods } from "@/ui/hooks/usePaymentMethods";
 import { buildTicketRequest } from "@/ui/utils/ticketBuilder";
 import { ticketService } from "@/services/data/ticket.service";
 import { printerService, type ReceiptData } from "@/services/local/printer.local.service";
@@ -20,22 +21,31 @@ export default function PaymentDesktop() {
   const navigate = useNavigate();
   const { items, clear, isHydrated } = useCart();
   const { state: appState } = useAppState();
+  const { paymentMethods } = usePaymentMethods();
 
   const subtotal = items.reduce((s, i) => s + i.price * i.quantity, 0);
   const { charges, totalCharges } = useCharges(items, subtotal);
   const total = subtotal + totalCharges;
 
   const [inputValue, setInputValue] = useState(() => total.toFixed(2));
-  const [selectedMethod, setSelectedMethod] = useState("Cash");
+  const [selectedMethod, setSelectedMethod] = useState("");
   const [showDrawer, setShowDrawer] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
   const [loading, setLoading] = useState(false);
   const [final, setFinal] = useState({ total: 0, balance: 0 });
+  const [isPaymentReady, setIsPaymentReady] = useState(false);
 
   // Update inputValue when total changes
   useEffect(() => {
     setInputValue(total.toFixed(2));
   }, [total]);
+
+  // Set default payment method when payment methods are loaded
+  useEffect(() => {
+    if (paymentMethods.length > 0 && !selectedMethod) {
+      setSelectedMethod(paymentMethods[0].name);
+    }
+  }, [paymentMethods, selectedMethod]);
 
   if (!isHydrated) return null;
 
@@ -217,6 +227,7 @@ export default function PaymentDesktop() {
           onPay={onPay}
           onQuick={(n) => setInputValue(n.toFixed(2))}
           onKey={onKey}
+          onPaymentReady={() => setIsPaymentReady(true)}
         />
       </div>
 
@@ -226,6 +237,8 @@ export default function PaymentDesktop() {
         onClose={() => {}}
         onMethodSelect={setSelectedMethod}
         onCancel={() => navigate("/pos")}
+        isPaymentReady={isPaymentReady}
+        onPay={onPay}
       />
 
       {showDrawer && (

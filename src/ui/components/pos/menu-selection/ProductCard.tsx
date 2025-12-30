@@ -7,31 +7,65 @@ interface ProductProps {
   onClick?: () => void
 }
 
-export default function ProductCard({ name, price, image, onClick }: ProductProps) {
-  const hasImage = image && image !== ""
+export default function ProductCard({
+  name,
+  price,
+  image,
+  onClick,
+}: ProductProps) {
+  const hasImage = Boolean(image)
 
   return (
     <div
       onClick={onClick}
-      className="group relative flex flex-col cursor-pointer overflow-hidden rounded-md border border-gray-200 bg-white shadow-sm transition-all hover:shadow-md active:scale-[0.95] min-h-[110px]"
+
     >
-      {hasImage && (
-        <div className="aspect-[3] w-full overflow-hidden bg-gray-50 border-b border-gray-100">
-          <img
-            src={image }
-            alt={name}
-            className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
-            loading="lazy"
-          />
-        </div>
-      )}
+      <div className="rounded-xl p-0 pb-2 bg-secondary border border-border shadow-sm cursor-pointer flex flex-col relative hover:shadow-md transition-shadow h-full">
+        
+        {/* ================= IMAGE MODE (image-1) ================= */}
+        {hasImage && (
+          <>
+            <img
+              src={image}
+              alt="product"
+              loading="lazy"
+              className="w-full max-h-[100px] object-cover rounded-t-xl"
+            />
 
-      <div className="flex flex-1 flex-col p-2">
-        <p className="text-[13px] font-medium leading-tight text-gray-800 line-clamp-2 mb-0.5">{name}</p>
+            <div className="px-3 w-full flex flex-col h-full py-2">
+              <p
+                className="font-bold line-clamp-2 flex-1 text-sm text-start"
+                style={{ color: "rgb(17, 24, 39)" }}
+              >
+                {name}
+              </p>
 
-        <div className="mt-auto flex justify-end">
-          <span className="text-[14px] font-bold text-[#1e6efd]">{price.toFixed(2)}</span>
-        </div>
+              <div className="w-full flex justify-end pt-2">
+                <p className="font-bold text-sm text-primary">
+                  {price.toFixed(2)}
+                </p>
+              </div>
+            </div>
+          </>
+        )}
+
+        {/* ================= NO IMAGE MODE (image-2) ================= */}
+        {!hasImage && (
+          <div className="px-3 w-full flex flex-col h-full py-2 justify-center">
+            <p
+              className="font-bold line-clamp-2 flex-1 text-sm text-start"
+              style={{ color: "rgb(17, 24, 39)" }}
+            >
+              {name}
+            </p>
+
+            <div className="w-full flex justify-end pt-2">
+              <p className="font-bold text-sm text-primary">
+                {price.toFixed(2)}
+              </p>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   )

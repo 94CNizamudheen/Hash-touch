@@ -232,12 +232,12 @@ const MenuSelectionSidebar = ({
 
       <div
         className={cn(
-          "group flex flex-col justify-between h-full transition-all duration-300 safe-area",
+          "group flex flex-col justify-between h-full transition-all  duration-300  safe-area",
           "w-16 lg:w-36 "
         )}
       >
         {/* ===== Top Navigation ===== */}
-        <div className="flex flex-col gap-1">
+        <div className="flex flex-col gap-1 mt-2 mx-1">
           {MENUSELECTIONNAVIGATION.map(
             (item) =>
               item.position === "Top" && (
@@ -263,15 +263,15 @@ const MenuSelectionSidebar = ({
                     if (item.link) router(item.link);
                   }}
                   className={cn(
-                    "flex items-center gap-2 p-2 xl:p-3 rounded-lg cursor-pointer hover:bg-sidebar-hover"
+                    "bg-secondary  flex items-center gap-2 p-2 xl:p-3 rounded-lg cursor-pointer hover:bg-sidebar-hover"
                   )}
                 >
-                  <div className="relative">
+                  <div className="relative flex-shrink-0">
                     {item.title === "Dark Mode" ? (
                       theme === "dark" ? (
-                        <Sun className="lg:w-5 lg:h-5 w-6 h-6" strokeWidth={2.5} />
+                        <Sun className="lg:w-5 lg:h-4 w-4 h-4" strokeWidth={2.5} />
                       ) : (
-                        <Moon className="lg:w-5 lg:h-5 w-6 h-6" strokeWidth={2.5} />
+                        <Moon className="lg:w-5 lg:h-4 w-4 h-4" strokeWidth={2.5} />
                       )
                     ) : (
                       item.icon
@@ -285,7 +285,7 @@ const MenuSelectionSidebar = ({
 
                   <p
                     className={cn(
-                      "text-navigation font-medium whitespace-nowrap transition-all duration-200",
+                      "text-navigation font-normal text-sm truncate transition-all duration-200",
                       "opacity-0 w-0 overflow-hidden",
                       "group-hover:opacity-100 group-hover:w-auto",
                       "lg:opacity-100 lg:w-auto"
@@ -315,7 +315,7 @@ const MenuSelectionSidebar = ({
           </div>
 
         ) : (
-          <div className="flex flex-col gap-3 mt-auto">
+          <div className="flex flex-col gap-3  mb-2 mx-1">
             {MENUSELECTIONNAVIGATION.map(
               (item) =>
                 item.position === "Bottom" && (
@@ -326,15 +326,24 @@ const MenuSelectionSidebar = ({
                       if (item.action) item.action(openModal);
                     }}
                     className={cn(
-                      "flex items-center gap-2 p-2 xl:p-3 rounded-lg cursor-pointer hover:bg-sidebar-hover",
-                      "justify-center lg:justify-start"
+                      "flex items-center gap-2  p-2 rounded-lg cursor-pointer",
+                      "justify-center lg:justify-start",
+                      item.title === "Location"
+                        ? "bg-primary text-primary-foreground hover:bg-primary/90"
+                        : "bg-secondary hover:bg-sidebar-hover"
                     )}
-                    title={t(item.title)}
+                    title={
+                      item.title === "Location"
+                        ? selectedLocationName
+                        : item.title === "Dine In"
+                          ? selectedOrderModeName || t("Select Mode")
+                          : t(item.title)
+                    }
                   >
-                    {item.icon}
+                    <div className="flex-shrink-0">{item.icon}</div>
                     <p
                       className={cn(
-                        "text-body font-medium whitespace-nowrap transition-all duration-200",
+                        "text-body font-medium text-sm truncate transition-all duration-200 max-w-[120px]",
                         "opacity-0 w-0 overflow-hidden",
                         "group-hover:opacity-100 group-hover:w-auto",
                         "lg:opacity-100 lg:w-auto",

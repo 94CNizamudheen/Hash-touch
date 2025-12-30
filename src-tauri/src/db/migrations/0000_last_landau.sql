@@ -13,6 +13,8 @@ CREATE TABLE `app_state` (
 	`sync_status` text DEFAULT 'IDLE',
 	`theme` text DEFAULT 'light',
 	`language` text DEFAULT 'en',
+	`kds_view_mode` text DEFAULT 'grid',
+	`kds_settings` text DEFAULT '{}',
 	`created_at` integer DEFAULT CURRENT_TIMESTAMP,
 	`updated_at` integer DEFAULT CURRENT_TIMESTAMP
 );
@@ -38,6 +40,40 @@ CREATE TABLE `categories` (
 	`media` text
 );
 --> statement-breakpoint
+CREATE TABLE `charge_mappings` (
+	`id` text PRIMARY KEY NOT NULL,
+	`charge_id` text NOT NULL,
+	`category_id` text,
+	`product_id` text,
+	`product_group_id` text,
+	`active` integer DEFAULT 1,
+	`sort_order` integer DEFAULT 0,
+	`created_at` text,
+	`updated_at` text,
+	`deleted_at` text,
+	`created_by` text,
+	`updated_by` text,
+	`deleted_by` text
+);
+--> statement-breakpoint
+CREATE TABLE `charges` (
+	`id` text PRIMARY KEY NOT NULL,
+	`code` text,
+	`name` text NOT NULL,
+	`percentage` text,
+	`is_tax` integer DEFAULT 0,
+	`transaction_type_id` text,
+	`parent_charge_id` text,
+	`active` integer DEFAULT 1,
+	`sort_order` integer DEFAULT 0,
+	`created_at` text,
+	`updated_at` text,
+	`deleted_at` text,
+	`created_by` text,
+	`updated_by` text,
+	`deleted_by` text
+);
+--> statement-breakpoint
 CREATE TABLE `device_profiles` (
 	`id` text PRIMARY KEY NOT NULL,
 	`name` text NOT NULL,
@@ -49,11 +85,36 @@ CREATE TABLE `device_profiles` (
 	`last_sync_at` integer
 );
 --> statement-breakpoint
+CREATE TABLE `kds_tickets` (
+	`id` text PRIMARY KEY NOT NULL,
+	`ticket_number` text NOT NULL,
+	`order_id` text,
+	`location_id` text,
+	`order_mode_name` text,
+	`status` text DEFAULT 'PENDING' NOT NULL,
+	`items` text NOT NULL,
+	`total_amount` integer,
+	`token_number` integer,
+	`created_at` text DEFAULT CURRENT_TIMESTAMP NOT NULL,
+	`updated_at` text DEFAULT CURRENT_TIMESTAMP NOT NULL
+);
+--> statement-breakpoint
 CREATE TABLE `location` (
 	`server_id` text PRIMARY KEY NOT NULL,
 	`name` text NOT NULL,
 	`active` integer DEFAULT 1,
 	`selected` integer DEFAULT 0
+);
+--> statement-breakpoint
+CREATE TABLE `printers` (
+	`id` text PRIMARY KEY NOT NULL,
+	`name` text NOT NULL,
+	`printer_type` text NOT NULL,
+	`ip_address` text,
+	`port` integer,
+	`is_active` integer DEFAULT 0 NOT NULL,
+	`created_at` text,
+	`updated_at` text
 );
 --> statement-breakpoint
 CREATE TABLE `product_group_categories` (
@@ -128,6 +189,21 @@ CREATE TABLE `products` (
 	`deleted_at` text,
 	`media` text,
 	`overrides` text
+);
+--> statement-breakpoint
+CREATE TABLE `tickets` (
+	`id` text PRIMARY KEY NOT NULL,
+	`ticket_data` text NOT NULL,
+	`sync_status` text DEFAULT 'PENDING' NOT NULL,
+	`sync_error` text,
+	`sync_attempts` integer DEFAULT 0,
+	`location_id` text,
+	`order_mode_name` text,
+	`ticket_amount` integer,
+	`items_count` integer,
+	`created_at` text,
+	`updated_at` text,
+	`synced_at` text
 );
 --> statement-breakpoint
 CREATE TABLE `work_shift_draft` (

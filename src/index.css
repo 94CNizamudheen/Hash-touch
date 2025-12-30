@@ -11,7 +11,7 @@
 
 @layer base {
   :root {
-    --background: #ffffff;
+    --background: hsl(0, 5%, 96%);
     --foreground: #0a0a0b;
 
     --muted: #f5f6f8;
@@ -30,7 +30,7 @@
     --primary-foreground: #fafafa;
     --primary-hover: #4986e1;
 
-    --secondary: #d9d8d8;
+    --secondary: #ffffff;
     --secondary-foreground: #1a1a1a;
 
     --accent: #272727;

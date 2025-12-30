@@ -11,7 +11,7 @@ import SplashScreen from "@/ui/components/common/SplashScreen";
 
 const MenuSelectionPage = () => {
   const { addItem } = useCart();
-  const [tempStyle, setTempStyle] = useState(false);
+  const [tempStyle, setTempStyle] = useState(true);
   const { shift, isHydrated } = useWorkShift();
   const [showSuccess, setShowSuccess] = useState(false);
   const { isLoggingOut } = useLogout();

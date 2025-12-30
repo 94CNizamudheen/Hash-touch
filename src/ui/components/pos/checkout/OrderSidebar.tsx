@@ -74,7 +74,7 @@ export default function OrderSidebar({
         <div className="shrink-0 bg-background border-t border-border safe-bottom">
           <div className="px-4 py-3 space-y-1 text-xs">
             <div className="flex justify-between">
-              <span>{t("subtotal")}</span>
+              <span>{t("Sub Total")}</span>
               <span>${subtotal.toFixed(2)}</span>
             </div>
 
@@ -91,21 +91,21 @@ export default function OrderSidebar({
             {/* Display total tax if there are any tax charges */}
             {totalTax > 0 && (
               <div className="flex justify-between font-medium">
-                <span>{t("total_tax")}</span>
+                <span>{t("Total Tax")}</span>
                 <span>${totalTax.toFixed(2)}</span>
               </div>
             )}
 
             <div className="flex justify-between font-semibold text-sm pt-1 border-t border-border">
-              <span>{t("grand_total")}</span>
+              <span>{t("Grand Total")}</span>
               <span>${grandTotal.toFixed(2)}</span>
             </div>
             <div className="flex justify-between text-xs">
-              <span>{t("payment_total")}</span>
+              <span>{t("Payment Total")}</span>
               <span>${paymentTotal.toFixed(2)}</span>
             </div>
             <div className="flex justify-between font-bold text-primary text-sm pt-1">
-              <span>{t("balance")}</span>
+              <span>{t("Balance")}</span>
               <span>${balance.toFixed(2)}</span>
             </div>
           </div>

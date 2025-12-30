@@ -101,6 +101,7 @@ pub fn run() {
             commands::app_state::set_kds_settings,
             commands::app_state::get_kds_view_mode,
             commands::app_state::set_kds_view_mode,
+            // commands::app_state::clear_device_data,
 
             // Device
             commands::device::get_devices,
@@ -151,6 +152,11 @@ pub fn run() {
             commands::charges::get_charges,
             commands::charges::get_charge_mappings,
             commands::charges::clear_charges_cache,
+
+            // Payment Methods
+            commands::payment_method::save_payment_methods,
+            commands::payment_method::get_payment_methods,
+            commands::payment_method::clear_payment_methods_cache,
 
             // Tickets
             commands::ticket::save_ticket,

@@ -104,7 +104,6 @@ const SplashScreen = ({
                   }`} />
                   {connectionStatus === "connecting" && (
                     <div className="absolute inset-0 flex items-center justify-center">
-                      <div className="w-20 h-20 border-4 border-primary/30 border-t-primary rounded-full animate-spin"></div>
                     </div>
                   )}
                 </div>

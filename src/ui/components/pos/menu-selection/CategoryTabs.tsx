@@ -1,6 +1,7 @@
 import { Tabs, TabsList, TabsTrigger } from "@/ui/shadcn/components/ui/tabs";
 import { useProducts } from "@/ui/context/ProductContext";
 import { useMemo } from "react";
+import templateImage from '@assets/template.png'
 
 interface CategoryTabsProps {
   direction?: "horizontal" | "vertical";
@@ -10,7 +11,7 @@ function getCategoryImage(media?: string) {
   try {
     if (!media) return "";
     const arr = JSON.parse(media);
-    return arr?.[0]?.filepath || "";
+    return arr?.[0]?.filepath || templateImage;
   } catch {
     return "";
   }
@@ -53,7 +54,7 @@ export default function CategoryTabs({
         // Vertical layout
         <TabsList
           style={{ WebkitOverflowScrolling: "touch" }}
-          className="flex flex-col gap-3 p-3 bg-background shadow-sm h-full overflow-y-auto overflow-x-hidden overscroll-contain"
+          className="gap-2 grid grid-cols-12 auto-rows-max h-full  overflow-y-auto no-scrollbar"
         >
           {categoriesList.map((cat) => {
             const isActive = selectedCategory === cat.value;
@@ -62,17 +63,17 @@ export default function CategoryTabs({
               <TabsTrigger
                 key={cat.value}
                 value={cat.value}
-                className={`w-full flex items-center gap-3 px-4 py-2 border transition-all duration-200 cursor-pointer
+                className={`rounded-xl px-8 cursor-pointer flex flex-row gap-2 justify-between border transition-colors col-span-12
                   ${
                     isActive
-                      ? "bg-primary text-primary-foreground border-border shadow-md"
-                      : "bg-navigation text-foreground border-border hover:bg-primary-hover hover:text-background"
+                      ? "bg-primary border-primary text-primary-foreground"
+                      : "bg-secondary border-border text-foreground hover:bg-primary-hover hover:text-background"
                   }
                 `}
               >
                 {/* Image */}
                 {cat.image ? (
-                  <div className="w-10 h-10 rounded-lg overflow-hidden flex-shrink-0">
+                  <div className="w-10 h-10 rounded-lg overflow-hidden ">
                     <img
                       src={cat.image}
                       alt={cat.label}
@@ -81,7 +82,7 @@ export default function CategoryTabs({
                   </div>
                 ) : (
                   <div
-                    className={`w-10 h-10 flex items-center justify-center text-lg font-bold rounded-lg flex-shrink-0
+                    className={`w-10 h-10 flex items-center justify-center text-lg font-bold rounded-lg 
                       ${
                         isActive
                           ? "bg-secondary text-secondary-foreground"
@@ -102,7 +103,7 @@ export default function CategoryTabs({
         </TabsList>
       ) : (
         // Horizontal layout - using the same pattern as ProductGroupTabs
-        <div className="w-full h-[5.5rem] overflow-x-auto no-scrollbar bg-background shadow-sm">
+        <div className="w-full h-[4.5rem] overflow-x-auto no-scrollbar bg-background shadow-sm">
           <div className="flex gap-3 p-3 min-w-max h-full">
             {categoriesList.map((cat) => {
               const isActive = selectedCategory === cat.value;
@@ -111,11 +112,11 @@ export default function CategoryTabs({
                 <button
                   key={cat.value}
                   onClick={() => setSelectedCategory(cat.value)}
-                  className={`flex items-center gap-3 px-4 py-2 border rounded transition-all duration-200 cursor-pointer whitespace-nowrap
+                  className={`flex items-center gap-3 px-8 py-2 border rounded transition-all duration-200 cursor-pointer whitespace-nowrap
                     ${
                       isActive
                         ? "bg-primary text-primary-foreground border-border shadow-md"
-                        : "bg-navigation text-foreground border-border hover:bg-primary-hover hover:text-background"
+                        : "bg-gray-50 text-foreground border-border hover:bg-primary-hover hover:text-background"
                     }
                   `}
                 >

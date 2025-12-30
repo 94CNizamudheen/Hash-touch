@@ -96,25 +96,24 @@ pub fn update_app_state(
     Ok(())
 }
 
-/// Clear device-specific data on logout
-/// Resets location, order modes, device role, but keeps tenant/auth info
-pub fn clear_device_data(conn: &Connection) -> anyhow::Result<()> {
-    conn.execute(
-        r#"
-        UPDATE app_state
-        SET selected_location_id = NULL,
-            selected_location_name = NULL,
-            order_mode_ids = NULL,
-            order_mode_names = NULL,
-            selected_order_mode_id = NULL,
-            selected_order_mode_name = NULL,
-            device_role = NULL,
-            kds_view_mode = 'grid',
-            kds_settings = '{}',
-            updated_at = CURRENT_TIMESTAMP
-        WHERE id = 1
-        "#,
-        [],
-    )?;
-    Ok(())
-}
+
+// pub fn clear_device_data(conn: &Connection) -> anyhow::Result<()> {
+//     conn.execute(
+//         r#"
+//         UPDATE app_state
+//         SET selected_location_id = NULL,
+//             selected_location_name = NULL,
+//             order_mode_ids = NULL,
+//             order_mode_names = NULL,
+//             selected_order_mode_id = NULL,
+//             selected_order_mode_name = NULL,
+//             device_role = NULL,
+//             kds_view_mode = 'grid',
+//             kds_settings = '{}',
+//             updated_at = CURRENT_TIMESTAMP
+//         WHERE id = 1
+//         "#,
+//         [],
+//     )?;
+//     Ok(())
+// }

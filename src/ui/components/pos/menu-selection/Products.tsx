@@ -62,9 +62,7 @@ export default function Products({
       {tempStyle ? (
         <div className="flex flex-1 overflow-hidden">
           <aside className="">
-            <div className="">
               <CategoryTabs direction="vertical" />
-            </div>
           </aside>
 
           <div
@@ -98,10 +96,7 @@ export default function Products({
 
         <>
 
-          <div className=" w-full overflow-auto bg-background">
             <CategoryTabs direction="horizontal" />
-          </div>
-
           <div
             ref={productGridRef}
             className={cn(

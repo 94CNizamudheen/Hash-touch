@@ -9,6 +9,7 @@ interface Props {
   onPay: () => void;
   onQuick: (n: number) => void;
   onKey: (k: string) => void;
+  onPaymentReady: () => void;
 }
 
 export default function CenterPaymentContent({
@@ -16,11 +17,22 @@ export default function CenterPaymentContent({
   balance,
   inputValue,
   setInputValue,
-  onPay,
   onQuick,
   onKey,
+  onPaymentReady,
 }: Props) {
   const { t } = useTranslation();
+
+  // Generate dynamic quick amounts based on total
+  const generateQuickAmounts = (total: number): number[] => {
+    const roundedTotal = Math.ceil(total);
+
+    // Round up to nearest 5, then add increments
+    const base = Math.ceil(roundedTotal / 5) * 5;
+    return [base, base + 5, base + 10];
+  };
+
+  const quickAmounts = generateQuickAmounts(total);
 
   return (
     <div className="flex flex-col h-full px-4   ">
@@ -29,7 +41,7 @@ export default function CenterPaymentContent({
         <div className="flex justify-between items-baseline p-3 border-b pb-1">
           <span className="text-lg text-muted-foreground">{t("Total")}:</span>
           <span className="text-3xl font-bold">${total.toFixed(2)}</span>
-        </div>
+        </div> 
         <div className="flex justify-between items-baseline p-3">
           <span className="text-lg text-muted-foreground">{t("Balance")}:</span>
           <span className="text-3xl font-bold">
@@ -65,17 +77,35 @@ export default function CenterPaymentContent({
 
       {/* Actions */}
       <div className="grid grid-cols-3 gap-2 mb-3 ">
-        <Button onClick={onPay} className="bg-blue-600 hover:bg-blue-700 text-white h-12 ">
+        <Button
+          onClick={() => {
+            setInputValue(total.toFixed(2));
+            onPaymentReady();
+          }}
+          className="bg-blue-600 hover:bg-blue-700 text-white h-12 "
+        >
           {t("All")}
         </Button>
-        <Button variant="outline" className="h-12">{t("split")}</Button>
-        <Button variant="outline" className="h-12">{t("divide")}</Button>
+        <Button variant="outline" className="h-12" >
+          {t("split")}
+        </Button>
+        <Button variant="outline" className="h-12" >
+          {t("divide")}
+        </Button>
       </div>
 
       {/* Quick */}
       <div className="grid grid-cols-3 gap-2 mb-3">
-        {[10, 25, 50].map((a) => (
-          <Button key={a} variant="outline" className="h-12" onClick={() => onQuick(a)}>
+        {quickAmounts.map((a) => (
+          <Button
+            key={a}
+            variant="outline"
+            className="h-12"
+            onClick={() => {
+              onQuick(a);
+              onPaymentReady();
+            }}
+          >
             $ {a}.00
           </Button>
         ))}

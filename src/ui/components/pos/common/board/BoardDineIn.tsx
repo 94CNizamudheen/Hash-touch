@@ -1,9 +1,12 @@
 // import BoardHeaderDineIn from "./BoardHeaderDineIn";
 import BoardFooterDineIn from "./BoardFooterDineIn";
 import BoardContentDineIn from "./BoardContentDineIn";
+import { useCart } from "@/ui/context/CartContext";
 
 
 const BoardDineIn = () => {
+  const { items } = useCart();
+
   return (
     <section className="w-full h-full flex flex-col bg-background overflow-hidden">
       {/* Header */}
@@ -19,9 +22,11 @@ const BoardDineIn = () => {
         </div>
 
         {/* Footer */}
-        <div className="shrink-0 border-t border-border bg-background">
-          <BoardFooterDineIn />
-        </div>
+        {items.length > 0 && (
+          <div className="shrink-0 border-t border-border bg-background">
+            <BoardFooterDineIn />
+          </div>
+        )}
       </div>
     </section>
   );
