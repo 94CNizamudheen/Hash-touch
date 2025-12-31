@@ -8,6 +8,7 @@ import { persistor, store } from './ui/store/store.ts';
 import { Provider } from "react-redux";
 import { ThemeProvider } from './ui/context/ThemeContext.tsx'
 import { AppStateProvider } from './ui/hooks/useAppState.ts'
+import { NotificationProvider } from './ui/context/NotificationContext.tsx';
 
 createRoot(document.getElementById('root')!).render(
 
@@ -15,11 +16,13 @@ createRoot(document.getElementById('root')!).render(
       <Provider store={store}>
         <PersistGate loading={null} persistor={persistor}>
           <div className="safe-area" >
+            <NotificationProvider>
             <ThemeProvider>
               <AppStateProvider>
                 <App />
               </AppStateProvider>
             </ThemeProvider>
+            </NotificationProvider>
           </div>
         </PersistGate>
       </Provider>

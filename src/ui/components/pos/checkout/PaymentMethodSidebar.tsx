@@ -34,7 +34,7 @@ export default function PaymentMethodsSidebar({
         if (isMobileOverlay && e.target === e.currentTarget) onClose();
       }}
     >
-      <div className="w-[300px] h-full bg-background flex flex-col border-l rounded shadow-lg relative">
+      <div className="w-[300px] h-full bg-background flex flex-col border-l border-border shadow-lg relative">
 
 
         {/* Close button for mobile */}

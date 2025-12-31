@@ -1,6 +1,7 @@
-
-
-import { useWorkShift } from "@/ui/context/WorkShiftContext"; 
+import { useWorkShift } from "@/ui/context/WorkShiftContext";
+import { useLogoutGuard } from "@/ui/hooks/useLogoutGuard";
+import { useNotification } from "@/ui/context/NotificationContext";
+import { useTranslation } from "react-i18next";
 
 export default function EndShiftConfirmModal({
   onClose,
@@ -10,6 +11,9 @@ export default function EndShiftConfirmModal({
   onConfirm?: () => void;
 }) {
   const { endShift } = useWorkShift();
+  const { checkBlocks } = useLogoutGuard();
+  const { showNotification } = useNotification();
+  const { t } = useTranslation();
 
   return (
     <div className="fixed inset-0 z-[9999] bg-black/50 flex items-center justify-center p-4">
@@ -37,10 +41,18 @@ export default function EndShiftConfirmModal({
             Cancel
           </button>
           <button
-            onClick={() => {
+            onClick={async () => {
+              // Check for pending syncs before ending shift
+              const blocks = await checkBlocks();
+              if (blocks.totalSyncs > 0) {
+                showNotification.info(t("Please wait for pending syncs to complete before closing shift"), 4000);
+                return;
+              }
+
+              // All clear, proceed with ending shift
               endShift("Admin");
               onClose();
-               onConfirm?.()
+              onConfirm?.();
             }}
             className="flex-1 bg-red-600 text-white font-medium rounded-lg py-3 hover:bg-red-700 transition-colors"
           >

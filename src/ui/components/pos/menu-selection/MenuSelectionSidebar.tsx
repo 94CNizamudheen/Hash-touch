@@ -14,14 +14,13 @@ import { Moon, Sun } from "lucide-react";
 import { useAppState } from "@/ui/hooks/useAppState";
 import { productLocal } from "@/services/local/product.local.service";
 import { appStateApi } from "@/services/tauri/appState";
-import LogoutConfirmModal from "../modal/LogoutConfirmModal";
 import LanguageModal from "../modal/LanguageModal";
 import { ticketLocal } from "@/services/local/ticket.local.service";
-import { useLogoutGuard, type LogoutBlocks } from "@/ui/hooks/useLogoutGuard";
-import LogoutBlockerModal from "../modal/LogoutBlockerModal";
+import { useLogoutGuard } from "@/ui/hooks/useLogoutGuard";
 import SplashScreen from "@/ui/components/common/SplashScreen";
 import { useLogout } from "@/ui/context/LogoutContext";
 import { deviceService } from "@/services/device/device.service";
+import { useNotification } from "@/ui/context/NotificationContext";
 
 
 
@@ -44,12 +43,10 @@ const MenuSelectionSidebar = ({
   const [modalContent, setModalContent] = useState("");
   const [showDineInBoard, setShowDineInBoard] = useState(false);
   const [showEndShift, setShowEndShift] = useState(false);
-  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const [showLanguageModal, setShowLanguageModal] = useState(false);
   const [pendingTicketsCount, setPendingTicketsCount] = useState(0);
-  const [showLogoutBlocker, setShowLogoutBlocker] = useState(false);
-  const [logoutBlocks, setLogoutBlocks] = useState<LogoutBlocks | null>(null);
   const { isLoggingOut, setIsLoggingOut } = useLogout();
+  const { showNotification } = useNotification();
 
 
   const { theme, setTheme, isHydrated } = useTheme();
@@ -95,14 +92,7 @@ const MenuSelectionSidebar = ({
         break;
       case "shift":
         if (isShiftOpen) {
-          // Check for pending syncs before allowing shift end
-          const blocks = await checkBlocks();
-          if (blocks.totalSyncs > 0) {
-            setLogoutBlocks(blocks);
-            setShowLogoutBlocker(true);
-          } else {
-            setShowEndShift(true);
-          }
+          setShowEndShift(true);
         }
         break;
       default:
@@ -114,14 +104,23 @@ const MenuSelectionSidebar = ({
 
 
   const handleLogoutClick = async () => {
+    // Check if shift is open
+    if (isShiftOpen) {
+      showNotification.info(t("Please close your shift before logging out"), 4000);
+      return;
+    }
+
     const blocks = await checkBlocks();
 
-    if (!blocks.canLogout) {
-      setLogoutBlocks(blocks);
-      setShowLogoutBlocker(true);
-    } else {
-      setShowLogoutConfirm(true);
+    // Check for pending syncs
+    if (blocks.totalSyncs > 0) {
+      showNotification.info(t("Please wait for pending syncs to complete before logging out"), 4000);
+      return;
     }
+
+    // All clear, proceed with logout
+    showNotification.info(t("Logging out..."), 2000);
+    handleConfirmLogout();
   };
 
 
@@ -155,14 +154,13 @@ const MenuSelectionSidebar = ({
       await appStateApi.clear();
       await clearShift();
 
-      // Clear device-specific data (KDS tickets, settings, cart, etc.)
+
       await deviceService.clearDeviceData();
 
       // Small delay to show splash screen
       await new Promise(resolve => setTimeout(resolve, 300));
 
-      // Full page navigation/reload to avoid UI flash
-      window.location.href = "/";
+      window.location.assign("/");
     } catch (e) {
       console.error("Logout failed:", e);
       setIsLoggingOut(false);
@@ -195,33 +193,13 @@ const MenuSelectionSidebar = ({
             const blocks = await checkBlocks();
             if (blocks.totalSyncs > 0) {
               // Still have pending syncs
-              setLogoutBlocks(blocks);
-              setShowLogoutBlocker(true);
+              showNotification.warning(t("Please wait for pending syncs to complete before logging out"), 4000);
             } else {
               // All clear, proceed to logout
-              setShowLogoutConfirm(true);
+              showNotification.warning(t("Logging out..."), 2000);
+              handleConfirmLogout();
             }
           }}
-        />
-      )}
-      {showLogoutBlocker && logoutBlocks && (
-        <LogoutBlockerModal
-          blocks={logoutBlocks}
-          onClose={() => setShowLogoutBlocker(false)}
-          onEndShift={() => {
-            setShowLogoutBlocker(false);
-            setShowEndShift(true);
-          }}
-          onGoToActivity={() => {
-            setShowLogoutBlocker(false);
-            router("/pos/activity");
-          }}
-        />
-      )}
-      {showLogoutConfirm && (
-        <LogoutConfirmModal
-          onClose={() => setShowLogoutConfirm(false)}
-          onConfirm={handleConfirmLogout}
         />
       )}
 

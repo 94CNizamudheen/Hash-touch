@@ -1,9 +1,8 @@
 import { X } from "lucide-react";
 import { useTranslation } from "react-i18next";
-import CardDineIn from "../common/card/CardDineIn";
-import { useCart } from "@/ui/context/CartContext";
 import { useCharges } from "@/ui/hooks/useCharges";
 import type { CartItem } from "@/types/cart";
+import CartCard from "./CartCard";
 
 interface OrderSidebarProps {
   items: CartItem[];
@@ -22,7 +21,6 @@ export default function OrderSidebar({
   const { t } = useTranslation();
   const isMobileOverlay = isOpen && window.innerWidth < 1024;
 
-  const { increment, decrement, remove } = useCart();
   const { charges, totalCharges, totalTax } = useCharges(items, total);
 
   const subtotal = total;
@@ -38,37 +36,34 @@ export default function OrderSidebar({
         if (isMobileOverlay && e.target === e.currentTarget) onClose();
       }}
     >
-      <div className="w-[420px]  h-screen bg-background flex flex-col border-r border-border shadow-lg safe-area ">
+      <div className="w-[480px]  h-screen bg-background flex flex-col border-r border-border shadow-lg safe-area ">
         {/* Header */}
-        <div className="h-14 px-4 flex items-center justify-between border-b border-border bg-secondary/30 shrink-0">
-          <h2 className="text-sm font-semibold">{t("Order summary")}</h2>
-          {isMobileOverlay && (
+
+        {isMobileOverlay && (
+          <div className="h-10 px-4 flex items-center justify-between border-b border-border bg-secondary/30 shrink-0">
             <button onClick={onClose}>
               <X className="w-5 h-5" />
             </button>
-          )}
-        </div>
+          </div>
+        )}
 
 
 
-        <div className="flex-1 overflow-y-auto px-3 py-3 space-y-2 items-center ">
+        <div className="flex-1 overflow-y-auto px-3 py-3 space-y-2 items-center mt-2">
           {items.length > 0 ? (
             items.map((item) => (
-              <CardDineIn
+              <CartCard
                 key={item.id}
-                menu={item.name}
+                name={item.name}
                 quantity={item.quantity}
                 price={item.price}
-                onIncrement={() => increment(item.id)}
-                onDecrement={() => decrement(item.id)}
-                onRemove={() => remove(item.id)}
               />
-            ))
-          ) : (
-            <div className="text-center text-sm text-muted-foreground py-10">
-              No items in order
-            </div>
-          )}
+            )))
+            : (
+              <div className="text-center text-sm text-muted-foreground py-10">
+                No items in order
+              </div>
+            )}
         </div>
 
         <div className="shrink-0 bg-background border-t border-border safe-bottom">
@@ -80,13 +75,24 @@ export default function OrderSidebar({
 
             {/* Display individual charges */}
             {charges.map((charge) => (
-              <div key={charge.id} className="flex justify-between text-muted-foreground">
+              <div
+                key={charge.id}
+                className={`flex justify-between text-xs ${charge.applied
+                    ? "text-muted-foreground"
+                    : "text-muted-foreground/50"
+                  }`}
+              >
                 <span>
                   {charge.name} ({charge.percentage}%)
+                  {!charge.applied && (
+                    <span className="ml-1 italic"></span>
+                  )}
                 </span>
+
                 <span>${charge.amount.toFixed(2)}</span>
               </div>
             ))}
+
 
             {/* Display total tax if there are any tax charges */}
             {totalTax > 0 && (

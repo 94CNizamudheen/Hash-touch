@@ -1,4 +1,5 @@
 import { Button } from "@/ui/shadcn/components/ui/button";
+import { CircleDollarSign, } from "lucide-react";
 import { useTranslation } from "react-i18next";
 
 interface Props {
@@ -35,7 +36,7 @@ export default function CenterPaymentContent({
   const quickAmounts = generateQuickAmounts(total);
 
   return (
-    <div className="flex flex-col h-full px-4   ">
+    <div className="flex flex-col h-full px-1   ">
       {/* Totals */}
       <div className="mb-3">
         <div className="flex justify-between items-baseline p-3 border-b pb-1">
@@ -57,11 +58,11 @@ export default function CenterPaymentContent({
           {t("Type tender here")}
         </label>
         <div className="relative ">
-          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xl text-muted-foreground">
-            $
-          </span>
+          <div className="absolute left-2 top-1/2 -translate-y-1/2 text-xl ">
+            <CircleDollarSign/>
+          </div>
           <input
-            className="w-full h-16 border rounded-lg pl-8 pr-3 py-2 text-3xl font-bold"
+            className="w-full h-16 border rounded-lg pl-12 pr-2 py-2 text-3xl font-bold"
             value={inputValue}
             onChange={(e) => {
               const v = e.target.value;

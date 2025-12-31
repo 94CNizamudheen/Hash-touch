@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { chargesLocal } from "@/services/local/charges.local.service";
 import type { DbCharge, DbChargeMapping } from "@/types/charges";
 import type { CartItem } from "@/types/cart";
@@ -10,86 +10,179 @@ export interface CalculatedCharge {
   percentage: number;
   amount: number;
   is_tax: boolean;
+  sort_order: number;
+  applied: boolean;
 }
+
+/* -------------------------------------------------------
+   Helpers
+------------------------------------------------------- */
+
+/** Get item IDs covered by a specific mapped charge */
+function getMappedItemIdsForCharge(
+  chargeId: string,
+  mappings: DbChargeMapping[],
+  items: CartItem[]
+): Set<string> {
+  const ids = new Set<string>();
+  const chargeMappings = mappings.filter(m => m.charge_id === chargeId);
+
+  chargeMappings.forEach(m => {
+    if (m.product_id) {
+      ids.add(m.product_id);
+    }
+
+    if (m.product_group_id) {
+      items.forEach(item => {
+        if (item.product_group_id === m.product_group_id) {
+          ids.add(item.id);
+        }
+      });
+    }
+
+    if (m.category_id) {
+      items.forEach(item => {
+        if (item.category_id === m.category_id) {
+          ids.add(item.id);
+        }
+      });
+    }
+  });
+
+  return ids;
+}
+
+/** Get all item IDs that are covered by ANY mapped charge */
+function getAllMappedItemIds(
+  charges: DbCharge[],
+  mappings: DbChargeMapping[],
+  items: CartItem[]
+): Set<string> {
+  const all = new Set<string>();
+
+  charges.forEach(charge => {
+    const hasMappings = mappings.some(m => m.charge_id === charge.id);
+    if (!hasMappings) return;
+
+    const ids = getMappedItemIdsForCharge(charge.id, mappings, items);
+    ids.forEach(id => all.add(id));
+  });
+
+  return all;
+}
+
+/** Calculate applicable subtotal for a charge */
+function getChargeApplicableAmount(
+  chargeId: string,
+  charges: DbCharge[],
+  mappings: DbChargeMapping[],
+  items: CartItem[]
+): number {
+  const chargeMappings = mappings.filter(m => m.charge_id === chargeId);
+
+  // 🌍 GLOBAL charge → apply only to items WITHOUT mapped charges
+  if (chargeMappings.length === 0) {
+    const mappedItemIds = getAllMappedItemIds(charges, mappings, items);
+
+    return items
+      .filter(item => !mappedItemIds.has(item.id))
+      .reduce((sum, item) => sum + item.price * item.quantity, 0);
+  }
+
+  // 🎯 MAPPED charge → apply only to its mapped items
+  const mappedItemIds = getMappedItemIdsForCharge(
+    chargeId,
+    mappings,
+    items
+  );
+
+  return items
+    .filter(item => mappedItemIds.has(item.id))
+    .reduce((sum, item) => sum + item.price * item.quantity, 0);
+}
+
+/* -------------------------------------------------------
+   Hook
+------------------------------------------------------- */
 
 export function useCharges(items: CartItem[], subtotal: number) {
   const [charges, setCharges] = useState<DbCharge[]>([]);
   const [mappings, setMappings] = useState<DbChargeMapping[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // Load charges and mappings from database
+  // Load charges & mappings from local DB
   useEffect(() => {
-    const loadCharges = async () => {
+    const load = async () => {
       try {
         const [chargesData, mappingsData] = await Promise.all([
           chargesLocal.getAllCharges(),
           chargesLocal.getAllMappings(),
         ]);
-        setCharges(chargesData.filter((c) => c.active === 1));
-        setMappings(mappingsData.filter((m) => m.active === 1));
-      } catch (error) {
-        console.error("Failed to load charges:", error);
+
+        setCharges(chargesData.filter(c => c.active === 1));
+        setMappings(mappingsData.filter(m => m.active === 1));
+      } catch (err) {
+        console.error("❌ Failed to load charges:", err);
       } finally {
         setLoading(false);
       }
     };
 
-    loadCharges();
+    load();
   }, []);
 
-  // Calculate applicable charges
-  const calculatedCharges: CalculatedCharge[] = [];
+  const calculatedCharges = useMemo<CalculatedCharge[]>(() => {
+    if (loading || items.length === 0 || subtotal <= 0) return [];
 
-  if (!loading && items.length > 0) {
-    // Get unique product IDs and category IDs from cart
-    const productIds = new Set(items.map((item) => item.id));
-    const categoryIds = new Set(
-      items.map((item) => item.category_id).filter(Boolean)
-    );
+    const result: CalculatedCharge[] = [];
 
-    // Find applicable charges
-    const applicableChargeIds = new Set<string>();
+    for (const charge of charges) {
+      const applicableAmount = getChargeApplicableAmount(
+        charge.id,
+        charges,
+        mappings,
+        items
+      );
 
-    mappings.forEach((mapping) => {
-      // Check if mapping applies to any item in cart
-      const appliesToProduct =
-        mapping.product_id && productIds.has(mapping.product_id);
-      const appliesToCategory =
-        mapping.category_id && categoryIds.has(mapping.category_id);
+      const percentage = Number(charge.percentage ?? 0);
+      if (percentage <= 0) continue;
 
-      // For product_group mappings, check if product_group_id matches any item's product_group_id
-      const appliesToProductGroup =
-        mapping.product_group_id &&
-        items.some((item) => item.product_group_id === mapping.product_group_id);
+      const applied = applicableAmount > 0;
+      const amount = applied
+        ? (applicableAmount * percentage) / 100
+        : 0;
 
-      if (appliesToProduct || appliesToCategory || appliesToProductGroup) {
-        applicableChargeIds.add(mapping.charge_id);
-      }
-    });
-
-    // Calculate charge amounts
-    applicableChargeIds.forEach((chargeId) => {
-      const charge = charges.find((c) => c.id === chargeId);
-      if (!charge) return;
-
-      const percentage = parseFloat(charge.percentage || "0");
-      const amount = (subtotal * percentage) / 100;
-
-      calculatedCharges.push({
+      result.push({
         id: charge.id,
         name: charge.name,
-        code: charge.code || null,
+        code: charge.code ?? null,
         percentage,
         amount,
         is_tax: charge.is_tax === 1,
+        sort_order: charge.sort_order ?? 0,
+        applied,
       });
-    });
-  }
+    }
 
-  const totalCharges = calculatedCharges.reduce((sum, c) => sum + c.amount, 0);
-  const totalTax = calculatedCharges
-    .filter((c) => c.is_tax)
-    .reduce((sum, c) => sum + c.amount, 0);
+    result.sort((a, b) => a.sort_order - b.sort_order);
+    return result;
+  }, [charges, mappings, items, subtotal, loading]);
+
+  const totalCharges = useMemo(
+    () =>
+      calculatedCharges
+        .filter(c => c.applied)
+        .reduce((sum, c) => sum + c.amount, 0),
+    [calculatedCharges]
+  );
+
+  const totalTax = useMemo(
+    () =>
+      calculatedCharges
+        .filter(c => c.applied && c.is_tax)
+        .reduce((sum, c) => sum + c.amount, 0),
+    [calculatedCharges]
+  );
 
   return {
     charges: calculatedCharges,
