@@ -6,6 +6,7 @@ import { useCart } from "@/ui/context/CartContext";
 import { useCharges } from "@/ui/hooks/useCharges";
 import { useAppState } from "@/ui/hooks/useAppState";
 import { usePaymentMethods } from "@/ui/hooks/usePaymentMethods";
+import { useTransactionTypes } from "@/ui/hooks/useTransactionTypes";
 import { buildTicketRequest } from "@/ui/utils/ticketBuilder";
 import { ticketService } from "@/services/data/ticket.service";
 import { printerService, type ReceiptData } from "@/services/local/printer.local.service";
@@ -16,12 +17,14 @@ import OrderSidebar from "./OrderSidebar";
 import CenterPaymentContent from "./CenterPaymentContent";
 import PaymentMethodsSidebar from "./PaymentMethodSidebar";
 import PaymentSuccessModal from "./PaymentSuccessModal";
+import { transactionTypeLocal } from "@/services/local/transaction-type.local.service";
 
 export default function PaymentDesktop() {
   const navigate = useNavigate();
   const { items, clear, isHydrated } = useCart();
   const { state: appState } = useAppState();
   const { paymentMethods } = usePaymentMethods();
+  const { transactionTypes } = useTransactionTypes();
 
   const subtotal = items.reduce((s, i) => s + i.price * i.quantity, 0);
   const { charges, totalCharges } = useCharges(items, subtotal);
@@ -34,6 +37,15 @@ export default function PaymentDesktop() {
   const [loading, setLoading] = useState(false);
   const [final, setFinal] = useState({ total: 0, balance: 0 });
   const [isPaymentReady, setIsPaymentReady] = useState(false);
+
+useEffect(() => {
+  const loadTransactionTypes = async () => {
+    const transactionTypes = await transactionTypeLocal.getAllTransactionTypes();
+    console.log("transaction types stored in db", transactionTypes);
+  };
+
+  loadTransactionTypes();
+}, []);
 
   // Update inputValue when total changes
   useEffect(() => {
@@ -78,6 +90,22 @@ export default function PaymentDesktop() {
         throw new Error("Missing required application state");
       }
 
+      // Find selected payment method to get its ID
+      const selectedPaymentMethod = paymentMethods.find(pm => pm.name === selectedMethod);
+      if (!selectedPaymentMethod) {
+        throw new Error(`Payment method "${selectedMethod}" not found`);
+      }
+
+      // Find SALE and PAYMENT transaction types
+      const saleTransactionType = transactionTypes.find(tt => tt.name === "SALE");
+      const paymentTransactionType = transactionTypes.find(tt => tt.name === "PAYMENT");
+
+      if (!saleTransactionType || !paymentTransactionType) {
+        throw new Error("Required transaction types (SALE, PAYMENT) not found. Please sync data.");
+      }
+
+      console.log("selected payment method", selectedPaymentMethod);
+
       // Build ticket request
       const ticketRequest = buildTicketRequest({
         items,
@@ -85,12 +113,16 @@ export default function PaymentDesktop() {
         subtotal,
         total,
         paymentMethod: selectedMethod,
+        paymentMethodId: selectedPaymentMethod.id,
         tenderedAmount: tendered,
         locationId: appState.selected_location_id,
         locationName: appState.selected_location_name,
         orderModeName: appState.selected_order_mode_name,
         channelName: "POS",
         userName: "POS User",
+        saleTransactionTypeId: saleTransactionType.id,
+        paymentTransactionTypeId: paymentTransactionType.id,
+        transactionTypes,
       });
 
       console.log("📝 Creating ticket:", ticketRequest);

@@ -48,13 +48,12 @@ export default function CategoryTabs({
     <Tabs
       value={selectedCategory}
       onValueChange={(val: string) => setSelectedCategory(val)}
-      className="w-full min-h-0"
+      className="w-full min-h-0 "
     >
       {isVertical ? (
         // Vertical layout
         <TabsList
-          style={{ WebkitOverflowScrolling: "touch" }}
-          className="gap-2 grid grid-cols-12 auto-rows-max h-full  overflow-y-auto no-scrollbar"
+          className="grid grid-cols-12 gap-3 h-full overflow-y-auto no-scrollbar "
         >
           {categoriesList.map((cat) => {
             const isActive = selectedCategory === cat.value;
@@ -63,44 +62,32 @@ export default function CategoryTabs({
               <TabsTrigger
                 key={cat.value}
                 value={cat.value}
-                className={`rounded-xl px-8 cursor-pointer flex flex-row gap-2 justify-between border transition-colors col-span-12
-                  ${
-                    isActive
-                      ? "bg-primary border-primary text-primary-foreground"
-                      : "bg-secondary border-border text-foreground hover:bg-primary-hover hover:text-background"
+                className={`
+                    rounded-xl p-2 cursor-pointer  flex flex-row gap-2 items-center w-full min-w-[200px] border transition-colors col-span-12 
+                     ${isActive
+                    ? "bg-primary border-primary text-primary-foreground"
+                    : "bg-white border-gray-300 text-foreground hover:bg-gray-50"
                   }
-                `}
+                 `}
               >
-                {/* Image */}
-                {cat.image ? (
-                  <div className="w-10 h-10 rounded-lg overflow-hidden ">
-                    <img
-                      src={cat.image}
-                      alt={cat.label}
-                      className="w-full h-full object-cover"
-                    />
-                  </div>
-                ) : (
-                  <div
-                    className={`w-10 h-10 flex items-center justify-center text-lg font-bold rounded-lg 
-                      ${
-                        isActive
-                          ? "bg-secondary text-secondary-foreground"
-                          : "bg-accent text-accent-foreground"
-                      }`}
-                  >
-                    {cat.label.charAt(0).toUpperCase()}
-                  </div>
-                )}
+                {/* Left Image */}
+                <div className="w-10 h-10 rounded-lg overflow-hidden flex-shrink-0 bg-muted">
+                  <img
+                    src={cat.image}
+                    alt={cat.label}
+                    className="w-full h-full object-cover"
+                  />
+                </div>
 
-                {/* Name */}
-                <span className={`font-semibold text-sm whitespace-nowrap`}>
+                {/* Center Text */}
+                <p className="flex-1 text-center font-semibold text-sm whitespace-nowrap">
                   {cat.label}
-                </span>
+                </p>
               </TabsTrigger>
             );
           })}
         </TabsList>
+
       ) : (
         // Horizontal layout - using the same pattern as ProductGroupTabs
         <div className="w-full h-[4.5rem] overflow-x-auto no-scrollbar bg-background shadow-sm">
@@ -112,38 +99,24 @@ export default function CategoryTabs({
                 <button
                   key={cat.value}
                   onClick={() => setSelectedCategory(cat.value)}
-                  className={`flex items-center gap-3 px-8 py-2 border rounded transition-all duration-200 cursor-pointer whitespace-nowrap
-                    ${
-                      isActive
-                        ? "bg-primary text-primary-foreground border-border shadow-md"
-                        : "bg-gray-50 text-foreground border-border hover:bg-primary-hover hover:text-background"
-                    }
-                  `}
-                >
+                  className={` rounded-xl p-2 cursor-pointer w-full flex flex-row gap-2 items-center min-w-[200px] border transition-colors col-span-3 
+                                  ${isActive
+                                            ? "bg-primary text-primary-foreground border-primary shadow-md"
+                                            : "bg-white text-foreground border-gray-300 hover:bg-gray-50"
+                                          }
+                                `}
+                  >
                   {/* Image */}
-                  {cat.image ? (
-                    <div className="w-10 h-10 rounded-lg overflow-hidden flex-shrink-0">
-                      <img
-                        src={cat.image}
-                        alt={cat.label}
-                        className="w-full h-full object-cover"
-                      />
-                    </div>
-                  ) : (
-                    <div
-                      className={`w-10 h-10 flex items-center justify-center text-lg font-bold rounded-lg flex-shrink-0
-                        ${
-                          isActive
-                            ? "bg-secondary text-secondary-foreground"
-                            : "bg-accent text-accent-foreground"
-                        }`}
-                    >
-                      {cat.label.charAt(0).toUpperCase()}
-                    </div>
-                  )}
+                  <div className="w-10 h-10 rounded-lg overflow-hidden flex-shrink-0 bg-muted">
+                    <img
+                      src={cat.image}
+                      alt={cat.label}
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
 
-                  {/* Name */}
-                  <span className="font-semibold text-sm">
+                  {/* Centered text */}
+                  <span className="flex-1 text-center font-semibold text-sm">
                     {cat.label}
                   </span>
                 </button>
@@ -151,6 +124,7 @@ export default function CategoryTabs({
             })}
           </div>
         </div>
+
       )}
     </Tabs>
   );

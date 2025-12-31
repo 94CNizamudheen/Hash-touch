@@ -12,6 +12,7 @@ export interface CalculatedCharge {
   is_tax: boolean;
   sort_order: number;
   applied: boolean;
+  transaction_type_id: string | null;
 }
 
 /* -------------------------------------------------------
@@ -161,6 +162,7 @@ export function useCharges(items: CartItem[], subtotal: number) {
         is_tax: charge.is_tax === 1,
         sort_order: charge.sort_order ?? 0,
         applied,
+        transaction_type_id: charge.transaction_type_id ?? null,
       });
     }
 

@@ -1,6 +1,7 @@
 import type { CartItem } from "@/types/cart";
 import type { CalculatedCharge } from "@/ui/hooks/useCharges";
 import type { TicketRequest, Order, Payment, Transaction } from "@/types/ticket";
+import type { DbTransactionType } from "@/types/transaction-type";
 
 interface BuildTicketParams {
   items: CartItem[];
@@ -8,20 +9,42 @@ interface BuildTicketParams {
   subtotal: number;
   total: number;
   paymentMethod: string;
+  paymentMethodId: string;
   tenderedAmount: number;
   locationId: string;
   locationName: string;
   orderModeName: string;
   channelName: string;
   userName?: string;
+  saleTransactionTypeId: string;
+  paymentTransactionTypeId: string;
+  transactionTypes: DbTransactionType[];
 }
 
 function getCurrentDateTime() {
   const now = new Date();
+
+  // Get date in YYYY-MM-DD format
+  const date = now.toISOString().split("T")[0];
+
+  // Get time components
+  const hours = String(now.getHours()).padStart(2, '0');
+  const minutes = String(now.getMinutes()).padStart(2, '0');
+  const seconds = String(now.getSeconds()).padStart(2, '0');
+
+  // Get timezone offset in +HH or -HH format
+  const offsetMinutes = -now.getTimezoneOffset();
+  const offsetHours = Math.floor(Math.abs(offsetMinutes) / 60);
+  const offsetSign = offsetMinutes >= 0 ? '+' : '-';
+  const timezone = `${offsetSign}${String(offsetHours).padStart(2, '0')}`;
+
+  // Format: "YYYY-MM-DD HH:MM:SS+TZ"
+  const timestamp = `${date} ${hours}:${minutes}:${seconds}${timezone}`;
+
   return {
-    date: now.toISOString().split("T")[0], // YYYY-MM-DD
-    time: now.toTimeString().split(" ")[0], // HH:MM:SS
-    datetime: now.toISOString(), // Full ISO datetime
+    date,
+    timestamp, 
+    datetime: now.toISOString(), 
   };
 }
 
@@ -43,15 +66,19 @@ export function buildTicketRequest(params: BuildTicketParams): TicketRequest {
     subtotal,
     total,
     paymentMethod,
+    paymentMethodId,
     tenderedAmount,
     locationId,
     locationName,
     orderModeName,
     channelName,
     userName = "POS User",
+    saleTransactionTypeId,
+    paymentTransactionTypeId,
+    transactionTypes,
   } = params;
 
-  const { date, time, datetime } = getCurrentDateTime();
+  const { date, timestamp } = getCurrentDateTime();
   const ticketNumber = generateTicketNumber();
   const invoiceNumber = generateInvoiceNumber();
 
@@ -119,13 +146,13 @@ export function buildTicketRequest(params: BuildTicketParams): TicketRequest {
     },
     business_date: date,
     order_date: date,
-    order_time: time,
+    order_time: timestamp,
   }));
 
   // Build payment object
   const payments: Payment[] = [
     {
-      payment_type_id: paymentMethod.toUpperCase().replace(/\s+/g, "_"),
+      payment_type_id: paymentMethodId,
       payment_type: paymentMethod,
       payment_amount: total.toFixed(2),
       tip_amount: "0.00",
@@ -139,19 +166,53 @@ export function buildTicketRequest(params: BuildTicketParams): TicketRequest {
         created_by: userName,
       },
       payment_date: date,
-      payment_time: time,
+      payment_time: timestamp,
     },
   ];
 
-  // Build transactions array (for charges and taxes)
+  // Build transactions array
   const transactions: Transaction[] = [];
 
-  charges.forEach((charge) => {
+  // 1. SALE transaction - subtotal amount
+  transactions.push({
+    transaction_type_name: "SALE",
+    amount: subtotal.toFixed(2),
+    transaction_time: timestamp,
+    transaction_type_id: saleTransactionTypeId,
+  });
+
+  // 2. PAYMENT transaction - total amount
+  transactions.push({
+    transaction_type_name: "PAYMENT",
+    amount: total.toFixed(2),
+    transaction_time: timestamp,
+    transaction_type_id: paymentTransactionTypeId,
+  });
+
+  // 3. Charge transactions (TAX, etc.) - group by transaction_type_id and sum amounts
+  const chargesByTransactionType = charges
+    .filter((charge) => charge.applied && charge.transaction_type_id)
+    .reduce((acc, charge) => {
+      const typeId = charge.transaction_type_id!;
+      if (!acc[typeId]) {
+        acc[typeId] = {
+          transaction_type_id: typeId,
+          amount: 0,
+        };
+      }
+      acc[typeId].amount += charge.amount;
+      return acc;
+    }, {} as Record<string, { transaction_type_id: string; amount: number }>);
+
+  // Create transactions from grouped charges
+  Object.values(chargesByTransactionType).forEach(({ transaction_type_id, amount }) => {
+    const transactionType = transactionTypes.find((tt) => tt.id === transaction_type_id);
+
     transactions.push({
-      transaction_type_name: charge.name,
-      amount: charge.amount.toFixed(2),
-      transaction_time: time,
-      transaction_type_id: charge.id,
+      transaction_type_name: transactionType?.name || "CHARGE",
+      amount: amount.toFixed(2),
+      transaction_time: timestamp,
+      transaction_type_id,
     });
   });
 
@@ -179,11 +240,13 @@ export function buildTicketRequest(params: BuildTicketParams): TicketRequest {
         total_charges: totalCharges.toFixed(2),
       },
       business_date: date,
-      ticket_created_time: datetime,
-      ticket_updated_time: datetime,
-      last_order_time: time,
+      ticket_created_time: timestamp,
+      ticket_updated_time: timestamp,
+      last_order_time: timestamp,
       last_payment_date: date,
-      last_payment_time: time,
+      last_payment_time: timestamp,
+      delivery_date: date,
+      delivery_time: timestamp,
     },
     orders,
     payments,

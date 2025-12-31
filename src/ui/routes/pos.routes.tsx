@@ -23,18 +23,19 @@ export default function PosRoutes() {
           <AnimationProvider>
             <WorkShiftProvider>
 
-                <Routes>
-                  <Route element={<MenuLayout />}>
-                    <Route index element={<MenuSelectionPage />} />
-                  </Route>
-                  <Route path="payment-panel" element={<PaymentPanel />} />
+              <Routes>
+                <Route element={<MenuLayout />}>
+                  <Route index element={<MenuSelectionPage />} />
                   <Route path="activity" element={<ActivityPage />} />
                   <Route path="settings" element={<SettingsPage />} />
                   <Route path="settings/printers" element={<PrinterSettingsPage />} />
                   <Route path="settings/devices" element={<DeviceCommunicationPage />} />
 
-                  <Route path="*" element={<Navigate to="" replace />} />
-                </Routes>
+                </Route>
+                <Route path="payment-panel" element={<PaymentPanel />} />
+
+                <Route path="*" element={<Navigate to="" replace />} />
+              </Routes>
             </WorkShiftProvider>
 
           </AnimationProvider>

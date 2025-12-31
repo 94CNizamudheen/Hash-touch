@@ -158,6 +158,11 @@ pub fn run() {
             commands::payment_method::get_payment_methods,
             commands::payment_method::clear_payment_methods_cache,
 
+            // Transaction Types
+            commands::transaction_type::save_transaction_types,
+            commands::transaction_type::get_transaction_types,
+            commands::transaction_type::clear_transaction_types_cache,
+
             // Tickets
             commands::ticket::save_ticket,
             commands::ticket::get_all_tickets,

@@ -15,6 +15,13 @@
       "when": 1767102734896,
       "tag": "0001_tricky_the_hood",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "6",
+      "when": 1767180443856,
+      "tag": "0002_odd_joseph",
+      "breakpoints": true
     }
   ]
 }

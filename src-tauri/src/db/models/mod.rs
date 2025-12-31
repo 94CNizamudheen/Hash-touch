@@ -21,6 +21,8 @@ pub mod charges;
 pub mod charges_repo;
 pub mod payment_method;
 pub mod payment_method_repo;
+pub mod transaction_type;
+pub mod transaction_type_repo;
 pub mod ticket;
 pub mod ticket_repo;
 pub mod kds_ticket;

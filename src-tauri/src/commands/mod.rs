@@ -13,6 +13,7 @@ pub mod cart_store;
 pub mod work_shift;
 pub mod charges;
 pub mod payment_method;
+pub mod transaction_type;
 pub mod ticket;
 pub mod kds_ticket;
 pub mod printer;

@@ -7,6 +7,7 @@ import { productGroupLocal } from "../local/product-group.local.service";
 import { productGroupCategoryLocal } from "../local/product-group-category.local.service";
 import { chargesLocal } from "../local/charges.local.service";
 import { paymentMethodLocal } from "../local/payment-method.local.service";
+import { transactionTypeLocal } from "../local/transaction-type.local.service";
 
 export async function initialSync(
   domain: string,
@@ -303,6 +304,28 @@ export async function initialSync(
 
   await paymentMethodLocal.savePaymentMethods(dbPaymentMethods);
   console.log(`✅ Payment methods synced: ${dbPaymentMethods.length}`);
+
+  // Sync transaction types
+  const transactionTypesResponse = await commonDataService.getTransactionTypes(domain, token);
+
+  console.log("📦 Transaction types received:", transactionTypesResponse.length);
+
+  const dbTransactionTypes = transactionTypesResponse.map((tt: any) => ({
+    id: tt.id,
+    code: tt.code ?? null,
+    name: tt.name,
+    active: tt.active ? 1 : 0,
+    sort_order: tt.sort_order ?? 0,
+    created_at: tt.created_at ?? null,
+    updated_at: tt.updated_at ?? null,
+    deleted_at: tt.deleted_at ?? null,
+    created_by: tt.created_by ?? null,
+    updated_by: tt.updated_by ?? null,
+    deleted_by: tt.deleted_by ?? null,
+  }));
+
+  await transactionTypeLocal.saveTransactionTypes(dbTransactionTypes);
+  console.log(`✅ Transaction types synced: ${dbTransactionTypes.length}`);
 
   console.log(" Initial sync completed successfully (from combinations)");
 }
