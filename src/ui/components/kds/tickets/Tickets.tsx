@@ -6,6 +6,7 @@ import MobileTicketCard from "./mobile/MobileTicketCard";
 import { kdsTicketLocal } from "@/services/local/kds-ticket.local.service";
 import { localEventBus, LocalEventTypes } from "@/services/eventbus/LocalEventBus";
 import { websocketService } from "@/services/websocket/websocket.service";
+import { useNotificationSound } from "@/ui/hooks/useNotificationSound";
 import type { Ticket, TicketItem } from "./ticket.types";
 import type { KDSTicketData, KDSTicketItem } from "@/types/kds";
 
@@ -45,6 +46,7 @@ const Tickets = () => {
   const [tickets, setTickets] = useState<Ticket[]>([]);
   const [loading, setLoading] = useState(true);
   const isDesktop = useMediaQuery('(min-width: 768px)');
+  const { playSound } = useNotificationSound();
 
   // Load tickets from database
   const loadTickets = async () => {
@@ -81,6 +83,9 @@ const Tickets = () => {
 
       const orderData = message.payload;
 
+      // Play notification sound
+      playSound();
+
       // Save to local database
       try {
         await kdsTicketLocal.saveTicket({
@@ -114,7 +119,7 @@ const Tickets = () => {
     return () => {
       client.off('new_order', handleNewOrder);
     };
-  }, []);
+  }, [playSound]);
 
   // LocalEventBus listener for ticket removal
   useEffect(() => {

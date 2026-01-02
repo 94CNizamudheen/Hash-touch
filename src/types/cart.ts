@@ -7,4 +7,5 @@ export interface CartItem {
   product_group_id?: string | null;
   image_url?: string | null;
   modifiers?: { name: string; qty: number; price: number }[];
+  notes?:string;
 }

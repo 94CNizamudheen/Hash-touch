@@ -33,4 +33,5 @@ const KdsSettingsPageMobile = () => {
   );
 };
 
+
 export default KdsSettingsPageMobile;

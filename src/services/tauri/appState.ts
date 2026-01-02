@@ -33,6 +33,10 @@ export const appStateApi = {
     return invoke("clear_app_state");
   },
 
+  clearAllData():Promise<void>{
+    return invoke("clear_all_data");
+  },
+
   // WebSocket settings
   getWsSettings(): Promise<[boolean, string]> {
     return invoke("get_ws_settings");

@@ -1,5 +1,5 @@
 
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { Routes, Route } from "react-router-dom";
 
@@ -25,8 +25,6 @@ import KdsRoutes from "./ui/routes/kds.routes";
 import QueueRoutes from "./ui/routes/queue.routes";
 import { useAppState } from "@/ui/hooks/useAppState";
 import { deviceService } from "./services/local/device.local.service";
-import { WebSocketClient } from "@services/websocket/WebSocketClient";
-import { websocketService } from "@services/websocket/websocket.service";
 
 
 /* =========================
@@ -47,18 +45,12 @@ export default function App() {
   const [loadingTenant, setLoadingTenant] = useState(false);
   const [loadingLocation, setLoadingLocation] = useState(false);
   const [loadingRole, setLoadingRole] = useState(false);
-  const [deviceId, setDeviceId] = useState<string>("");
+  const [, setDeviceId] = useState<string>("");
 
   // Sync state
   const [isSyncing, setIsSyncing] = useState(false);
   const [syncStatus, setSyncStatus] = useState<"syncing" | "synced">("syncing");
 
-  // WebSocket state
-  const [wsReady, setWsReady] = useState(false);
-  const [wsStatus, setWsStatus] = useState<"connecting" | "connected" | "failed" | "retrying">("connecting");
-  const [wsRetryCount, setWsRetryCount] = useState(0);
-  const wsInitializedRef = useRef(false);
-  const wsInitFunctionRef = useRef<(() => void) | null>(null);
 
   /* =========================
      BOOTSTRAP (Rust → Redux)
@@ -90,74 +82,6 @@ export default function App() {
     bootstrap();
   }, [dispatch, refreshAppStateContext]);
 
-  useEffect(() => {
-    const initializeWebSocket = async () => {
-      setWsStatus("connecting");
-      setWsReady(false);
-
-      const maxRetries = 5;
-      let attempts = 0;
-
-      const attemptConnection = async (): Promise<boolean> => {
-        try {
-          const [_, configuredWsUrl] = await appStateApi.getWsSettings();
-          const wsUrl = configuredWsUrl || "ws://localhost:9001";
-
-          console.log(`[App] Connecting to: ${wsUrl}`);
-
-          const client = new WebSocketClient(
-            wsUrl,
-            deviceId,
-            appState.device_role || "POS"
-          );
-
-          await client.connect();
-          await client.waitForRegisterAck();
-
-          websocketService.setClient(client);
-
-          setWsStatus("connected");
-          setWsReady(true);
-
-          return true;
-        } catch (error) {
-          attempts++;
-
-          console.error(`❌ WS failed (${attempts}/${maxRetries})`, error);
-
-          if (attempts < maxRetries) {
-            setWsStatus("retrying");
-            setWsRetryCount(attempts);
-            await new Promise((r) => setTimeout(r, 3000));
-            return attemptConnection();
-          }
-
-          setWsStatus("failed");
-          return false;
-        }
-      };
-
-
-      await attemptConnection();
-    };
-
-    // Store function in ref for retry handler
-    wsInitFunctionRef.current = initializeWebSocket;
-
-    if (
-      appState.device_role &&
-      deviceId &&
-      appState.selected_location_id &&
-      !wsInitializedRef.current &&
-      !booting
-    ) {
-      console.log("[App] ✅ All conditions met! Initializing WebSocket...");
-      wsInitializedRef.current = true;
-      initializeWebSocket();
-    } else {
-      console.log("[App] ❌ Conditions not met, skipping initialization");
-    }
-  }, [appState.device_role, deviceId, appState.selected_location_id, booting]);
 
 
 
@@ -270,15 +194,6 @@ export default function App() {
     }
   };
 
-  const handleWebSocketRetry = () => {
-    // Reset the ref to allow re-initialization
-    wsInitializedRef.current = false;
-    setWsRetryCount(0);
-    // Call the initialization function
-    if (wsInitFunctionRef.current) {
-      wsInitFunctionRef.current();
-    }
-  };
 
 
 
@@ -318,17 +233,6 @@ export default function App() {
 
   if (!appState.device_role) {
     return <Home onRoleSelected={handleRoleSelected} />;
-  }
-
-  if (!wsReady) {
-    return (
-      <SplashScreen
-        type={3}
-        connectionStatus={wsStatus}
-        retryCount={wsRetryCount}
-        onRetry={handleWebSocketRetry}
-      />
-    );
   }
 
   return (

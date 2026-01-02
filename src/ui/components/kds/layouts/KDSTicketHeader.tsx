@@ -6,31 +6,26 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useState, useEffect } from "react";
 import MobileLeftSidebar from "./mobile/MobileLeftSidebar";
 import { kdsSettingsLocal } from "@/services/local/kds-settings.local.service";
+import { logoutService } from "@/services/auth/logout.service";
+
 
 const KDSTicketHeader = () => {
     const [viewMode, setViewMode] = useState("Classic");
-    const [orderMenuOPen,setIsOrderMenuOPen]=useState(false);
+    const [orderMenuOPen, setIsOrderMenuOPen] = useState(false);
+    const [isLoggingOut, setIsLoggingOut] = useState(false);
 
-    // Load view mode from SQLite on mount
     useEffect(() => {
         const loadViewMode = async () => {
             try {
-                // Migrate from localStorage if exists
-                const oldMode = localStorage.getItem("kds_view_mode");
-                if (oldMode) {
-                    await kdsSettingsLocal.saveViewMode(oldMode);
-                    localStorage.removeItem("kds_view_mode");
-                    setViewMode(oldMode);
-                } else {
-                    const mode = await kdsSettingsLocal.getViewMode();
-                    setViewMode(mode);
-                }
+                const mode = await kdsSettingsLocal.getViewMode();
+                setViewMode(mode);
             } catch (error) {
                 console.error("Failed to load view mode:", error);
             }
         };
         loadViewMode();
     }, []);
+
 
     const handleChange = async (value: string) => {
         setViewMode(value);
@@ -39,6 +34,21 @@ const KDSTicketHeader = () => {
             console.log("Selected view:", value);
         } catch (error) {
             console.error("Failed to save view mode:", error);
+        }
+    };
+
+    const handleLogout = async () => {
+        if (!confirm("Are you sure you want to logout? All data will be cleared.")) {
+            return;
+        }
+
+        setIsLoggingOut(true);
+        try {
+            await logoutService.logout();
+        } catch (error) {
+            console.error("Logout failed:", error);
+            setIsLoggingOut(false);
+            alert("Logout failed. Please try again.");
         }
     };
 
@@ -69,9 +79,9 @@ const KDSTicketHeader = () => {
 
                     <div className="flex items-center gap-1 ml-2">
                         {/* shadcn Select Dropdown */}
-                        <Button onClick={()=>setIsOrderMenuOPen(true)} className="w-9 h-9 flex bg-amber-300  items-center justify-center  rounded hover:bg-primary-hover">
+                        <Button onClick={() => setIsOrderMenuOPen(true)} className="w-9 h-9 flex bg-amber-300  items-center justify-center  rounded hover:bg-primary-hover">
                             <ListOrdered className="stroke-primary" size={20} />
-                            
+
                         </Button>
                         <Select value={viewMode} onValueChange={handleChange}>
                             <SelectTrigger className="w-[150px] border border-gray-300 px-3 py-1.5 text-sm font-medium focus:ring-0 focus:outline-none">
@@ -93,20 +103,25 @@ const KDSTicketHeader = () => {
 
                         {/* Settings Button */}
                         <button
-                            onClick={() => navigate("/settings")}
+                            onClick={() => navigate("/kds/settings")}
                             className="w-9 h-9 flex items-center justify-center rounded-full hover:bg-gray-100 text-gray-700 transition-colors"
                         >
                             <Settings size={20} />
                         </button>
 
-                        {/* Power Button */}
-                        <button className="w-9 h-9 flex items-center justify-center rounded-full hover:bg-blue-50 text-blue-600 transition-colors">
+                        {/* Logout Button */}
+                        <button
+                            onClick={handleLogout}
+                            disabled={isLoggingOut}
+                            className="w-9 h-9 flex items-center justify-center rounded-full hover:bg-red-50 text-red-600 transition-colors disabled:opacity-50"
+                            title="Logout"
+                        >
                             <Power size={20} />
                         </button>
                     </div>
                 </div>
 
-                    <MobileLeftSidebar open={orderMenuOPen} onClose={() => setIsOrderMenuOPen(false)} />
+                <MobileLeftSidebar open={orderMenuOPen} onClose={() => setIsOrderMenuOPen(false)} />
             </header>
         </>
     );

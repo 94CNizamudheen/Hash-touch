@@ -12,15 +12,13 @@ import EndShiftConfirmModal from "../modal/work-shift/EndShiftConfirmModal";
 import { useTheme } from "@/ui/context/ThemeContext";
 import { Moon, Sun } from "lucide-react";
 import { useAppState } from "@/ui/hooks/useAppState";
-import { productLocal } from "@/services/local/product.local.service";
-import { appStateApi } from "@/services/tauri/appState";
 import LanguageModal from "../modal/LanguageModal";
 import { ticketLocal } from "@/services/local/ticket.local.service";
 import { useLogoutGuard } from "@/ui/hooks/useLogoutGuard";
 import SplashScreen from "@/ui/components/common/SplashScreen";
 import { useLogout } from "@/ui/context/LogoutContext";
-import { deviceService } from "@/services/device/device.service";
 import { useNotification } from "@/ui/context/NotificationContext";
+import { logoutService } from "@/services/auth/logout.service";
 
 
 
@@ -35,7 +33,7 @@ const MenuSelectionSidebar = ({
 }) => {
   const { t } = useTranslation();
   const router = useNavigate();
-  const { shift, clear: clearShift } = useWorkShift();
+  const { shift, } = useWorkShift();
 
   const isShiftOpen = !!shift?.isOpen;
 
@@ -149,19 +147,8 @@ const MenuSelectionSidebar = ({
   const handleConfirmLogout = async () => {
     setIsLoggingOut(true);
     try {
-      // Clear all data
-      await productLocal.clearCache();
-      await ticketLocal.clearAll();
-      await appStateApi.clear();
-      await clearShift();
-
-
-      await deviceService.clearDeviceData();
-
-      // Small delay to show splash screen
-      await new Promise(resolve => setTimeout(resolve, 300));
-
-      window.location.assign("/");
+      // Use centralized logout service to clear all data
+      await logoutService.logout();
     } catch (e) {
       console.error("Logout failed:", e);
       setIsLoggingOut(false);

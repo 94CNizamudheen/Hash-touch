@@ -1,17 +1,15 @@
 import { Button } from "@/ui/shadcn/components/ui/button";
-// import { deviceService } from "@/services/local/device.local.service"; 
 import { ExitIcon, ResetIcon } from "@radix-ui/react-icons";
-import { RotateCcw, Settings } from "lucide-react";
+import { RotateCcw, Settings, Wifi } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { logoutService } from "@/services/auth/logout.service";
 
 
 const Top = ({ onReset }: { onReset: () => void }) => {
     const handleResetDevice = async () => {
-      if (confirm("Are you sure you want to reset this device?")) {
+      if (confirm("Are you sure you want to reset this device? All data will be cleared.")) {
         try {
-          // await deviceService.clearDevices();
-          alert("Device reset successfully!");
-          window.location.href = "/";
+          await logoutService.logout();
         } catch (err) {
           console.error("Failed to reset device:", err);
           alert("Failed to reset device. Please try again.");
@@ -27,9 +25,13 @@ const Top = ({ onReset }: { onReset: () => void }) => {
         <h1 className="text-2xl font-bold text-gray-800">KDS Styling Settings</h1>
       </div>
       <div className="flex justify-evenly gap-3">
-        <Button onClick={() => navigate(-1)} className="hover:bg-primary-hover">
+        <Button onClick={() => navigate('/')} className="hover:bg-primary-hover">
           <ExitIcon />
           Back
+        </Button>
+        <Button onClick={() => navigate("/kds/settings/connection")} className="hover:bg-primary-hover">
+          <Wifi size={18} />
+          <span>Connect to POS</span>
         </Button>
         <Button
           onClick={onReset}

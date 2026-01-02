@@ -117,6 +117,7 @@ pub fn run() {
             // App state
             commands::app_state::get_app_state,
             commands::app_state::clear_app_state,
+            commands::app_state::clear_all_data,
             commands::app_state::set_tenant,
             commands::app_state::set_location,
             commands::app_state::set_order_modes,
@@ -131,7 +132,6 @@ pub fn run() {
             commands::app_state::set_ws_server_mode,
             commands::app_state::set_ws_server_url,
             commands::app_state::get_local_ip,
-            // commands::app_state::clear_device_data,
 
             // Device
             commands::device::get_devices,

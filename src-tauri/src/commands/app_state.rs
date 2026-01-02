@@ -214,3 +214,65 @@ pub fn clear_app_state(app: AppHandle) -> Result<(), String> {
 
     Ok(())
 }
+
+#[tauri::command]
+pub fn clear_all_data(app: AppHandle) -> Result<(), String> {
+    let conn = migrate::connection(&app);
+    log::info!("🗑️  Starting complete database clear...");
+
+    // Clear all tables
+    let tables_to_clear = vec![
+        "products",
+        "product_groups",
+        "product_group_categories",
+        "product_tag_groups",
+        "product_tags",
+        "categories",
+        "tickets",
+        "kds_tickets",
+        "charges",
+        "charge_mappings",
+        "payment_methods",
+        "transaction_types",
+        "printers",
+        "locations",
+        "devices",
+        "cart_draft",
+        "work_shift_draft",
+    ];
+
+    for table in tables_to_clear {
+        match conn.execute(&format!("DELETE FROM {}", table), []) {
+            Ok(deleted) => log::info!("✅ Cleared {} rows from {}", deleted, table),
+            Err(e) => log::warn!("⚠️  Failed to clear {}: {}", table, e),
+        }
+    }
+
+    // Reset app_state
+    conn.execute(
+        r#"
+        UPDATE app_state SET
+          tenant_domain = NULL,
+          access_token = NULL,
+          selected_location_id = NULL,
+          selected_location_name = NULL,
+          brand_id = NULL,
+          order_mode_ids = '[]',
+          order_mode_names = '[]',
+          selected_order_mode_id = NULL,
+          selected_order_mode_name = NULL,
+          device_role = NULL,
+          sync_status = 'IDLE',
+          kds_view_mode = 'grid',
+          kds_settings = '{}',
+          ws_server_mode = 0,
+          ws_server_url = 'ws://localhost:9001'
+        WHERE id = 1
+        "#,
+        [],
+    )
+    .map_err(|e| e.to_string())?;
+
+    log::info!("✅ All data cleared successfully");
+    Ok(())
+}
