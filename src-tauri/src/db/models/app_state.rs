@@ -17,4 +17,6 @@ pub struct AppState {
     pub language: Option<String>,
     pub kds_view_mode: Option<String>,
     pub kds_settings: Option<String>,
+    pub ws_server_mode: Option<i32>,
+    pub ws_server_url: Option<String>,
 }

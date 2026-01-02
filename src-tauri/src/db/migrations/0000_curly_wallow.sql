@@ -15,6 +15,8 @@ CREATE TABLE `app_state` (
 	`language` text DEFAULT 'en',
 	`kds_view_mode` text DEFAULT 'grid',
 	`kds_settings` text DEFAULT '{}',
+	`ws_server_mode` integer DEFAULT 0,
+	`ws_server_url` text DEFAULT 'ws://localhost:9001',
 	`created_at` integer DEFAULT CURRENT_TIMESTAMP,
 	`updated_at` integer DEFAULT CURRENT_TIMESTAMP
 );
@@ -104,6 +106,21 @@ CREATE TABLE `location` (
 	`name` text NOT NULL,
 	`active` integer DEFAULT 1,
 	`selected` integer DEFAULT 0
+);
+--> statement-breakpoint
+CREATE TABLE `payment_methods` (
+	`id` text PRIMARY KEY NOT NULL,
+	`code` text,
+	`name` text NOT NULL,
+	`processor` text,
+	`active` integer DEFAULT 1,
+	`sort_order` integer DEFAULT 0,
+	`created_at` text,
+	`updated_at` text,
+	`deleted_at` text,
+	`created_by` text,
+	`updated_by` text,
+	`deleted_by` text
 );
 --> statement-breakpoint
 CREATE TABLE `printers` (
@@ -201,9 +218,25 @@ CREATE TABLE `tickets` (
 	`order_mode_name` text,
 	`ticket_amount` integer,
 	`items_count` integer,
+	`queue_number` integer,
+	`ticket_number` integer,
 	`created_at` text,
 	`updated_at` text,
 	`synced_at` text
+);
+--> statement-breakpoint
+CREATE TABLE `transaction_types` (
+	`id` text PRIMARY KEY NOT NULL,
+	`code` text,
+	`name` text NOT NULL,
+	`active` integer DEFAULT 1,
+	`sort_order` integer DEFAULT 0,
+	`created_at` text,
+	`updated_at` text,
+	`deleted_at` text,
+	`created_by` text,
+	`updated_by` text,
+	`deleted_by` text
 );
 --> statement-breakpoint
 CREATE TABLE `work_shift_draft` (

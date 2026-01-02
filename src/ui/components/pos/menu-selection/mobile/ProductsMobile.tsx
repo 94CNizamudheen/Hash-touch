@@ -67,9 +67,9 @@ const ProductsMobile = () => {
               onChange={(e: any) => setSearch(e.target.value)}
             />
 
-            <MobileProductGroupTabs />
+            {!search.trim() && <MobileProductGroupTabs />}
 
-            <MobileCategoryTab />
+            {!search.trim() && <MobileCategoryTab />}
           </div>
 
 

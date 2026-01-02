@@ -1,20 +1,23 @@
 import DineIn from "../_components/DineIn";
 import Products from "./Products";
+import ProductsMobile from "./mobile/ProductsMobile";
 import { useCart } from "@/ui/context/CartContext";
-import MenuSelectionSidebar from "./MenuSelectionSidebar";
 import { useState } from "react";
 import { useWorkShift } from "@/ui/context/WorkShiftContext";
 import StartShiftModal from "../modal/work-shift/StartShiftModal";
 import WorkShiftSuccessModal from "../modal/work-shift/WorkShiftSuccessModal";
 import { useLogout } from "@/ui/context/LogoutContext";
 import SplashScreen from "@/ui/components/common/SplashScreen";
+import { useMediaQuery } from "usehooks-ts";
+import { useTempStyle } from "@/ui/context/TempStyleContext";
 
 const MenuSelectionPage = () => {
   const { addItem } = useCart();
-  const [tempStyle, setTempStyle] = useState(true);
+  const { tempStyle } = useTempStyle();
   const { shift, isHydrated } = useWorkShift();
   const [showSuccess, setShowSuccess] = useState(false);
   const { isLoggingOut } = useLogout();
+  const isDesktop = useMediaQuery("(min-width: 768px)");
 
   if (!isHydrated) return null;
 
@@ -23,7 +26,6 @@ const MenuSelectionPage = () => {
     return <SplashScreen type={1} />;
   }
 
-  // Show StartShiftModal only if there's no shift data at all
   const shouldShowStart = !shift;
   // Show main UI if shift exists (even if closed) - this allows logout flow to complete
   const shouldShowMainUI = !!shift;
@@ -42,27 +44,23 @@ const MenuSelectionPage = () => {
       )}
 
       {shouldShowMainUI && !showSuccess && (
-        <div className="flex w-full h-full overflow-hidden safe-area">
-          {/* Left Sidebar - Menu Selection */}
-          <div className="h-full overflow-hidden border-r border-border flex-shrink-0 bg-background">
-            <MenuSelectionSidebar
-              onChangeStyle={(value) => {
-                setTempStyle(value);
-              }}
-              style={tempStyle}
-            />
-          </div>
+        <>
+          {isDesktop ? (
+            <div className="flex w-full h-full overflow-hidden">
+              {/* Middle Panel - Dine In */}
+              <div className="flex-[4] h-full overflow-hidden border-r border-border ">
+                <DineIn />
+              </div>
 
-          {/* Middle Panel - Dine In */}
-          <div className="flex-[4] h-full overflow-hidden border-r border-border ">
-            <DineIn />
-          </div>
-
-          {/* Right Panel - Products */}
-          <div className="flex-[8] h-full overflow-hidden">
-            <Products onAddToOrder={addItem} tempStyle={tempStyle} />
-          </div>
-        </div>
+              {/* Right Panel - Products */}
+              <div className="flex-[8] h-full overflow-hidden">
+                <Products onAddToOrder={addItem} tempStyle={tempStyle} />
+              </div>
+            </div>
+          ) : (
+            <ProductsMobile />
+          )}
+        </>
       )}
     </>
   );

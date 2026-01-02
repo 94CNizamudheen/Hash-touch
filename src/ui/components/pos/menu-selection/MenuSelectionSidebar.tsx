@@ -55,7 +55,7 @@ const MenuSelectionSidebar = ({
     loading,
     setOrderMode,
     selectedLocationName,
-    selectedOrderModeName
+    selectedOrderModeName,
   } = useAppState();
   const { checkBlocks } = useLogoutGuard();
 
@@ -141,6 +141,7 @@ const MenuSelectionSidebar = ({
       mode.name
     );
     setShowDineInBoard(false);
+
   };
 
 

@@ -19,6 +19,7 @@ interface BuildTicketParams {
   saleTransactionTypeId: string;
   paymentTransactionTypeId: string;
   transactionTypes: DbTransactionType[];
+  queueNumber: number;
 }
 
 function getCurrentDateTime() {
@@ -76,6 +77,7 @@ export function buildTicketRequest(params: BuildTicketParams): TicketRequest {
     saleTransactionTypeId,
     paymentTransactionTypeId,
     transactionTypes,
+    queueNumber,
   } = params;
 
   const { date, timestamp } = getCurrentDateTime();
@@ -232,7 +234,7 @@ export function buildTicketRequest(params: BuildTicketParams): TicketRequest {
         closed: false,
         void: false,
       },
-      queue_number: ticketNumber % 1000, // Simple queue number
+      queue_number: queueNumber, 
       extra_data: {
         location_name: locationName,
         subtotal: subtotal.toFixed(2),

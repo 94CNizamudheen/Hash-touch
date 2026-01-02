@@ -31,5 +31,21 @@ export const appStateApi = {
   },
   clear():Promise<void>{
     return invoke("clear_app_state");
+  },
+
+  // WebSocket settings
+  getWsSettings(): Promise<[boolean, string]> {
+    return invoke("get_ws_settings");
+  },
+
+  setWsServerMode(enabled: boolean): Promise<void> {
+    return invoke("set_ws_server_mode", { enabled });
+  },
+
+  setWsServerUrl(url: string): Promise<void> {
+    return invoke("set_ws_server_url", { url });
+  },
+  getIpAddress():Promise<string>{
+    return invoke('get_local_ip')
   }
 };

@@ -1,6 +1,6 @@
 import { createContext, useContext, useState, useEffect, type ReactNode } from "react";
 import { type ThemeSettings } from "../components/kds/tickets/ticket.types";
-import { kdsSettingsLocal, defaultKdsSettings } from "@/services/local/kds-settings.local.service";
+import { kdsSettingsLocal } from "@/services/local/kds-settings.local.service";
 
 interface SettingsContextType {
   settings: ThemeSettings;
@@ -56,7 +56,7 @@ const defaultSettings: ThemeSettings = {
 
 export const KdsSettingsProvider = ({ children }: { children: ReactNode }) => {
   const [settings, setSettings] = useState<ThemeSettings>(defaultSettings);
-  const [isLoaded, setIsLoaded] = useState(false);
+  const [_, setIsLoaded] = useState(false);
 
   // Load settings from SQLite on mount
   useEffect(() => {

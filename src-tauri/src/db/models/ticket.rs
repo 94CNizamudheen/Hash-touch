@@ -11,6 +11,8 @@ pub struct Ticket {
     pub order_mode_name: Option<String>,
     pub ticket_amount: Option<i32>,
     pub items_count: Option<i32>,
+    pub queue_number: Option<i32>,
+    pub ticket_number: Option<i32>,
     pub created_at: Option<String>,
     pub updated_at: Option<String>,
     pub synced_at: Option<String>,

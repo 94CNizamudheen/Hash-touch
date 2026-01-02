@@ -141,7 +141,7 @@ export default function SelectLocationPage({
                         setSelected(loc);
                         setIsOpen(false);
                       }}
-                      className={`px-4 py-2 cursor-pointer hover:bg-primary/10 ${
+                      className={`px-4 py-2 cursor-pointer hover:bg-primary ${
                         selected?.id === loc.id
                           ? "bg-primary text-white"
                           : ""

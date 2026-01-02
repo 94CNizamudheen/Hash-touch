@@ -4,6 +4,7 @@ import MenuLayout from "../components/pos/layouts/MenuLayout";
 import { CartProvider } from "@/ui/context/CartContext";
 import { ProductProvider } from "@/ui/context/ProductContext";
 import { AnimationProvider } from "@/ui/context/AnimationContext";
+import { TempStyleProvider } from "@/ui/context/TempStyleContext";
 
 import MenuSelectionPage from "../components/pos/menu-selection/MenuSelectionPage";
 import PaymentPanel from "../components/pos/checkout/PaymentPanel";
@@ -22,20 +23,21 @@ export default function PosRoutes() {
         <ProductProvider>
           <AnimationProvider>
             <WorkShiftProvider>
+              <TempStyleProvider>
+                <Routes>
+                  <Route element={<MenuLayout />}>
+                    <Route index element={<MenuSelectionPage />} />
+                    <Route path="activity" element={<ActivityPage />} />
+                    <Route path="settings" element={<SettingsPage />} />
+                    <Route path="settings/printers" element={<PrinterSettingsPage />} />
+                    <Route path="settings/devices" element={<DeviceCommunicationPage />} />
 
-              <Routes>
-                <Route element={<MenuLayout />}>
-                  <Route index element={<MenuSelectionPage />} />
-                  <Route path="activity" element={<ActivityPage />} />
-                  <Route path="settings" element={<SettingsPage />} />
-                  <Route path="settings/printers" element={<PrinterSettingsPage />} />
-                  <Route path="settings/devices" element={<DeviceCommunicationPage />} />
+                  </Route>
+                  <Route path="payment-panel" element={<PaymentPanel />} />
 
-                </Route>
-                <Route path="payment-panel" element={<PaymentPanel />} />
-
-                <Route path="*" element={<Navigate to="" replace />} />
-              </Routes>
+                  <Route path="*" element={<Navigate to="" replace />} />
+                </Routes>
+              </TempStyleProvider>
             </WorkShiftProvider>
 
           </AnimationProvider>

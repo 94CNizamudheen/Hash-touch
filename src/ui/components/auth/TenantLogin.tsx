@@ -8,9 +8,9 @@ import { authService } from "@services/auth/auth.service";
 import TenantForm from "./TenantForm";
 import Logo from "@assets/logo/logo.png";
 import LogoDark from "@assets/logo/logo_dark.png";
-import { useTheme } from "@/ui/context/ThemeContext"; 
+import { useTheme } from "@/ui/context/ThemeContext";
 import { cn } from "@/lib/utils";
-
+import { useNotification } from "@/ui/context/NotificationContext";
 
 const tenantSchema = z.object({
   domain: z.string().min(2, "Tenant is required"),
@@ -35,6 +35,7 @@ export default function TenantLogin({
   const { theme } = useTheme();
   const [isLoading, setIsLoading] = useState(false);
   const [showKeyboard, setShowKeyboard] = useState(false);
+  const { showNotification } = useNotification()
 
   /* =========================
      React Hook Form
@@ -51,26 +52,26 @@ export default function TenantLogin({
   /* =========================
      Submit Handler
   ========================= */
- const onSubmit = async (data: TenantLoginForm) => {
-  try {
-    setIsLoading(true);
+  const onSubmit = async (data: TenantLoginForm) => {
+    try {
+      setIsLoading(true);
 
-    const result = await authService.loginTenant({
-      domain: data.domain,
-      email: data.email,
-      password: data.password,
-    });
+      const result = await authService.loginTenant({
+        domain: data.domain,
+        email: data.email,
+        password: data.password,
+      });
 
 
-    // PASS domain + token UPWARD (do not store here)
-    await onTenantSelected(data.domain, result.access_token);
+      // PASS domain + token UPWARD (do not store here)
+      await onTenantSelected(data.domain, result.access_token);
 
-  } catch (err: any) {
-    alert(err?.message || "Tenant login failed");
-  } finally {
-    setIsLoading(false);
-  }
-};
+    } catch (err: any) {
+      showNotification.error(err?.message || "Tenant login failed");
+    } finally {
+      setIsLoading(false);
+    }
+  };
   console.log(form.formState.errors);
   /* =========================
      UI
@@ -78,25 +79,26 @@ export default function TenantLogin({
   return (
     <section
       className={cn(
-        " max-w-sm md:max-w-md mx-auto flex flex-col justify-center items-center gap-5 transition-all duration-300",
-        showKeyboard
-          ? "min-h-[calc(100vh-336px)] h-full"
-          : "min-h-screen h-screen"
+        "min-h-screen flex items-center justify-center bg-background px-4 transition-all ",
+        showKeyboard && "pb-[320px]"
       )}
     >
-      <img
-        src={theme === "light" ? Logo : LogoDark}
-        alt="Hashmato Logo"
-        className="w-40 h-auto"
-      />
-
-      <FormProvider {...form}>
-        <TenantForm
-          onSubmit={form.handleSubmit(onSubmit)}
-          setShowKeyboard={setShowKeyboard}
-          isLoading={isLoading}
+      <div className="w-full flex flex-col items-center gap-3 rounded-2xl shadow-lg max-w-lg  ">
+        <img
+          src={theme === "light" ? Logo : LogoDark}
+          alt="Hashmato Logo"
+          className="w-50 mt-2"
         />
-      </FormProvider>
+
+        <FormProvider {...form}>
+          <TenantForm
+            onSubmit={form.handleSubmit(onSubmit)}
+            setShowKeyboard={setShowKeyboard}
+            isLoading={isLoading}
+          />
+        </FormProvider>
+      </div>
     </section>
+
   );
 }

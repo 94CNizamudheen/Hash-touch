@@ -1,5 +1,5 @@
 
-import  { useCallback, useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { Routes, Route } from "react-router-dom";
 
@@ -49,10 +49,16 @@ export default function App() {
   const [loadingRole, setLoadingRole] = useState(false);
   const [deviceId, setDeviceId] = useState<string>("");
 
+  // Sync state
+  const [isSyncing, setIsSyncing] = useState(false);
+  const [syncStatus, setSyncStatus] = useState<"syncing" | "synced">("syncing");
+
   // WebSocket state
   const [wsReady, setWsReady] = useState(false);
   const [wsStatus, setWsStatus] = useState<"connecting" | "connected" | "failed" | "retrying">("connecting");
   const [wsRetryCount, setWsRetryCount] = useState(0);
+  const wsInitializedRef = useRef(false);
+  const wsInitFunctionRef = useRef<(() => void) | null>(null);
 
   /* =========================
      BOOTSTRAP (Rust → Redux)
@@ -62,11 +68,21 @@ export default function App() {
       const state: AppState = await appStateApi.get();
       dispatch(hydrateAppState(state));
       await refreshAppStateContext();
+      let device = await deviceService.getDevice();
+      if (!device && state.device_role) {
+        console.log("[App] No device found but role exists, creating device with role:", state.device_role);
+        device = await deviceService.registerDevices({
+          name: `${state.device_role}-Device-${Date.now()}`,
+          role: state.device_role
+        });
+        console.log("[App] Created device:", device.id);
+      }
 
-      // Get or create device ID
-      const device = await deviceService.getDevice();
       if (device) {
         setDeviceId(device.id);
+        console.log("[App] Device ID set to:", device.id);
+      } else {
+        console.log("[App] No device found and no role set yet");
       }
 
       setBooting(false);
@@ -74,69 +90,76 @@ export default function App() {
     bootstrap();
   }, [dispatch, refreshAppStateContext]);
 
+  useEffect(() => {
+    const initializeWebSocket = async () => {
+      setWsStatus("connecting");
+      setWsReady(false);
 
-  const initializeWebSocket = useCallback(async () => {
-    if (!appState.device_role || !deviceId) return;
+      const maxRetries = 5;
+      let attempts = 0;
 
-    console.log("[App] Initializing WebSocket...");
-    setWsStatus("connecting");
-    setWsReady(false);
+      const attemptConnection = async (): Promise<boolean> => {
+        try {
+          const [_, configuredWsUrl] = await appStateApi.getWsSettings();
+          const wsUrl = configuredWsUrl || "ws://localhost:9001";
 
-    const maxRetries = 5;
-    let attempts = 0;
+          console.log(`[App] Connecting to: ${wsUrl}`);
 
-    const attemptConnection = async (): Promise<boolean> => {
-      try {
-        // The WebSocket server runs as part of the Tauri app (on the same device)
-        // So we always connect to localhost, regardless of platform
-        const wsUrl = import.meta.env.VITE_WS_URL || "ws://localhost:9001";
+          const client = new WebSocketClient(
+            wsUrl,
+            deviceId,
+            appState.device_role || "POS"
+          );
 
-        const isAndroid = navigator.userAgent.toLowerCase().includes('android');
-        console.log(`[App] Platform: ${isAndroid ? 'Android' : 'Desktop'}`);
-        console.log(`[App] Connecting to: ${wsUrl} (Attempt ${attempts + 1}/${maxRetries})`);
+          await client.connect();
+          await client.waitForRegisterAck();
 
-        const client = new WebSocketClient(wsUrl, deviceId, appState.device_role || "POS");
-        await client.connect();
+          websocketService.setClient(client);
 
-        // Store client in service for global access
-        websocketService.setClient(client);
+          setWsStatus("connected");
+          setWsReady(true);
 
-        console.log("✅ WebSocket connected successfully");
-        setWsStatus("connected");
+          return true;
+        } catch (error) {
+          attempts++;
 
-        // Give brief moment before transitioning
-        setTimeout(() => setWsReady(true), 800);
-        return true;
-      } catch (error) {
-        console.error(`❌ WebSocket connection failed (Attempt ${attempts + 1}):`, error);
-        attempts++;
+          console.error(`❌ WS failed (${attempts}/${maxRetries})`, error);
 
-        if (attempts < maxRetries) {
-          setWsStatus("retrying");
-          setWsRetryCount(attempts);
-          console.log(`[App] Retrying in 3s... (${attempts}/${maxRetries})`);
-          await new Promise((resolve) => setTimeout(resolve, 3000));
-          return attemptConnection();
-        } else {
+          if (attempts < maxRetries) {
+            setWsStatus("retrying");
+            setWsRetryCount(attempts);
+            await new Promise((r) => setTimeout(r, 3000));
+            return attemptConnection();
+          }
+
           setWsStatus("failed");
           return false;
         }
-      }
+      };
+
+
+      await attemptConnection();
     };
 
-    await attemptConnection();
-  }, [appState.device_role, deviceId]);
+    // Store function in ref for retry handler
+    wsInitFunctionRef.current = initializeWebSocket;
 
-  // Initialize WebSocket after role is selected
-  useEffect(() => {
-    if (appState.device_role && deviceId && !wsReady && wsStatus === "connecting") {
+    if (
+      appState.device_role &&
+      deviceId &&
+      appState.selected_location_id &&
+      !wsInitializedRef.current &&
+      !booting
+    ) {
+      console.log("[App] ✅ All conditions met! Initializing WebSocket...");
+      wsInitializedRef.current = true;
       initializeWebSocket();
+    } else {
+      console.log("[App] ❌ Conditions not met, skipping initialization");
     }
-  }, [appState.device_role, deviceId,wsReady,wsStatus,initializeWebSocket]);
+  }, [appState.device_role, deviceId, appState.selected_location_id, booting]);
 
-  /* =========================
-     HANDLERS
-  ========================= */
+
 
   const handleTenantSelected = async (domain: string, token: string) => {
     setLoadingTenant(true);
@@ -179,12 +202,22 @@ export default function App() {
       const defaultMode = orderModesResponse[0];
       await appStateApi.setOrderMode(orderModeIds, orderModeNames, defaultMode.id, defaultMode.name);
 
+      // Start syncing
+      setIsSyncing(true);
+      setSyncStatus("syncing");
+
       await initialSync(appState.tenant_domain, appState.access_token, {
         channel: appState.device_role ?? "POS",
         locationId: location.id,
         brandId: location.brand_id,
         orderModeIds,
       });
+
+      // Sync complete
+      setSyncStatus("synced");
+
+      // Show synced message briefly
+      await new Promise(resolve => setTimeout(resolve, 1000));
 
       dispatch(
         hydrateAppState({
@@ -201,6 +234,7 @@ export default function App() {
 
       await refreshAppStateContext();
     } finally {
+      setIsSyncing(false);
       setLoadingLocation(false);
     }
   };
@@ -211,15 +245,42 @@ export default function App() {
       await appStateApi.setDeviceRole(role);
       dispatch(setDeviceRole(role));
       await refreshAppStateContext();
+
+      let device = await deviceService.getDevice();
+      if (!device) {
+        console.log("[App] Creating new device with role:", role);
+        device = await deviceService.registerDevices({
+          name: `${role}-Device-${Date.now()}`,
+          role: role
+        });
+        console.log("[App] Created device:", device.id);
+      }
+      setDeviceId(device.id);
+
+      if (role === "POS") {
+
+        setTimeout(() => {
+          window.location.reload();
+        }, 500);
+        return;
+      }
     } finally {
-      // Keep loading true until navigation completes
+
       setTimeout(() => setLoadingRole(false), 500);
     }
   };
 
-  /* =========================
-     BOOT / AUTH FLOW
-  ========================= */
+  const handleWebSocketRetry = () => {
+    // Reset the ref to allow re-initialization
+    wsInitializedRef.current = false;
+    setWsRetryCount(0);
+    // Call the initialization function
+    if (wsInitFunctionRef.current) {
+      wsInitFunctionRef.current();
+    }
+  };
+
+
 
   if (booting) {
     return <SplashScreen type={1} />;
@@ -234,7 +295,10 @@ export default function App() {
     return <TenantLogin onTenantSelected={handleTenantSelected} />;
   }
 
-  // Show loading after location selection (during initial sync)
+  // Show syncing screen during initial sync
+  if (isSyncing) {
+    return <SplashScreen type={4} syncStatus={syncStatus} />;
+  }
   if (loadingLocation) {
     return <SplashScreen type={1} />;
   }
@@ -248,8 +312,6 @@ export default function App() {
       />
     );
   }
-
-  // Show loading after role selection
   if (loadingRole) {
     return <SplashScreen type={1} />;
   }
@@ -258,21 +320,17 @@ export default function App() {
     return <Home onRoleSelected={handleRoleSelected} />;
   }
 
-  // Show WebSocket connection screen
   if (!wsReady) {
     return (
       <SplashScreen
         type={3}
         connectionStatus={wsStatus}
         retryCount={wsRetryCount}
-        onRetry={initializeWebSocket}
+        onRetry={handleWebSocketRetry}
       />
     );
   }
 
-  /* =========================
-     ROUTER (ROLE BASED)
-  ========================= */
   return (
     <Routes>
       {/* Entry: decides where to go */}

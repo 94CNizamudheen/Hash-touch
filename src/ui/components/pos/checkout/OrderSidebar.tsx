@@ -10,6 +10,7 @@ interface OrderSidebarProps {
   isOpen: boolean;
   onClose: () => void;
   onBackToMenu: () => void;
+  tenderedAmount?: number;
 }
 
 export default function OrderSidebar({
@@ -17,6 +18,7 @@ export default function OrderSidebar({
   total,
   isOpen,
   onClose,
+  tenderedAmount = 0,
 }: OrderSidebarProps) {
   const { t } = useTranslation();
   const isMobileOverlay = isOpen && window.innerWidth < 1024;
@@ -25,8 +27,7 @@ export default function OrderSidebar({
 
   const subtotal = total;
   const grandTotal = subtotal + totalCharges;
-  const paymentTotal = grandTotal;
-  const balance = grandTotal - paymentTotal;
+  const balance = tenderedAmount - grandTotal;
 
 
   return (
@@ -74,19 +75,13 @@ export default function OrderSidebar({
             </div>
 
             {/* Display individual charges */}
-            {charges.map((charge) => (
+            {charges.filter(charge => charge.applied).map((charge) => (
               <div
                 key={charge.id}
-                className={`flex justify-between text-xs ${charge.applied
-                    ? "text-muted-foreground"
-                    : "text-muted-foreground/50"
-                  }`}
+                className="flex justify-between text-xs text-muted-foreground"
               >
                 <span>
                   {charge.name} ({charge.percentage}%)
-                  {!charge.applied && (
-                    <span className="ml-1 italic"></span>
-                  )}
                 </span>
 
                 <span>${charge.amount.toFixed(2)}</span>
@@ -106,14 +101,18 @@ export default function OrderSidebar({
               <span>{t("Grand Total")}</span>
               <span>${grandTotal.toFixed(2)}</span>
             </div>
-            <div className="flex justify-between text-xs">
-              <span>{t("Payment Total")}</span>
-              <span>${paymentTotal.toFixed(2)}</span>
-            </div>
-            <div className="flex justify-between font-bold text-primary text-sm pt-1">
-              <span>{t("Balance")}</span>
-              <span>${balance.toFixed(2)}</span>
-            </div>
+            {tenderedAmount > 0 && (
+              <>
+                <div className="flex justify-between text-xs pt-1">
+                  <span>{t("Tendered")}</span>
+                  <span>${tenderedAmount.toFixed(2)}</span>
+                </div>
+                <div className={`flex justify-between font-bold text-sm pt-1 ${balance >= 0 ? 'text-green-600' : 'text-destructive'}`}>
+                  <span>{t("Balance")}</span>
+                  <span>${Math.abs(balance).toFixed(2)} {balance < 0 ? `(${t("Due")})` : `(${t("Change")})`}</span>
+                </div>
+              </>
+            )}
           </div>
         </div>
       </div>

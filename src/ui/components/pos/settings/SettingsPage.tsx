@@ -8,7 +8,7 @@ export default function SettingsPage() {
   const navigate = useNavigate();
 
   return (
-    <div className="fixed inset-0 flex flex-col bg-background text-foreground safe-area">
+    <div className="flex flex-col h-full bg-background text-foreground">
       {/* Header */}
       <div className="flex items-center justify-between p-6 border-b border-border">
         <h1 className="text-3xl font-bold">{t("Settings")}</h1>

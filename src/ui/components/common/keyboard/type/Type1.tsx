@@ -67,7 +67,7 @@ const Type1 = ({
               type="button"
               key={primary}
               className={cn(
-                "col-span-1 relative h-12 rounded-lg bg-white shadow text-black flex justify-center items-center text-lg font-medium",
+                "col-span-1 relative h-12 rounded-lg bg-background shadow text-foreground flex justify-center items-center text-lg font-medium",
                 isCaps ? "uppercase" : "lowercase"
               )}
               onClick={() => handleKeyClick(primary)}
@@ -101,7 +101,7 @@ const Type1 = ({
             type="button"
             key={key}
             className={cn(
-              "h-12 relative col-span-1 rounded-lg bg-white shadow text-black flex justify-center items-center text-lg font-medium",
+              "h-12 relative col-span-1 rounded-lg bg-background shadow text-foreground flex justify-center items-center text-lg font-medium",
               isCaps ? "uppercase" : "lowercase"
             )}
             onClick={() => handleKeyClick(key)}
@@ -131,7 +131,7 @@ const Type1 = ({
             type="button"
             key={key}
             className={cn(
-              "col-span-1 h-12 rounded-lg bg-white shadow text-black flex justify-center items-center text-lg font-medium",
+              "col-span-1 h-12 rounded-lg bg-background shadow text-foreground flex justify-center items-center text-lg font-medium",
               isCaps ? "uppercase" : "lowercase"
             )}
             onClick={() => handleKeyClick(key)}
@@ -171,7 +171,7 @@ const Type1 = ({
         <button
           type="button"
           onClick={() => handleKeyClick(" ")}
-          className="col-span-6 h-12 rounded-lg bg-white shadow flex justify-center items-center text-lg font-medium"
+          className="col-span-6 h-12 rounded-lg bg-background shadow flex justify-center items-center text-lg font-medium"
         />
         <button
           type="button"

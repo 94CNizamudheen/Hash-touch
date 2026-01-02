@@ -1,7 +1,9 @@
 
-use tauri::AppHandle;
+use tauri::{AppHandle, Manager};
 use crate::db::migrate;
 use crate::db::models::app_state_repo;
+use crate::WsState;
+use local_ip_address::local_ip;
 
 #[tauri::command]
 pub fn get_app_state(app: AppHandle) -> Result<crate::db::models::app_state::AppState, String> {
@@ -49,17 +51,28 @@ pub fn set_location(
 }
 
 #[tauri::command]
-pub fn set_device_role(
-    app: AppHandle,
-    role: String,
-) -> Result<(), String> {
+pub fn set_device_role(app: AppHandle, role: String) -> Result<(), String> {
     let conn = migrate::connection(&app);
-
     app_state_repo::update_app_state(&conn, "device_role", &role)
         .map_err(|e| e.to_string())?;
 
+    if role == "POS" {
+        let state = app.state::<WsState>();
+        let server = state.server.clone();
+
+        tauri::async_runtime::spawn(async move {
+            let addr = "0.0.0.0:9001";
+            log::info!("🚀 Starting WebSocket server on {}", addr);
+
+            if let Err(e) = server.start(addr).await {
+                log::error!("❌ WebSocket server failed: {}", e);
+            }
+        });
+    }
+
     Ok(())
 }
+
 
 #[tauri::command]
 pub fn set_order_modes(
@@ -136,6 +149,41 @@ pub fn set_kds_view_mode(app: AppHandle, mode: String) -> Result<(), String> {
     app_state_repo::update_app_state(&conn, "kds_view_mode", &mode)
         .map_err(|e| e.to_string())?;
     Ok(())
+}
+
+#[tauri::command]
+pub fn get_ws_settings(app: AppHandle) -> Result<(bool, String), String> {
+    let conn = migrate::connection(&app);
+    let state = app_state_repo::get_app_state(&conn).map_err(|e| e.to_string())?;
+
+    let server_mode = state.ws_server_mode.unwrap_or(0) == 1;
+    let server_url = state.ws_server_url.unwrap_or_else(|| "ws://localhost:9001".to_string());
+
+    Ok((server_mode, server_url))
+}
+
+#[tauri::command]
+pub fn set_ws_server_mode(app: AppHandle, enabled: bool) -> Result<(), String> {
+    let conn = migrate::connection(&app);
+    let value = if enabled { "1" } else { "0" };
+    app_state_repo::update_app_state(&conn, "ws_server_mode", value)
+        .map_err(|e| e.to_string())?;
+    Ok(())
+}
+
+#[tauri::command]
+pub fn set_ws_server_url(app: AppHandle, url: String) -> Result<(), String> {
+    let conn = migrate::connection(&app);
+    app_state_repo::update_app_state(&conn, "ws_server_url", &url)
+        .map_err(|e| e.to_string())?;
+    Ok(())
+}
+
+#[tauri::command]
+pub fn get_local_ip() -> Result<String, String> {
+    local_ip()
+        .map(|ip| ip.to_string())
+        .map_err(|e| e.to_string())
 }
 
 #[tauri::command]

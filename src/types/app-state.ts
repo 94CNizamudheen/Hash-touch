@@ -15,7 +15,10 @@ export interface AppState {
 
   selected_order_mode_id?: string | null;
   selected_order_mode_name?: string | null;
-  
+
   device_role: DeviceRole | null;
   sync_status: SyncStatus | null;
+
+  ws_server_mode?: number | null;
+  ws_server_url?: string | null;
 }

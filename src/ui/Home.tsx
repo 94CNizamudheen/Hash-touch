@@ -1,6 +1,7 @@
 
 import { deviceService, type DeviceRole } from "@/services/local/device.local.service";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { appStateApi } from "@/services/tauri/appState";
 
 
 const ROLES: { key: DeviceRole; label: string }[] = [
@@ -18,6 +19,23 @@ export default function Home({ onRoleSelected }: Props) {
   const [selectedRole, setSelectedRole] = useState<DeviceRole | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [serverUrl, setServerUrl] = useState("");
+
+  useEffect(() => {
+    // Load saved server URL
+    const loadServerUrl = async () => {
+      try {
+        const [_, url] = await appStateApi.getWsSettings();
+        // Load any previously saved URL
+        if (url) {
+          setServerUrl(url);
+        }
+      } catch (error) {
+        console.error("Failed to load server URL:", error);
+      }
+    };
+    loadServerUrl();
+  }, []);
 
   const handleRoleSelect = (role: DeviceRole) => {
     setSelectedRole(role);
@@ -25,6 +43,22 @@ export default function Home({ onRoleSelected }: Props) {
 
   const createAndContinue = async () => {
     if (!selectedRole) return;
+
+    // For non-POS devices, save the server URL
+    if (selectedRole !== "POS") {
+      if (!serverUrl.trim()) {
+        setError("Please enter the POS server URL");
+        return;
+      }
+      try {
+        await appStateApi.setWsServerUrl(serverUrl);
+      } catch (err) {
+        console.error("Failed to save server URL:", err);
+        setError("Failed to save server URL");
+        return;
+      }
+    }
+
     setBusy(true);
     try {
       const label = ROLES.find((r) => r.key === selectedRole)?.label || selectedRole;
@@ -63,6 +97,34 @@ export default function Home({ onRoleSelected }: Props) {
               </button>
             ))}
           </div>
+
+          {/* Server URL input for non-POS devices */}
+          {selectedRole && selectedRole !== "POS" && (
+            <div className="mb-6 p-4 bg-blue-50 rounded-lg border border-blue-200">
+              <label className="block text-sm font-medium mb-2 text-zinc-700">
+                POS Server Address
+              </label>
+              <input
+                type="text"
+                value={serverUrl}
+                onChange={(e) => setServerUrl(e.target.value)}
+                placeholder="ws://192.168.1.100:9001"
+                className="w-full px-3 py-2 border border-zinc-300 rounded-md text-sm font-mono"
+              />
+              <p className="text-xs text-zinc-600 mt-2">
+                Enter the IP address of the POS device (e.g., ws://192.168.1.100:9001)
+              </p>
+            </div>
+          )}
+
+          {/* Info for POS device */}
+          {selectedRole === "POS" && (
+            <div className="mb-6 p-4 bg-green-50 rounded-lg border border-green-200">
+              <p className="text-sm text-green-800">
+                ✓ This device will run as the WebSocket server. Other devices (KDS, Queue) will connect to this device.
+              </p>
+            </div>
+          )}
 
           <button
             onClick={createAndContinue}

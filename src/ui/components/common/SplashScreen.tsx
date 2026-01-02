@@ -1,11 +1,12 @@
 import { useTheme } from "@/ui/context/ThemeContext";
-import Logo from "../../../assets/logo_2.png";
-import LogoDark from "../../../assets/logo_dark_2.png";
+import Logo from "../../../assets/logo.png";
+import LogoDark from "../../../assets/logo_dark.png";
 import { Wifi, WifiOff } from "lucide-react";
 
 interface SplashScreenProps {
   type?: number;
   connectionStatus?: "connecting" | "connected" | "failed" | "retrying"|"disconnected";
+  syncStatus?: "syncing" | "synced";
   retryCount?: number;
   onRetry?: () => void;
 }
@@ -13,6 +14,7 @@ interface SplashScreenProps {
 const SplashScreen = ({
   type = 1,
   connectionStatus = "connecting",
+  syncStatus = "syncing",
   retryCount = 0,
   onRetry
 }: SplashScreenProps) => {
@@ -21,54 +23,58 @@ const SplashScreen = ({
   switch (type) {
     case 1:
       return (
-        <div className="min-h-screen flex relative items-center justify-center max-w-md mx-auto">
-          {theme === "light" ? (
-            <img
-              src={Logo}
-              alt="Logo"
-              width={300}
-              height={50}
-              className="h-auto animate-pulse"
-            />
-          ) : (
-            <img
-              src={LogoDark}
-              alt="Logo"
-              width={300}
-              height={50}
-              className="h-auto animate-pulse"
-            />
-          )}
+        <div className="fixed inset-0 flex items-center justify-center bg-background z-50">
+          <div className="max-w-md mx-auto px-4">
+            {theme === "light" ? (
+              <img
+                src={Logo}
+                alt="Logo"
+                width={300}
+                height={50}
+                className="h-auto animate-pulse"
+              />
+            ) : (
+              <img
+                src={LogoDark}
+                alt="Logo"
+                width={300}
+                height={50}
+                className="h-auto animate-pulse"
+              />
+            )}
+          </div>
         </div>
       );
 
     case 2:
       return (
-        <div className="min-h-screen flex relative items-center justify-center text-center flex-col gap-10">
-          {theme === "light" ? (
-            <img
-              src={Logo}
-              alt="Logo"
-              width={300}
-              height={50}
-              className="h-auto animate-pulse"
-            />
-          ) : (
-            <img
-              src={LogoDark}
-              alt="Logo"
-              width={300}
-              height={50}
-              className="h-auto animate-pulse"
-            />
-          )}
+        <div className="fixed inset-0 flex items-center justify-center text-center bg-background z-50">
+          <div className="flex flex-col gap-10 max-w-md mx-auto px-4">
+            {theme === "light" ? (
+              <img
+                src={Logo}
+                alt="Logo"
+                width={300}
+                height={50}
+                className="h-auto animate-pulse"
+              />
+            ) : (
+              <img
+                src={LogoDark}
+                alt="Logo"
+                width={300}
+                height={50}
+                className="h-auto animate-pulse"
+              />
+            )}
+          </div>
         </div>
       );
 
     case 3:
       // WebSocket connection screen
       return (
-        <div className="min-h-screen flex relative items-center justify-center bg-background">
+        <div className="fixed inset-0 flex items-center justify-center bg-background z-50">
           <div className="max-w-md mx-auto text-center space-y-6 p-6">
             {/* Logo */}
             {theme === "light" ? (
@@ -168,6 +174,67 @@ const SplashScreen = ({
 
             {/* Loading Dots */}
             {(connectionStatus === "connecting" || connectionStatus === "retrying") && (
+              <div className="flex justify-center gap-2 pt-4">
+                <div className="w-2 h-2 bg-primary rounded-full animate-bounce [animation-delay:-0.3s]"></div>
+                <div className="w-2 h-2 bg-primary rounded-full animate-bounce [animation-delay:-0.15s]"></div>
+                <div className="w-2 h-2 bg-primary rounded-full animate-bounce"></div>
+              </div>
+            )}
+          </div>
+        </div>
+      );
+
+    case 4:
+      // Data sync screen
+      return (
+        <div className="fixed inset-0 flex items-center justify-center bg-background z-50">
+          <div className="max-w-md mx-auto text-center space-y-6 p-6">
+            {/* Logo */}
+            {theme === "light" ? (
+              <img
+                src={Logo}
+                alt="Logo"
+                width={300}
+                height={50}
+                className="h-auto mx-auto"
+              />
+            ) : (
+              <img
+                src={LogoDark}
+                alt="Logo"
+                width={300}
+                height={50}
+                className="h-auto mx-auto"
+              />
+            )}
+
+            {/* Status Text */}
+            <div className="space-y-2">
+              {syncStatus === "syncing" && (
+                <>
+                  <h2 className="text-xl font-semibold text-foreground">
+                    Syncing Data...
+                  </h2>
+                  <p className="text-sm text-muted-foreground">
+                    Downloading products, categories, and settings
+                  </p>
+                </>
+              )}
+
+              {syncStatus === "synced" && (
+                <>
+                  <h2 className="text-xl font-semibold text-green-600 dark:text-green-400">
+                    Synced Successfully!
+                  </h2>
+                  <p className="text-sm text-muted-foreground">
+                    All data is up to date
+                  </p>
+                </>
+              )}
+            </div>
+
+            {/* Loading Dots */}
+            {syncStatus === "syncing" && (
               <div className="flex justify-center gap-2 pt-4">
                 <div className="w-2 h-2 bg-primary rounded-full animate-bounce [animation-delay:-0.3s]"></div>
                 <div className="w-2 h-2 bg-primary rounded-full animate-bounce [animation-delay:-0.15s]"></div>

@@ -45,27 +45,40 @@ export const ticketService = {
   ): Promise<{ success: boolean; ticketId?: string; offline?: boolean }> {
     const online = await isOnline();
 
+    // Prepare metadata for saving
+    const metadata = {
+      locationId: ticketRequest.ticket.location_id,
+      orderModeName: ticketRequest.ticket.ordermode_name,
+      ticketAmount: Math.round(ticketRequest.ticket.ticket_amount * 100), // Store in cents
+      itemsCount: ticketRequest.orders.length,
+      queueNumber: ticketRequest.ticket.queue_number,
+      ticketNumber: ticketRequest.ticket.ticket_number,
+    };
+
     if (online) {
       try {
-      
         await post(domain, "sync-tickets", token, [ticketRequest]);
-        return { success: true, offline: false };
-      } catch (error) {
-        // If API call fails, save offline
+
+        // Save to local DB with SYNCED status for online tickets
         const ticketId = await ticketLocal.save(ticketRequest, {
-          locationId: ticketRequest.ticket.location_id,
-          orderModeName: ticketRequest.ticket.ordermode_name,
-          ticketAmount: Math.round(ticketRequest.ticket.ticket_amount),
-          itemsCount: ticketRequest.orders.length,
+          ...metadata,
+          syncStatus: "SYNCED",
+        });
+
+        return { success: true, ticketId, offline: false };
+      } catch (error) {
+        // If API call fails, save offline with PENDING status
+        const ticketId = await ticketLocal.save(ticketRequest, {
+          ...metadata,
+          syncStatus: "PENDING",
         });
         return { success: true, ticketId, offline: true };
       }
     } else {
+      // Save offline with PENDING status
       const ticketId = await ticketLocal.save(ticketRequest, {
-        locationId: ticketRequest.ticket.location_id,
-        orderModeName: ticketRequest.ticket.ordermode_name,
-        ticketAmount: Math.round(ticketRequest.ticket.ticket_amount),
-        itemsCount: ticketRequest.orders.length,
+        ...metadata,
+        syncStatus: "PENDING",
       });
       return { success: true, ticketId, offline: true };
     }

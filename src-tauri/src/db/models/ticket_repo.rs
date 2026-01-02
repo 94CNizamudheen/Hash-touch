@@ -7,9 +7,10 @@ pub fn save_ticket(conn: &mut Connection, ticket: &Ticket) -> anyhow::Result<()>
         INSERT INTO tickets (
           id, ticket_data, sync_status, sync_error, sync_attempts,
           location_id, order_mode_name, ticket_amount, items_count,
+          queue_number, ticket_number,
           created_at, updated_at, synced_at
         )
-        VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12)
+        VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14)
         ON CONFLICT(id) DO UPDATE SET
           ticket_data = excluded.ticket_data,
           sync_status = excluded.sync_status,
@@ -28,6 +29,8 @@ pub fn save_ticket(conn: &mut Connection, ticket: &Ticket) -> anyhow::Result<()>
             ticket.order_mode_name,
             ticket.ticket_amount,
             ticket.items_count,
+            ticket.queue_number,
+            ticket.ticket_number,
             ticket.created_at,
             ticket.updated_at,
             ticket.synced_at,
@@ -42,6 +45,7 @@ pub fn get_all_tickets(conn: &Connection) -> anyhow::Result<Vec<Ticket>> {
         SELECT
           id, ticket_data, sync_status, sync_error, sync_attempts,
           location_id, order_mode_name, ticket_amount, items_count,
+          queue_number, ticket_number,
           created_at, updated_at, synced_at
         FROM tickets
         ORDER BY created_at DESC
@@ -59,9 +63,11 @@ pub fn get_all_tickets(conn: &Connection) -> anyhow::Result<Vec<Ticket>> {
             order_mode_name: row.get(6)?,
             ticket_amount: row.get(7)?,
             items_count: row.get(8)?,
-            created_at: row.get(9)?,
-            updated_at: row.get(10)?,
-            synced_at: row.get(11)?,
+            queue_number: row.get(9)?,
+            ticket_number: row.get(10)?,
+            created_at: row.get(11)?,
+            updated_at: row.get(12)?,
+            synced_at: row.get(13)?,
         })
     })?;
 
@@ -74,6 +80,7 @@ pub fn get_pending_tickets(conn: &Connection) -> anyhow::Result<Vec<Ticket>> {
         SELECT
           id, ticket_data, sync_status, sync_error, sync_attempts,
           location_id, order_mode_name, ticket_amount, items_count,
+          queue_number, ticket_number,
           created_at, updated_at, synced_at
         FROM tickets
         WHERE sync_status = 'PENDING' OR sync_status = 'FAILED'
@@ -92,9 +99,11 @@ pub fn get_pending_tickets(conn: &Connection) -> anyhow::Result<Vec<Ticket>> {
             order_mode_name: row.get(6)?,
             ticket_amount: row.get(7)?,
             items_count: row.get(8)?,
-            created_at: row.get(9)?,
-            updated_at: row.get(10)?,
-            synced_at: row.get(11)?,
+            queue_number: row.get(9)?,
+            ticket_number: row.get(10)?,
+            created_at: row.get(11)?,
+            updated_at: row.get(12)?,
+            synced_at: row.get(13)?,
         })
     })?;
 
@@ -151,4 +160,29 @@ pub fn get_sync_stats(conn: &Connection) -> anyhow::Result<(i32, i32, i32)> {
 pub fn clear_all_tickets(conn: &mut Connection) -> anyhow::Result<()> {
     conn.execute("DELETE FROM tickets", [])?;
     Ok(())
+}
+
+pub fn get_max_queue_number(
+    conn: &Connection,
+    location_id: &str,
+    business_date: &str,
+) -> anyhow::Result<Option<i32>> {
+    let mut stmt = conn.prepare(
+        r#"
+        SELECT MAX(queue_number) as max_queue
+        FROM tickets
+        WHERE location_id = ?1
+          AND DATE(created_at) = DATE(?2)
+        "#
+    )?;
+
+    let result = stmt.query_row(params![location_id, business_date], |row| {
+        row.get(0)
+    });
+
+    match result {
+        Ok(max_queue) => Ok(max_queue),
+        Err(rusqlite::Error::QueryReturnedNoRows) => Ok(None),
+        Err(e) => Err(e.into()),
+    }
 }

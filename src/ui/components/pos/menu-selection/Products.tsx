@@ -55,15 +55,17 @@ export default function Products({
           value={search}
           onChange={(e: any) => setSearch(e.target.value)}
         />
-        <ProductGroupTabs />
+        {!search.trim() && <ProductGroupTabs />}
       </div>
 
       {/* ================= tempStyle = true ================= */}
       {tempStyle ? (
         <div className="flex flex-1 overflow-hidden">
-          <aside className="">
+          {!search.trim() && (
+            <aside className="">
               <CategoryTabs direction="vertical" />
-          </aside>
+            </aside>
+          )}
 
           <div
             ref={productGridRef}
@@ -95,8 +97,8 @@ export default function Products({
       ) : (
 
         <>
+          {!search.trim() && <CategoryTabs direction="horizontal" />}
 
-            <CategoryTabs direction="horizontal" />
           <div
             ref={productGridRef}
             className={cn(

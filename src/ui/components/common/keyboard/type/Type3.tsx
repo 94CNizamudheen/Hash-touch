@@ -50,7 +50,7 @@ const Type3 = ({
             key={key as string}
             type="button"
             className={cn(
-              "relative h-12 rounded-lg bg-white shadow col-span-1 text-black flex justify-center items-center text-lg font-medium"
+              "relative h-12 rounded-lg bg-background shadow col-span-1 text-foreground flex justify-center items-center text-lg font-medium"
             )}
             onClick={() => handleKeyClick(key as string)}
           >
@@ -73,7 +73,7 @@ const Type3 = ({
             type="button"
             key={key}
             className={cn(
-              "h-12 relative rounded-lg bg-white shadow col-span-1 text-black flex justify-center items-center text-lg font-medium"
+              "h-12 relative rounded-lg bg-background shadow col-span-1 text-foreground flex justify-center items-center text-lg font-medium"
             )}
             onClick={() => handleKeyClick(key)}
           >
@@ -107,7 +107,7 @@ const Type3 = ({
             type="button"
             key={key}
             className={cn(
-              "h-12 rounded-lg bg-white shadow text-black col-span-1 flex justify-center items-center text-lg font-medium"
+              "h-12 rounded-lg bg-background shadow text-foreground col-span-1 flex justify-center items-center text-lg font-medium"
             )}
             onClick={() => handleKeyClick(key)}
           >
@@ -151,7 +151,7 @@ const Type3 = ({
         <button
           type="button"
           onClick={() => handleKeyClick(" ")}
-          className="col-span-7 h-12 rounded-lg bg-white shadow flex justify-center items-center text-lg font-medium"
+          className="col-span-7 h-12 rounded-lg bg-background shadow flex justify-center items-center text-lg font-medium"
         />
         <button
           type="button"

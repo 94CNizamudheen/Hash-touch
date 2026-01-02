@@ -15,12 +15,11 @@ export default function TenantForm({
   return (
     <form
       onSubmit={onSubmit}
-      className="w-full flex flex-col gap-4  p-8 rounded-2xl shadow-lg max-w-sm"
+      className="w-full flex flex-col gap-4  p-8 "
     >
       {/* Tenant Name */}
       <TenantInput
         name="domain"
-        label="Tenant Name"
         icon="home"
         placeholder="Enter tenant name"
         onShowKeyboard={setShowKeyboard}
@@ -28,7 +27,6 @@ export default function TenantForm({
 
       <TenantInput
         name="email"
-        label="Email"
         icon="user"
         placeholder="Enter your email"
         onShowKeyboard={setShowKeyboard}
@@ -36,7 +34,6 @@ export default function TenantForm({
 
       <TenantInput
         name="password"
-        label="Password"
         type="password"
         icon="lock"
         placeholder="Enter your password"

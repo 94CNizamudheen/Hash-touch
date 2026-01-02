@@ -66,18 +66,44 @@ pub fn run() {
                 event_bus_clone.start().await;
             });
 
-            let ws_addr = "0.0.0.0:9001";
-
-            log::info!("🔧 Starting WebSocket server on {}", ws_addr);
-
-            // Start WebSocket server
-            tauri::async_runtime::spawn(async move {
-                log::info!("🚀 WebSocket server task started, binding to {}", ws_addr);
-                match ws_server.start(ws_addr).await {
-                    Ok(_) => log::info!("✅ WebSocket server stopped gracefully"),
-                    Err(e) => log::error!("❌ WebSocket server error: {}", e),
+            // Check device role - POS devices always run as server
+            let conn = db::migrate::connection(app.handle());
+            let device_role = match db::models::app_state_repo::get_app_state(&conn) {
+                Ok(state) => {
+                    log::info!("📋 Device role from database: {:?}", state.device_role);
+                    state.device_role.clone()
+                },
+                Err(e) => {
+                    log::warn!("⚠️ Failed to read device role: {}, will start server when role is set", e);
+                    None
                 }
-            });
+            };
+
+            // Start server if device role is POS
+            if let Some(role) = device_role {
+                if role == "POS" {
+                    let ws_addr = "0.0.0.0:9001";
+                    log::info!("🔧 POS device detected - Starting WebSocket server on {}", ws_addr);
+                    log::info!("🌐 Server will be accessible at ws://<your-ip>:9001");
+
+                    // Start WebSocket server
+                    tauri::async_runtime::spawn(async move {
+                        log::info!("🚀 WebSocket server task started, attempting to bind to {}", ws_addr);
+                        match ws_server.start(ws_addr).await {
+                            Ok(_) => log::info!("✅ WebSocket server stopped gracefully"),
+                            Err(e) => {
+                                log::error!("❌ WebSocket server FAILED to start: {}", e);
+                                log::error!("❌ This usually means port 9001 is already in use or permission denied");
+                            }
+                        }
+                    });
+                } else {
+                    log::info!("📴 Non-POS device ({}) - Running as client only", role);
+                }
+            } else {
+                log::info!("⏳ No device role set yet - WebSocket server will start when POS role is selected");
+                log::info!("💡 After selecting POS role, the app will restart and the server will start");
+            }
 
             log::info!("🚀 Setup complete, app is ready");
             Ok(())
@@ -101,6 +127,10 @@ pub fn run() {
             commands::app_state::set_kds_settings,
             commands::app_state::get_kds_view_mode,
             commands::app_state::set_kds_view_mode,
+            commands::app_state::get_ws_settings,
+            commands::app_state::set_ws_server_mode,
+            commands::app_state::set_ws_server_url,
+            commands::app_state::get_local_ip,
             // commands::app_state::clear_device_data,
 
             // Device
@@ -171,6 +201,7 @@ pub fn run() {
             commands::ticket::delete_ticket,
             commands::ticket::get_sync_stats,
             commands::ticket::clear_all_tickets,
+            commands::ticket::get_max_queue_number,
 
             // KDS Tickets
             commands::kds_ticket::save_kds_ticket,

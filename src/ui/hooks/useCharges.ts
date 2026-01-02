@@ -81,7 +81,6 @@ function getChargeApplicableAmount(
 ): number {
   const chargeMappings = mappings.filter(m => m.charge_id === chargeId);
 
-  // 🌍 GLOBAL charge → apply only to items WITHOUT mapped charges
   if (chargeMappings.length === 0) {
     const mappedItemIds = getAllMappedItemIds(charges, mappings, items);
 

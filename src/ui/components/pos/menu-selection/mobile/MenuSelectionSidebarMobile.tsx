@@ -169,13 +169,9 @@ const MenuSelectionSidebarMobile = () => {
           onClose={() => setShowEndShift(false)}
           onConfirm={async () => {
             setShowEndShift(false);
-
-            // After ending shift, check only for pending syncs
-            // (shift is now closed, so no need to check it again)
             const blocks = await checkBlocks();
             if (blocks.totalSyncs > 0) {
-              // Still have pending syncs
-              showNotification.info(t("Please wait for pending syncs to complete before logging out"), 4000);
+              showNotification.warning(t("Please wait for pending syncs to complete before logging out"), 4000);
             } else {
               // All clear, proceed to logout
               showNotification.info(t("Logging out..."), 2000);

@@ -202,13 +202,15 @@ export const ProductProvider = ({ children }: { children: React.ReactNode }) => 
   const filteredItems = useMemo(() => {
     let result = [...items];
 
-    if (selectedCategory) {
-      result = result.filter(p => p.category_id === selectedCategory);
-    }
-
+    // If searching, search globally (ignore category)
     if (search.trim()) {
       const term = search.toLowerCase();
       result = result.filter(p => p.name.toLowerCase().includes(term));
+    } else {
+      // Only filter by category when NOT searching
+      if (selectedCategory) {
+        result = result.filter(p => p.category_id === selectedCategory);
+      }
     }
 
     return result;

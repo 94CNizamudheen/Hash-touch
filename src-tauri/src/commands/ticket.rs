@@ -66,3 +66,15 @@ pub fn clear_all_tickets(app: AppHandle) -> Result<(), String> {
     ticket_repo::clear_all_tickets(&mut conn)
         .map_err(|e| e.to_string())
 }
+
+#[tauri::command]
+pub fn get_max_queue_number(
+    app: AppHandle,
+    location_id: String,
+    business_date: String,
+) -> Result<Option<i32>, String> {
+    println!("🦀 Rust Command: get_max_queue_number for location {} on {}", location_id, business_date);
+    let conn = migrate::connection(&app);
+    ticket_repo::get_max_queue_number(&conn, &location_id, &business_date)
+        .map_err(|e| e.to_string())
+}

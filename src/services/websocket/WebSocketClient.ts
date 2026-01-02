@@ -12,11 +12,17 @@ export class WebSocketClient {
   private url: string;
   private deviceId: string;
   private deviceType: string;
+
   private messageHandlers: Map<string, MessageHandler[]> = new Map();
+
   private reconnectAttempts = 0;
   private maxReconnectAttempts = 5;
   private reconnectDelay = 3000;
   private isIntentionallyClosed = false;
+
+  // 🔐 Registration ACK handling
+  private registerAckPromise: Promise<void> | null = null;
+  private resolveRegisterAck: (() => void) | null = null;
 
   constructor(url: string, deviceId: string, deviceType: string) {
     this.url = url;
@@ -27,25 +33,39 @@ export class WebSocketClient {
   connect(): Promise<void> {
     return new Promise((resolve, reject) => {
       try {
-        console.log(`[WebSocketClient] Attempting to connect to: ${this.url}`);
+        console.log(`[WebSocketClient] Connecting to ${this.url}`);
+
+        // 🔐 Prepare register ACK promise
+        this.registerAckPromise = new Promise((res) => {
+          this.resolveRegisterAck = res;
+        });
+
         this.ws = new WebSocket(this.url);
         this.isIntentionallyClosed = false;
 
-        // Add connection timeout (10 seconds)
+        let hasResolved = false;
+
+        // ⏱ Connection timeout
         const connectionTimeout = setTimeout(() => {
           if (this.ws && this.ws.readyState !== WebSocket.OPEN) {
             console.error("❌ WebSocket connection timeout");
             this.ws.close();
-            reject(new Error("Connection timeout"));
+            if (!hasResolved) {
+              hasResolved = true;
+              reject(new Error("WebSocket connection timeout"));
+            }
           }
-        }, 10000);
+        }, 3000);
 
+        // ✅ Socket opened
         this.ws.onopen = () => {
           clearTimeout(connectionTimeout);
-          console.log("✅ WebSocket connected successfully");
+          hasResolved = true;
+
+          console.log("✅ WebSocket connected");
           this.reconnectAttempts = 0;
 
-          // Register device
+          // 🔐 Register device with server
           this.send({
             message_type: "register",
             device_id: this.deviceId,
@@ -56,52 +76,87 @@ export class WebSocketClient {
           resolve();
         };
 
+        // 📨 Incoming messages
         this.ws.onmessage = (event) => {
           try {
             const message: DeviceMessage = JSON.parse(event.data);
-            console.log("📨 Received message:", message.message_type);
+            console.log("📨 WS message:", message.message_type);
+
+            // ✅ Register ACK
+            if (message.message_type === "register_ack") {
+              console.log("✅ Device successfully registered");
+              this.resolveRegisterAck?.();
+            }
+
             this.handleMessage(message);
-          } catch (error) {
-            console.error("❌ Failed to parse message:", error);
+          } catch (err) {
+            console.error("❌ Invalid WS message:", err);
           }
         };
 
+        // ❌ Error
         this.ws.onerror = (error) => {
           clearTimeout(connectionTimeout);
-          console.error("❌ WebSocket error:", error);
-          console.error("❌ WebSocket URL:", this.url);
-          console.error("❌ WebSocket readyState:", this.ws?.readyState);
-          reject(error);
+          if (!hasResolved) {
+            hasResolved = true;
+            console.error("❌ WebSocket error:", error);
+            reject(error);
+          }
         };
 
+        // 🔌 Closed
         this.ws.onclose = (event) => {
           clearTimeout(connectionTimeout);
-          console.log("🔌 WebSocket disconnected", {
+          console.warn("🔌 WebSocket closed", {
             code: event.code,
             reason: event.reason,
-            wasClean: event.wasClean
+            clean: event.wasClean,
           });
 
-          if (!this.isIntentionallyClosed && this.reconnectAttempts < this.maxReconnectAttempts) {
+          if (!hasResolved) {
+            hasResolved = true;
+            reject(
+              new Error(
+                `Closed before open: ${event.reason || "Unknown reason"}`
+              )
+            );
+            return;
+          }
+
+          // 🔁 Auto reconnect
+          if (
+            !this.isIntentionallyClosed &&
+            this.reconnectAttempts < this.maxReconnectAttempts
+          ) {
+            this.reconnectAttempts++;
+            console.log(
+              `🔄 Reconnecting (${this.reconnectAttempts}/${this.maxReconnectAttempts})`
+            );
+
             setTimeout(() => {
-              console.log(`🔄 Attempting to reconnect (${this.reconnectAttempts + 1}/${this.maxReconnectAttempts})...`);
-              this.reconnectAttempts++;
               this.connect().catch(console.error);
             }, this.reconnectDelay);
           }
         };
-      } catch (error) {
-        console.error("❌ WebSocket connection error:", error);
-        reject(error);
+      } catch (err) {
+        console.error("❌ WS setup error:", err);
+        reject(err);
       }
     });
+  }
+
+  // 🔐 Wait until server confirms registration
+  async waitForRegisterAck(): Promise<void> {
+    if (this.registerAckPromise) {
+      await this.registerAckPromise;
+    }
   }
 
   send(message: DeviceMessage): void {
     if (this.ws && this.ws.readyState === WebSocket.OPEN) {
       this.ws.send(JSON.stringify(message));
     } else {
-      console.warn("⚠️ WebSocket not connected, message not sent");
+      console.warn("⚠️ WS not connected, message skipped");
     }
   }
 
@@ -114,25 +169,25 @@ export class WebSocketClient {
 
   off(messageType: string, handler: MessageHandler): void {
     const handlers = this.messageHandlers.get(messageType);
-    if (handlers) {
-      const index = handlers.indexOf(handler);
-      if (index > -1) {
-        handlers.splice(index, 1);
-      }
+    if (!handlers) return;
+
+    const index = handlers.indexOf(handler);
+    if (index >= 0) {
+      handlers.splice(index, 1);
     }
   }
 
   private handleMessage(message: DeviceMessage): void {
-    // Handle specific message type
+    // Specific handlers
     const handlers = this.messageHandlers.get(message.message_type);
     if (handlers) {
-      handlers.forEach((handler) => handler(message));
+      handlers.forEach((h) => h(message));
     }
 
-    // Handle wildcard handlers
-    const wildcardHandlers = this.messageHandlers.get("*");
-    if (wildcardHandlers) {
-      wildcardHandlers.forEach((handler) => handler(message));
+    // Wildcard handlers
+    const wildcard = this.messageHandlers.get("*");
+    if (wildcard) {
+      wildcard.forEach((h) => h(message));
     }
   }
 

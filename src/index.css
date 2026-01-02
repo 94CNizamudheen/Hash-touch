@@ -120,14 +120,36 @@ body {
   margin: 0;
   padding: 0;
   overflow: hidden;
-  touch-action: pan-y;
+  position: fixed;
+  touch-action: manipulation;
   -webkit-text-size-adjust: 100%;
+  -webkit-tap-highlight-color: transparent;
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  user-select: none;
 }
 
 html,
 body,
 #root {
   height: 100%;
+  width: 100%;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+}
+
+/* POS Touch Optimizations */
+* {
+  -webkit-tap-highlight-color: transparent;
+}
+
+button, input, select, textarea {
+  -webkit-user-select: text;
+  user-select: text;
+  touch-action: manipulation;
 }
 
 

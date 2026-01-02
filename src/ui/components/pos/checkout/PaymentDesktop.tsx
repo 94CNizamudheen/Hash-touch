@@ -9,6 +9,7 @@ import { usePaymentMethods } from "@/ui/hooks/usePaymentMethods";
 import { useTransactionTypes } from "@/ui/hooks/useTransactionTypes";
 import { buildTicketRequest } from "@/ui/utils/ticketBuilder";
 import { ticketService } from "@/services/data/ticket.service";
+import { ticketLocal } from "@/services/local/ticket.local.service";
 import { printerService, type ReceiptData } from "@/services/local/printer.local.service";
 import { websocketService } from "@services/websocket/websocket.service";
 import { kdsTicketLocal } from "@/services/local/kds-ticket.local.service";
@@ -18,6 +19,7 @@ import CenterPaymentContent from "./CenterPaymentContent";
 import PaymentMethodsSidebar from "./PaymentMethodSidebar";
 import PaymentSuccessModal from "./PaymentSuccessModal";
 import { transactionTypeLocal } from "@/services/local/transaction-type.local.service";
+import { useNotification } from "@/ui/context/NotificationContext";
 
 export default function PaymentDesktop() {
   const navigate = useNavigate();
@@ -30,13 +32,14 @@ export default function PaymentDesktop() {
   const { charges, totalCharges } = useCharges(items, subtotal);
   const total = subtotal + totalCharges;
 
-  const [inputValue, setInputValue] = useState(() => total.toFixed(2));
+  const [inputValue, setInputValue] = useState("0.00");
   const [selectedMethod, setSelectedMethod] = useState("");
   const [showDrawer, setShowDrawer] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
   const [loading, setLoading] = useState(false);
   const [final, setFinal] = useState({ total: 0, balance: 0 });
   const [isPaymentReady, setIsPaymentReady] = useState(false);
+  const {showNotification}= useNotification();
 
 useEffect(() => {
   const loadTransactionTypes = async () => {
@@ -46,11 +49,6 @@ useEffect(() => {
 
   loadTransactionTypes();
 }, []);
-
-  // Update inputValue when total changes
-  useEffect(() => {
-    setInputValue(total.toFixed(2));
-  }, [total]);
 
   // Set default payment method when payment methods are loaded
   useEffect(() => {
@@ -64,6 +62,10 @@ useEffect(() => {
   const tendered = parseFloat(inputValue) || 0;
   const balance = tendered - total;
 
+  console.log("tendered amount:", tendered.toFixed(2))
+  console.log("total amount:", total.toFixed(2))
+  console.log("balance amount:", balance.toFixed(2))
+
   const onKey = (k: string) => {
     if (k === "C") return setInputValue("0.00");
     if (k === "." && inputValue.includes(".")) return;
@@ -71,8 +73,12 @@ useEffect(() => {
   };
 
   const onPay = async () => {
-    if (tendered < total) {
-      alert("Insufficient payment");
+    // Round to 2 decimals for comparison to avoid floating point issues
+    const tenderedRounded = Math.round(tendered * 100) / 100;
+    const totalRounded = Math.round(total * 100) / 100;
+
+    if (tenderedRounded < totalRounded) {
+      showNotification.error("Insufficient payment")
       return;
     }
 
@@ -106,6 +112,17 @@ useEffect(() => {
 
       console.log("selected payment method", selectedPaymentMethod);
 
+      // Get business date (today in YYYY-MM-DD format)
+      const businessDate = new Date().toISOString().split("T")[0];
+
+      // Get sequential queue number for this location and date
+      const queueNumber = await ticketLocal.getNextQueueNumber(
+        appState.selected_location_id,
+        businessDate
+      );
+
+      console.log(`🎫 Generated queue number: ${queueNumber} for location ${appState.selected_location_id} on ${businessDate}`);
+
       // Build ticket request
       const ticketRequest = buildTicketRequest({
         items,
@@ -123,6 +140,8 @@ useEffect(() => {
         saleTransactionTypeId: saleTransactionType.id,
         paymentTransactionTypeId: paymentTransactionType.id,
         transactionTypes,
+        queueNumber
+        
       });
 
       console.log("📝 Creating ticket:", ticketRequest);
@@ -140,6 +159,9 @@ useEffect(() => {
       } else {
         console.log("✅ Ticket created successfully online");
       }
+
+      // Dispatch custom event to notify Activity page
+      window.dispatchEvent(new CustomEvent("ticketCreated"));
 
       // Broadcast order to KDS and Queue displays via WebSocket
       try {
@@ -248,6 +270,7 @@ useEffect(() => {
         isOpen
         onClose={() => {}}
         onBackToMenu={() => navigate("/pos")}
+        tenderedAmount={tendered}
       />
 
       <div className="flex-1 p-6 overflow-hidden ">

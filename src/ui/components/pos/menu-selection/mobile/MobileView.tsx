@@ -1,6 +1,6 @@
-import ProductsMobile from "./ProductsMobile";
+
 import CartSidebar from "../CartSidebar";
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import { ShoppingCart, TextAlignJustifyIcon } from "lucide-react";
 import { useCart } from "@/ui/context/CartContext";
 import { motion, AnimatePresence } from "framer-motion";
@@ -54,7 +54,7 @@ const MobileHeader = ({ onOpenCart, onOpenMenu }: any) => {
 /* =========================
    Mobile View
 ========================= */
-const MobileView = () => {
+const MobileView = ({ children }: { children?: ReactNode }) => {
   const [cartOpen, setCartOpen] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
 
@@ -96,7 +96,7 @@ const MobileView = () => {
 
       {/* Main Content */}
       <main className="flex-1 mt-16 overflow-y-auto no-scrollbar">
-        <ProductsMobile />
+        {children}
       </main>
     </div>
   );

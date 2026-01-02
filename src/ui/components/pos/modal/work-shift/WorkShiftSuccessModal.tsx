@@ -24,7 +24,7 @@ export default function WorkShiftSuccessModal({
 
     return (
         <div className="fixed inset-0 z-[9999] bg-black/50 flex items-center justify-center p-4">
-            <div className="bg-white rounded-2xl w-full max-w-[420px] p-8 shadow-2xl">
+            <div className="bg-white rounded-2xl w-full max-w-[520px] p-8 shadow-2xl">
                 {/* Icon */}
                 <div className="w-16 h-16 mx-auto mb-6 rounded-full bg-blue-600 flex items-center justify-center">
                     <Check className="w-9 h-9 text-white stroke-[3]" />

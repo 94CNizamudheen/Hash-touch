@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useKdsSettings } from "@/context/KdsSettingsContext";
+import { useKdsSettings } from "@/ui/context/KdsSettingsContext";
 import MobileSettingsTop from "./MobileSettingsTop";
 import MobileSettingsLeftSide from "./MobileSettingsLeftSide";
 import MobileSettingsPreview from "./MobileSettingsPreview";

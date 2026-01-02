@@ -11,6 +11,8 @@ import { cn } from "@/lib/utils";
 import { useState } from "react";
 
 import { useAppState } from "@/ui/hooks/useAppState";
+import { useNotification } from "@/ui/context/NotificationContext";
+import { useTranslation } from "react-i18next";
 
 const ModalDepartment = ({
   isModal,
@@ -22,6 +24,8 @@ const ModalDepartment = ({
   onSelect: (mode: { id: string, name: string }) => void;
 }) => {
   const { state: appState, loading } = useAppState();
+  const { showNotification } = useNotification();
+  const { t } = useTranslation();
   const [choose, setChoose] = useState<string | null>(null);
 
   if (loading) return null;
@@ -94,6 +98,7 @@ const ModalDepartment = ({
               }
               console.log("🟦 Selected order mode:", mode.id);
               onSelect({ id: mode.id, name: mode.title });
+              showNotification.success(`${t("Order mode changed to")} ${mode.title}`, 2000);
               onClose();
             }}
             className="w-full sm:w-auto"

@@ -50,7 +50,7 @@ const BoardFooterDineIn = () => {
               <span>${subtotal.toFixed(2)}</span>
             </div>
 
-            {charges.map((charge) => (
+            {charges.filter(charge => charge.applied).map((charge) => (
               <div key={charge.id} className="flex justify-between text-muted-foreground">
                 <span>
                   {charge.name} ({charge.percentage}%)

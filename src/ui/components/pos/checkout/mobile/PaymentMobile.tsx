@@ -15,6 +15,7 @@ import { useTransactionTypes } from "@/ui/hooks/useTransactionTypes";
 import { buildTicketRequest } from "@/ui/utils/ticketBuilder";
 import { ticketService } from "@/services/data/ticket.service";
 import LeftActionRail from "../LeftActionRail";
+import { ticketLocal } from "@/services/local/ticket.local.service";
 
 export default function PaymentMobile() {
     const navigate = useNavigate();
@@ -27,7 +28,7 @@ export default function PaymentMobile() {
     const { charges, totalCharges } = useCharges(items, subtotal);
     const total = subtotal + totalCharges;
 
-    const [inputValue, setInputValue] = useState(() => total.toFixed(2));
+    const [inputValue, setInputValue] = useState("0.00");
     const [selectedMethod, setSelectedMethod] = useState("");
     const [showOrder, setShowOrder] = useState(false);
     const [showMethods, setShowMethods] = useState(false);
@@ -37,11 +38,6 @@ export default function PaymentMobile() {
     const [showActions, setShowActions] = useState(false);
     const [loading, setLoading] = useState(false);
     const [isPaymentReady, setIsPaymentReady] = useState(false);
-
-    // Update inputValue when total changes
-    useEffect(() => {
-        setInputValue(total.toFixed(2));
-    }, [total]);
 
     // Set default payment method when payment methods are loaded
     useEffect(() => {
@@ -62,7 +58,11 @@ export default function PaymentMobile() {
     };
 
     const onPay = async () => {
-        if (tendered < total) {
+        // Round to 2 decimals for comparison to avoid floating point issues
+        const tenderedRounded = Math.round(tendered * 100) / 100;
+        const totalRounded = Math.round(total * 100) / 100;
+
+        if (tenderedRounded < totalRounded) {
             alert("Insufficient payment");
             return;
         }
@@ -94,6 +94,11 @@ export default function PaymentMobile() {
             if (!saleTransactionType || !paymentTransactionType) {
                 throw new Error("Required transaction types (SALE, PAYMENT) not found. Please sync data.");
             }
+            const businessDate = new Date().toISOString().split("T")[0];
+            const queueNumber = await ticketLocal.getNextQueueNumber(
+                appState.selected_location_id,
+                businessDate
+            );
 
             console.log("selected payment method", selectedPaymentMethod);
 
@@ -114,6 +119,7 @@ export default function PaymentMobile() {
                 saleTransactionTypeId: saleTransactionType.id,
                 paymentTransactionTypeId: paymentTransactionType.id,
                 transactionTypes,
+                queueNumber
             });
 
             console.log("📝 Creating ticket:", ticketRequest);
@@ -131,6 +137,9 @@ export default function PaymentMobile() {
             } else {
                 console.log("✅ Ticket created successfully online");
             }
+
+            // Dispatch custom event to notify Activity page
+            window.dispatchEvent(new CustomEvent("ticketCreated"));
 
             setShowDrawer(true);
         } catch (error) {
@@ -185,6 +194,7 @@ export default function PaymentMobile() {
                     isOpen
                     onClose={() => setShowOrder(false)}
                     onBackToMenu={() => navigate("/pos")}
+                    tenderedAmount={tendered}
                 />
             )}
 

@@ -17,6 +17,8 @@ export const ticketsSqlite = sqliteTable("tickets", {
   orderModeName: text("order_mode_name"),
   ticketAmount: integer("ticket_amount"),
   itemsCount: integer("items_count"),
+  queueNumber: integer("queue_number"),
+  ticketNumber: integer("ticket_number"),
 
   createdAt: text("created_at"),
   updatedAt: text("updated_at"),

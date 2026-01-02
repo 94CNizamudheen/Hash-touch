@@ -7,7 +7,14 @@ pub async fn broadcast_to_kds(
     ws_state: State<'_, WsState>,
     message: DeviceMessage,
 ) -> Result<(), String> {
-    broadcast_to_device_type(&ws_state.server.get_devices(), "KDS", &message)
+    let devices = ws_state.server.get_devices();
+
+    let count = devices.read().await.len();
+    if count == 0 {
+        log::warn!("⚠️ No connected KDS devices");
+    }
+
+    broadcast_to_device_type(&devices, "KDS", &message)
         .await
         .map_err(|e| format!("Failed to broadcast to KDS: {}", e))
 }
@@ -17,7 +24,14 @@ pub async fn broadcast_to_queue(
     ws_state: State<'_, WsState>,
     message: DeviceMessage,
 ) -> Result<(), String> {
-    broadcast_to_device_type(&ws_state.server.get_devices(), "QUEUE", &message)
+    let devices = ws_state.server.get_devices();
+
+    let count = devices.read().await.len();
+    if count == 0 {
+        log::warn!("⚠️ No connected QUEUE devices");
+    }
+
+    broadcast_to_device_type(&devices, "QUEUE", &message)
         .await
         .map_err(|e| format!("Failed to broadcast to QUEUE: {}", e))
 }
@@ -27,27 +41,29 @@ pub async fn broadcast_order(
     ws_state: State<'_, WsState>,
     order_data: serde_json::Value,
 ) -> Result<(), String> {
-    // Send to KDS devices
+    let devices = ws_state.server.get_devices();
+
+    // 🧑‍🍳 KDS
     let kds_message = DeviceMessage {
         message_type: "new_order".to_string(),
         device_id: None,
-        device_type: "KDS".to_string(),
-        payload: order_data.clone(),
+        device_type: "SERVER".to_string(),
+        payload: order_data.clone(), 
     };
 
-    broadcast_to_device_type(&ws_state.server.get_devices(), "KDS", &kds_message)
+    broadcast_to_device_type(&devices, "KDS", &kds_message)
         .await
         .map_err(|e| format!("Failed to broadcast to KDS: {}", e))?;
 
-    // Send to Queue displays
+    // 📺 QUEUE
     let queue_message = DeviceMessage {
         message_type: "new_ticket".to_string(),
         device_id: None,
-        device_type: "QUEUE".to_string(),
-        payload: order_data,
+        device_type: "SERVER".to_string(),
+        payload: order_data, 
     };
 
-    broadcast_to_device_type(&ws_state.server.get_devices(), "QUEUE", &queue_message)
+    broadcast_to_device_type(&devices, "QUEUE", &queue_message)
         .await
         .map_err(|e| format!("Failed to broadcast to QUEUE: {}", e))?;
 

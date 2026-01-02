@@ -18,7 +18,9 @@ pub fn get_app_state(conn: &Connection) -> anyhow::Result<AppState> {
                theme,
                language,
                kds_view_mode,
-               kds_settings
+               kds_settings,
+               ws_server_mode,
+               ws_server_url
         FROM app_state
         WHERE id = 1
         "#,
@@ -48,6 +50,8 @@ pub fn get_app_state(conn: &Connection) -> anyhow::Result<AppState> {
                 language: row.get(12)?,
                 kds_view_mode: row.get(13)?,
                 kds_settings: row.get(14)?,
+                ws_server_mode: row.get(15)?,
+                ws_server_url: row.get(16)?,
             })
         },
     ) {
@@ -56,7 +60,7 @@ pub fn get_app_state(conn: &Connection) -> anyhow::Result<AppState> {
         Err(rusqlite::Error::QueryReturnedNoRows) => {
             // Initialize row if not exists
             conn.execute(
-                "INSERT INTO app_state (id, sync_status, kds_view_mode, kds_settings) VALUES (1, 'IDLE', 'grid', '{}')",
+                "INSERT INTO app_state (id, sync_status, kds_view_mode, kds_settings, ws_server_mode, ws_server_url) VALUES (1, 'IDLE', 'grid', '{}', 0, 'ws://localhost:9001')",
                 [],
             )?;
 
@@ -76,6 +80,8 @@ pub fn get_app_state(conn: &Connection) -> anyhow::Result<AppState> {
                 language: Some("en".to_string()),
                 kds_view_mode: Some("grid".to_string()),
                 kds_settings: Some("{}".to_string()),
+                ws_server_mode: Some(0),
+                ws_server_url: Some("ws://localhost:9001".to_string()),
             })
         }
 

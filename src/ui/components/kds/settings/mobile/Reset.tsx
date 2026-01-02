@@ -1,4 +1,4 @@
-import { deviceService } from "@core/services/device.service";
+// import { deviceService } from "@/services/local/device.local.service";
 
 interface ResetProps {
   editId: string;
@@ -20,7 +20,7 @@ const Reset = ({ editId, onCancel }: ResetProps) => {
           <button
             onClick={async () => {
               if (confirm("Reset device? This cannot be undone.")) {
-                await deviceService.clearDevices();
+                // await deviceService.clearDevices();
                 alert("Device reset successfully!");
                 window.location.href = "/";
               }

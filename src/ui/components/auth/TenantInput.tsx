@@ -1,33 +1,33 @@
-
 import { Input } from "@/ui/shadcn/components/ui/input";
 import { useFormContext } from "react-hook-form";
 import { useState, useEffect, useRef } from "react";
 import { useMediaQuery } from "usehooks-ts";
-import { Home, User, Lock } from "lucide-react";
+import { Home, User, Lock, Eye, EyeOff } from "lucide-react";
 import Keyboard from "../common/keyboard";
-import { FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/ui/shadcn/components/ui/form";
+import { FormControl, FormField, FormItem, FormMessage } from "@/ui/shadcn/components/ui/form";
 
 const ICONS = { home: Home, user: User, lock: Lock };
 
 interface TenantInputProps {
   name: string;
-  label: string;
   type?: string;
   icon?: keyof typeof ICONS;
   placeholder?: string;
   onShowKeyboard: (v: boolean) => void;
+  showPasswordToggle?: boolean;
 }
 
 export default function TenantInput({
   name,
-  label,
   type = "text",
   icon,
   placeholder,
   onShowKeyboard,
+  showPasswordToggle,
 }: TenantInputProps) {
   const form = useFormContext();
   const [showKeyboard, setShowKeyboard] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   const inputRef = useRef<HTMLDivElement>(null);
   const keyboardRef = useRef<HTMLDivElement>(null);
   const matches = useMediaQuery("(min-width: 1000px)");
@@ -55,53 +55,73 @@ export default function TenantInput({
         control={form.control}
         name={name}
         render={({ field }) => (
-          <FormItem ref={inputRef} className="w-full flex flex-col gap-1">
-            <FormLabel className="text-sm font-light text-muted-foreground">
-              {label}
-            </FormLabel>
+          <FormItem ref={inputRef} className="w-full">
+            <div
+              className="
+                flex items-center gap-3
+                bg-muted
+                rounded-xl
+                px-4
+                h-12
+                transition
+              "
+            >
+              {Icon && <Icon className="w-5 h-5 text-primary shrink-0" />}
 
-            {/* Input Wrapper */}
-            <div className="relative flex items-center bg-gray-200 rounded-xl border border-transparent focus-within:border-primary px-3 py-2 transition">
-              {Icon && (
-                <Icon
-                  className="text-primary w-5 h-5 mr-2 shrink-0"
-                  strokeWidth={2}
-                />
-              )}
               <FormControl>
                 <Input
-                  type={type}
                   {...field}
-                  value={field.value || ""}
+                  type={
+                    showPasswordToggle
+                      ? showPassword
+                        ? "text"
+                        : "password"
+                      : type
+                  }
                   placeholder={placeholder}
                   autoComplete="off"
-                  className="border-none bg-transparent focus-visible:ring-0 text-sm placeholder:text-zinc-500 dark:text-black"
+                  className="
+                    border-none 
+                    text-sm
+                    placeholder:text-muted-foreground
+                  "
                   onFocus={() => {
                     setShowKeyboard(true);
                     onShowKeyboard(true);
                   }}
                 />
               </FormControl>
+
+              {showPasswordToggle && (
+                <button
+                  type="button"
+                  onClick={() => setShowPassword((p) => !p)}
+                  className="text-muted-foreground"
+                >
+                  {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                </button>
+              )}
             </div>
 
-            <FormMessage className="text-xs text-red-500" />
+            <FormMessage className="text-xs text-red-500 mt-1" />
           </FormItem>
         )}
       />
 
-      {/* On-screen Keyboard */}
       {matches && showKeyboard && (
         <div
           ref={keyboardRef}
-          className="fixed bottom-0 left-0 w-full min-h-[300px] px-44 py-4 bg-navigation-foreground z-50"
+          className="fixed bottom-0 left-0 w-full min-h-[300px] px-44 py-4 bg-background z-50"
         >
           <Keyboard
-            onChange={(value) => form.setValue(name, value,{
-              shouldValidate: true,
-              shouldDirty: true,
-              shouldTouch: true,
-            })}
             defaultValue={form.getValues(name)}
+            onChange={(value) =>
+              form.setValue(name, value, {
+                shouldValidate: true,
+                shouldDirty: true,
+                shouldTouch: true,
+              })
+            }
           />
         </div>
       )}

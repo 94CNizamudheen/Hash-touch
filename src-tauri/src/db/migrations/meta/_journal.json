@@ -5,22 +5,8 @@
     {
       "idx": 0,
       "version": "6",
-      "when": 1767091911352,
-      "tag": "0000_last_landau",
-      "breakpoints": true
-    },
-    {
-      "idx": 1,
-      "version": "6",
-      "when": 1767102734896,
-      "tag": "0001_tricky_the_hood",
-      "breakpoints": true
-    },
-    {
-      "idx": 2,
-      "version": "6",
-      "when": 1767180443856,
-      "tag": "0002_odd_joseph",
+      "when": 1767328033820,
+      "tag": "0000_curly_wallow",
       "breakpoints": true
     }
   ]

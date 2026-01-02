@@ -16,7 +16,7 @@ export default function StartShiftModal({
 
    return (
     <div className="fixed inset-0 z-[9999] bg-black/50 flex items-center justify-center p-4">
-      <div className="bg-white rounded-2xl w-full max-w-[400px] p-8 shadow-2xl">
+      <div className="bg-secondary rounded-2xl w-full max-w-[500px] p-8 shadow-2xl">
         {/* Icon */}
         <div className="w-16 h-16 mx-auto mb-6 rounded-full bg-blue-600 flex items-center justify-center">
           <svg className="w-8 h-8 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -50,12 +50,12 @@ export default function StartShiftModal({
 
         {/* Actions */}
         <div className="flex gap-3">
-          <button
+          {/* <button
             onClick={onClose}
             className="flex-1 border-2 border-gray-300 text-gray-700 font-medium rounded-lg py-3 hover:bg-gray-50 transition-colors"
           >
             Cancel
-          </button>
+          </button> */}
           <button
             onClick={() => {
               const amt = Number(amount || 0);

@@ -50,7 +50,7 @@ const Type2 = ({
             key={key as string}
             type="button"
             className={cn(
-              "relative h-12 rounded-lg bg-white shadow text-black flex justify-center items-center text-lg font-medium",
+              "relative h-12 rounded-lg bg-background shadow text-foreground flex justify-center items-center text-lg font-medium",
               !isNaN(Number(key)) ? "col-span-2" : "col-span-1"
             )}
             onClick={() => handleKeyClick(key as string)}
@@ -74,7 +74,7 @@ const Type2 = ({
             type="button"
             key={key}
             className={cn(
-              "h-12 relative rounded-lg bg-white shadow text-black flex justify-center items-center text-lg font-medium",
+              "h-12 relative rounded-lg bg-background shadow text-foreground flex justify-center items-center text-lg font-medium",
               !isNaN(Number(key)) ? "col-span-2" : "col-span-1"
             )}
             onClick={() => handleKeyClick(key)}
@@ -97,7 +97,7 @@ const Type2 = ({
             type="button"
             key={key}
             className={cn(
-              "h-12 rounded-lg bg-white shadow text-black flex justify-center items-center text-lg font-medium",
+              "h-12 rounded-lg bg-background shadow text-foreground flex justify-center items-center text-lg font-medium",
               !isNaN(Number(key)) ? "col-span-2" : "col-span-1"
             )}
             onClick={() => handleKeyClick(key)}
@@ -154,7 +154,7 @@ const Type2 = ({
         <button
           type="button"
           onClick={() => handleKeyClick("0")}
-          className="col-span-6 h-12 text-black rounded-lg bg-white shadow flex justify-center items-center text-lg font-medium"
+          className="col-span-6 h-12 text-foreground rounded-lg bg-background shadow flex justify-center items-center text-lg font-medium"
         >
           0
         </button>

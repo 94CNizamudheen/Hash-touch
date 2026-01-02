@@ -32,6 +32,10 @@ export const appStateSqlite = sqliteTable("app_state", {
   kdsViewMode: text("kds_view_mode").default("grid"),
   kdsSettings: text("kds_settings").default("{}"),
 
+  // WebSocket Settings
+  wsServerMode: integer("ws_server_mode").default(0),
+  wsServerUrl: text("ws_server_url").default("ws://localhost:9001"),
+
   createdAt: integer("created_at", { mode: "timestamp" })
     .default(sql`CURRENT_TIMESTAMP`),
 
