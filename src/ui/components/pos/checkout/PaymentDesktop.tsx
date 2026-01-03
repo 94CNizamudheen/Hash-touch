@@ -12,7 +12,6 @@ import { ticketService } from "@/services/data/ticket.service";
 import { ticketLocal } from "@/services/local/ticket.local.service";
 import { printerService, type ReceiptData } from "@/services/local/printer.local.service";
 import { websocketService } from "@services/websocket/websocket.service";
-import { kdsTicketLocal } from "@/services/local/kds-ticket.local.service";
 import LeftActionRail from "./LeftActionRail";
 import OrderSidebar from "./OrderSidebar";
 import CenterPaymentContent from "./CenterPaymentContent";
@@ -164,6 +163,7 @@ useEffect(() => {
       window.dispatchEvent(new CustomEvent("ticketCreated"));
 
       // Broadcast order to KDS and Queue displays via WebSocket
+      // Note: KDS devices will receive this broadcast and save to their local database
       try {
         await websocketService.broadcastOrder({
           ticket_id: result.ticketId || `offline-${Date.now()}`,
@@ -188,35 +188,6 @@ useEffect(() => {
       } catch (error) {
         console.error("❌ Failed to broadcast order:", error);
         // Don't fail the entire transaction if broadcast fails
-      }
-
-      // Save to KDS tickets table for local display
-      try {
-        await kdsTicketLocal.saveTicket({
-          id: `kds-${Date.now()}`,
-          ticketNumber: ticketRequest.ticket.ticket_number.toString(),
-          orderId: result.ticketId || `offline-${Date.now()}`,
-          locationId: appState.selected_location_id,
-          orderModeName: appState.selected_order_mode_name,
-          status: 'PENDING',
-          items: JSON.stringify(items.map(item => ({
-            id: item.id,
-            name: item.name,
-            quantity: item.quantity,
-            price: item.price,
-            notes: item.notes || '',
-            modifiers: item.modifiers || [],
-            completed: false,
-          }))),
-          totalAmount: Math.round(total * 100),
-          tokenNumber: queueNumber,
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
-        });
-        console.log("💾 Saved ticket to KDS table");
-      } catch (error) {
-        console.error("❌ Failed to save to KDS table:", error);
-        // Don't fail the entire transaction if KDS save fails
       }
 
       setShowDrawer(true);

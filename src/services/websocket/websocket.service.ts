@@ -25,12 +25,8 @@ class WebSocketService {
   }
 
   // Broadcast order to both KDS and Queue via Tauri backend
+  // Note: POS devices are servers, so they don't need client connection to broadcast
   async broadcastOrder(orderData: any): Promise<void> {
-    if (!this.isConnected()) {
-      console.warn("⚠️ WebSocket not connected, cannot broadcast order");
-      return;
-    }
-
     try {
       await invoke("broadcast_order", { orderData });
       console.log("📡 Order broadcasted to KDS and Queue displays via backend");

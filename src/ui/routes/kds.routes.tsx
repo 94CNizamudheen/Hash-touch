@@ -17,5 +17,6 @@ export default function KdsRoutes() {
         <Route path="*" element={<Navigate to="" replace />} />
       </Routes>
     </KdsSettingsProvider>
+    
   );
 }

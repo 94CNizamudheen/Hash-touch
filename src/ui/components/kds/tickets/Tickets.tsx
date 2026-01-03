@@ -1,11 +1,11 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useKdsSettings } from "@/ui/context/KdsSettingsContext";
+import { useKdsWebSocket } from "@/ui/context/KdsWebSocketContext";
 import TicketCard from "./TicketCard";
 import { useMediaQuery } from "usehooks-ts";
 import MobileTicketCard from "./mobile/MobileTicketCard";
 import { kdsTicketLocal } from "@/services/local/kds-ticket.local.service";
 import { localEventBus, LocalEventTypes } from "@/services/eventbus/LocalEventBus";
-import { websocketService } from "@/services/websocket/websocket.service";
 import { useNotificationSound } from "@/ui/hooks/useNotificationSound";
 import type { Ticket, TicketItem } from "./ticket.types";
 import type { KDSTicketData, KDSTicketItem } from "@/types/kds";
@@ -43,13 +43,14 @@ function transformKdsTicketToTicket(kdsTicket: KDSTicketData): Ticket {
 
 const Tickets = () => {
   const { settings } = useKdsSettings();
+  const { isConnected, client } = useKdsWebSocket();
   const [tickets, setTickets] = useState<Ticket[]>([]);
   const [loading, setLoading] = useState(true);
   const isDesktop = useMediaQuery('(min-width: 768px)');
   const { playSound } = useNotificationSound();
 
   // Load tickets from database
-  const loadTickets = async () => {
+  const loadTickets = useCallback(async () => {
     try {
       console.log('[Tickets] Loading active tickets from database');
       const kdsTickets = await kdsTicketLocal.getActiveTickets();
@@ -63,20 +64,23 @@ const Tickets = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   // Initial load on mount
   useEffect(() => {
     loadTickets();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // WebSocket listener for new orders from POS
   useEffect(() => {
-    const client = websocketService.getClient();
-    if (!client) {
-      console.warn('[Tickets] WebSocket client not available');
+    // Wait for WebSocket connection to be established
+    if (!isConnected || !client) {
+      console.log('[Tickets] Waiting for WebSocket connection...', { isConnected, hasClient: !!client });
       return;
     }
+
+    console.log('[Tickets] ✅ WebSocket connected, registering new_order listener');
 
     const handleNewOrder = async (message: any) => {
       console.log('[Tickets] Received new_order via WebSocket:', message);
@@ -90,14 +94,14 @@ const Tickets = () => {
       try {
         await kdsTicketLocal.saveTicket({
           id: orderData.ticket_id || `kds-${Date.now()}`,
-          ticketNumber: orderData.ticket_number || `T${Date.now()}`,
-          orderId: orderData.ticket_id,
-          locationId: orderData.location_id,
+          ticketNumber: String(orderData.ticket_number || `T${Date.now()}`),
+          orderId: orderData.ticket_id || '',
+          locationId: orderData.location_id || '',
           orderModeName: orderData.order_mode || 'Dine In',
           status: 'PENDING',
           items: JSON.stringify(orderData.items || []),
-          totalAmount: orderData.total_amount,
-          tokenNumber: orderData.token_number,
+          totalAmount: orderData.total_amount || 0,
+          tokenNumber: orderData.token_number || 0,
           createdAt: orderData.created_at || new Date().toISOString(),
           updatedAt: new Date().toISOString(),
         });
@@ -117,9 +121,10 @@ const Tickets = () => {
     client.on('new_order', handleNewOrder);
 
     return () => {
+      console.log('[Tickets] Cleaning up new_order listener');
       client.off('new_order', handleNewOrder);
     };
-  }, [playSound]);
+  }, [isConnected, client, playSound, loadTickets]);
 
   // LocalEventBus listener for ticket removal
   useEffect(() => {
@@ -129,6 +134,7 @@ const Tickets = () => {
     });
 
     return unsubscribe;
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Handle marking ticket as done
@@ -198,7 +204,7 @@ const Tickets = () => {
       className="min-h-full p-3"
       style={{ backgroundColor: settings.pageBgColor }}
     >
-      {/* MOBILE */}
+      {/* MOBILE */}  
       {!isDesktop && (
         <div className="grid grid-cols-1 gap-3">
           {tickets.map((t) => (
