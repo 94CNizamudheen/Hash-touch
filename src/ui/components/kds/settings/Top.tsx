@@ -1,21 +1,11 @@
 import { Button } from "@/ui/shadcn/components/ui/button";
-import { ExitIcon, ResetIcon } from "@radix-ui/react-icons";
+import { ExitIcon, } from "@radix-ui/react-icons";
 import { RotateCcw, Settings, Wifi } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import { logoutService } from "@/services/auth/logout.service";
 
 
 const Top = ({ onReset }: { onReset: () => void }) => {
-    const handleResetDevice = async () => {
-      if (confirm("Are you sure you want to reset this device? All data will be cleared.")) {
-        try {
-          await logoutService.logout();
-        } catch (err) {
-          console.error("Failed to reset device:", err);
-          alert("Failed to reset device. Please try again.");
-        }
-      }
-    };
+
   
   const navigate = useNavigate()
   return (
@@ -40,10 +30,7 @@ const Top = ({ onReset }: { onReset: () => void }) => {
           <RotateCcw size={18} />
           <span>Reset to Default</span>
         </Button>
-        <Button onClick={handleResetDevice} className="hover:bg-primary-hover">
-          <ResetIcon />
-          Reset device
-        </Button>
+
       </div>
 
     </div>

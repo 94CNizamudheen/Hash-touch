@@ -38,6 +38,7 @@ export default function TenantForm({
         icon="lock"
         placeholder="Enter your password"
         onShowKeyboard={setShowKeyboard}
+        showPasswordToggle
       />
 
       {/* Submit Button */}

@@ -1,41 +1,86 @@
-import { Settings, CheckCircle, Power, Grid3x3, ListOrdered } from "lucide-react";
+import { Settings, Power, ListOrdered } from "lucide-react";
 import logo from '@/assets/logo_2.png';
 import { useNavigate } from "react-router-dom";
-import { Button } from "@/ui/shadcn/components/ui/button";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/ui/shadcn/components/ui/select";
+// import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/ui/shadcn/components/ui/select";
 import { useState, useEffect } from "react";
 import MobileLeftSidebar from "./mobile/MobileLeftSidebar";
-import { kdsSettingsLocal } from "@/services/local/kds-settings.local.service";
+// import { kdsSettingsLocal } from "@/services/local/kds-settings.local.service";
 import { logoutService } from "@/services/auth/logout.service";
+import { kdsTicketLocal } from "@/services/local/kds-ticket.local.service";
+import type { Ticket, TicketItem } from "../tickets/ticket.types";
+import { Button } from "@/ui/shadcn/components/ui/button";
 
 
 const KDSTicketHeader = () => {
-    const [viewMode, setViewMode] = useState("Classic");
+    // const [viewMode, setViewMode] = useState("Classic");
     const [orderMenuOPen, setIsOrderMenuOPen] = useState(false);
     const [isLoggingOut, setIsLoggingOut] = useState(false);
+    const [tickets, setTickets] = useState<Ticket[]>([]);
+
+    // useEffect(() => {
+    //     const loadViewMode = async () => {
+    //         try {
+    //             const mode = await kdsSettingsLocal.getViewMode();
+    //             setViewMode(mode);
+    //         } catch (error) {
+    //             console.error("Failed to load view mode:", error);
+    //         }
+    //     };
+    //     loadViewMode();
+    // }, []);
 
     useEffect(() => {
-        const loadViewMode = async () => {
+        const loadTickets = async () => {
             try {
-                const mode = await kdsSettingsLocal.getViewMode();
-                setViewMode(mode);
+                const kdsTickets = await kdsTicketLocal.getActiveTickets();
+                const transformedTickets: Ticket[] = kdsTickets.map((kdsTicket) => {
+                    let items: TicketItem[] = [];
+                    try {
+                        const parsedItems = JSON.parse(kdsTicket.items);
+                        items = parsedItems.map((item: any, index: number) => ({
+                            id: item.id || `item-${index}`,
+                            name: item.name,
+                            quantity: item.quantity,
+                            status: (item.completed ? 'completed' : 'pending') as 'pending' | 'completed',
+                            notes: item.notes || '',
+                        }));
+                    } catch (error) {
+                        console.error('[KDSTicketHeader] Failed to parse items:', error);
+                    }
+                    return {
+                        id: kdsTicket.id,
+                        orderNumber: kdsTicket.ticketNumber,
+                        restaurant: kdsTicket.locationId || 'Location',
+                        adminId: kdsTicket.orderId || '',
+                        receivedTime: new Date(kdsTicket.createdAt),
+                        preparationTime: '10 min',
+                        tableNumber: kdsTicket.orderModeName || 'Dine In',
+                        items,
+                    };
+                });
+                setTickets(transformedTickets);
             } catch (error) {
-                console.error("Failed to load view mode:", error);
+                console.error('[KDSTicketHeader] Failed to load tickets:', error);
             }
         };
-        loadViewMode();
-    }, []);
+        loadTickets();
 
-
-    const handleChange = async (value: string) => {
-        setViewMode(value);
-        try {
-            await kdsSettingsLocal.saveViewMode(value);
-            console.log("Selected view:", value);
-        } catch (error) {
-            console.error("Failed to save view mode:", error);
+        // Reload when menu opens
+        if (orderMenuOPen) {
+            loadTickets();
         }
-    };
+    }, [orderMenuOPen]);
+
+
+    // const handleChange = async (value: string) => {
+    //     setViewMode(value);
+    //     try {
+    //         await kdsSettingsLocal.saveViewMode(value);
+    //         console.log("Selected view:", value);
+    //     } catch (error) {
+    //         console.error("Failed to save view mode:", error);
+    //     }
+    // };
 
     const handleLogout = async () => {
         if (!confirm("Are you sure you want to logout? All data will be cleared.")) {
@@ -83,7 +128,7 @@ const KDSTicketHeader = () => {
                             <ListOrdered className="stroke-primary" size={20} />
 
                         </Button>
-                        <Select value={viewMode} onValueChange={handleChange}>
+                        {/* <Select value={viewMode} onValueChange={handleChange}>
                             <SelectTrigger className="w-[150px] border border-gray-300 px-3 py-1.5 text-sm font-medium focus:ring-0 focus:outline-none">
                                 <Grid3x3 size={16} className="mr-2 text-gray-600" />
                                 <SelectValue placeholder="Select View" />
@@ -94,12 +139,12 @@ const KDSTicketHeader = () => {
                                 <SelectItem value="Bind Table">Bind Table</SelectItem>
                                 <SelectItem value="Tabular">Tabular</SelectItem>
                             </SelectContent>
-                        </Select>
+                        </Select> */}
 
-                        {/* CheckCircle Button */}
+                        {/* CheckCircle Button
                         <Button className="w-9 h-9 flex items-center justify-center rounded-full hover:bg-primary-hover">
                             <CheckCircle size={20} />
-                        </Button>
+                        </Button> */}
 
                         {/* Settings Button */}
                         <button
@@ -121,7 +166,7 @@ const KDSTicketHeader = () => {
                     </div>
                 </div>
 
-                <MobileLeftSidebar open={orderMenuOPen} onClose={() => setIsOrderMenuOPen(false)} />
+                <MobileLeftSidebar open={orderMenuOPen} onClose={() => setIsOrderMenuOPen(false)} tickets={tickets} />
             </header>
         </>
     );

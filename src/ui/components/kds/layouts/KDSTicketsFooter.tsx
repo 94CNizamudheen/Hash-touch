@@ -6,7 +6,7 @@ interface KDSTicketsFooterProps {
 }
 
 const KDSTicketsFooter = ({ wsConnected }: KDSTicketsFooterProps) => {
-  const [lastSync, setLastSync] = useState(new Date());
+  const [, setLastSync] = useState(new Date());
 
   useEffect(() => {
     const timer = setInterval(() => setLastSync(new Date()), 1000);
@@ -17,12 +17,12 @@ const KDSTicketsFooter = ({ wsConnected }: KDSTicketsFooterProps) => {
     <footer className="flex items-center justify-between px-4 py-3 border-t bg-blue-50">
       {/* Left Section */}
       <div className="flex items-center gap-6">
-        <div className="flex items-center gap-2">
+        {/* <div className="flex items-center gap-2">
           <RefreshCcw size={18} className="text-blue-600" />
           <span className="text-sm font-semibold text-gray-900">
             Count: <span className="text-blue-600">5</span>
           </span>
-        </div>
+        </div> */}
 
         <div className="flex items-center gap-2">
           <div className="w-5 h-5 bg-green-500 rounded-full flex items-center justify-center">
@@ -51,23 +51,23 @@ const KDSTicketsFooter = ({ wsConnected }: KDSTicketsFooterProps) => {
           </span>
         </div>
 
-        <span className="text-sm text-gray-700">
+        {/* <span className="text-sm text-gray-700">
           Last Sync:{" "}
           <span className="font-semibold text-blue-600">
             {lastSync.toLocaleTimeString("en-US", { hour12: true })}
           </span>
-        </span>
+        </span> */}
       </div>
 
       {/* Right Section */}
       <div className="flex gap-3">
-        <button className="border border-gray-300 bg-white rounded-md px-4 py-1.5 text-sm font-medium hover:bg-gray-50 transition-colors">
+        {/* <button className="border border-gray-300 bg-white rounded-md px-4 py-1.5 text-sm font-medium hover:bg-gray-50 transition-colors">
           Recall Item
         </button>
 
         <button className="border border-gray-300 bg-white rounded-md px-4 py-1.5 text-sm font-medium hover:bg-gray-50 transition-colors">
           Recall Ticket 
-        </button>
+        </button> */}
 
         <button
           onClick={() => window.location.reload()}

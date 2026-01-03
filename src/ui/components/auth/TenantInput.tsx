@@ -96,7 +96,7 @@ export default function TenantInput({
                 <button
                   type="button"
                   onClick={() => setShowPassword((p) => !p)}
-                  className="text-muted-foreground"
+                  className="text-muted-foreground shrink-0 flex items-center justify-center"
                 >
                   {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                 </button>

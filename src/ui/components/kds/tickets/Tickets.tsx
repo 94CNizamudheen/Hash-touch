@@ -204,17 +204,18 @@ const Tickets = () => {
       className="min-h-full p-3"
       style={{ backgroundColor: settings.pageBgColor }}
     >
-      {/* MOBILE */}  
+      {/* MOBILE */}
       {!isDesktop && (
-        <div className="grid grid-cols-1 gap-3">
+        <div className="flex gap-3 overflow-x-auto pb-4">
           {tickets.map((t) => (
-            <MobileTicketCard
-              key={t.id}
-              ticket={t}
-              theme={settings}
-              onToggleItem={handleToggleItem}
-              onMarkAsDone={handleMarkAsDone}
-            />
+            <div key={t.id} className="flex-shrink-0 w-80">
+              <MobileTicketCard
+                ticket={t}
+                theme={settings}
+                onToggleItem={handleToggleItem}
+                onMarkAsDone={handleMarkAsDone}
+              />
+            </div>
           ))}
         </div>
       )}
@@ -222,20 +223,20 @@ const Tickets = () => {
       {/* DESKTOP */}
       {isDesktop && (
         <div
-          className="grid gap-4"
+          className="flex overflow-x-auto pb-4"
           style={{
-            gridTemplateColumns: `repeat(${settings.pageGridCols}, minmax(0, 1fr))`,
             gap: settings.pageGap,
           }}
         >
           {tickets.map((t) => (
-            <TicketCard
-              key={t.id}
-              ticket={t}
-              theme={settings}
-              onToggleItem={handleToggleItem}
-              onMarkAsDone={handleMarkAsDone}
-            />
+            <div key={t.id} className="flex-shrink-0 w-96">
+              <TicketCard
+                ticket={t}
+                theme={settings}
+                onToggleItem={handleToggleItem}
+                onMarkAsDone={handleMarkAsDone}
+              />
+            </div>
           ))}
         </div>
       )}

@@ -1,15 +1,16 @@
 import { X } from "lucide-react";
 import logo from "@/assets/logo_2.png";
-import { mockTickets } from "../../tickets/data";
+import type { Ticket } from "../../tickets/ticket.types";
 
 interface Props {
   open: boolean;
   onClose: () => void;
+  tickets: Ticket[];
 }
 
-const MobileLeftSidebar = ({ open, onClose }: Props) => {
+const MobileLeftSidebar = ({ open, onClose, tickets }: Props) => {
   // Flatten ticket items
-  const menuRows = mockTickets.flatMap((ticket) =>
+  const menuRows = tickets.flatMap((ticket) =>
     ticket.items.map((item) => ({
       id: item.id,
       name: item.name,
