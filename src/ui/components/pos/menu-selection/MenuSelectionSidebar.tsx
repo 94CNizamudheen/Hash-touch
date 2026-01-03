@@ -9,6 +9,7 @@ import { useWorkShift } from "@/ui/context/WorkShiftContext";
 import { useTranslation } from "react-i18next";
 
 import EndShiftConfirmModal from "../modal/work-shift/EndShiftConfirmModal";
+import LogoutConfirmModal from "../modal/LogoutConfirmModal";
 import { useTheme } from "@/ui/context/ThemeContext";
 import { Moon, Sun } from "lucide-react";
 import { useAppState } from "@/ui/hooks/useAppState";
@@ -42,6 +43,7 @@ const MenuSelectionSidebar = ({
   const [showDineInBoard, setShowDineInBoard] = useState(false);
   const [showEndShift, setShowEndShift] = useState(false);
   const [showLanguageModal, setShowLanguageModal] = useState(false);
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const [pendingTicketsCount, setPendingTicketsCount] = useState(0);
   const { isLoggingOut, setIsLoggingOut } = useLogout();
   const { showNotification } = useNotification();
@@ -116,9 +118,8 @@ const MenuSelectionSidebar = ({
       return;
     }
 
-    // All clear, proceed with logout
-    showNotification.info(t("Logging out..."), 2000);
-    handleConfirmLogout();
+    // All clear, show confirmation modal
+    setShowLogoutConfirm(true);
   };
 
 
@@ -173,20 +174,20 @@ const MenuSelectionSidebar = ({
       {showEndShift && (
         <EndShiftConfirmModal
           onClose={() => setShowEndShift(false)}
-          onConfirm={async () => {
+          onConfirm={() => {
             setShowEndShift(false);
+            showNotification.success(t("Work shift ended successfully"), 3000);
+          }}
+        />
+      )}
 
-            // After ending shift, check only for pending syncs
-            // (shift is now closed, so no need to check it again)
-            const blocks = await checkBlocks();
-            if (blocks.totalSyncs > 0) {
-              // Still have pending syncs
-              showNotification.warning(t("Please wait for pending syncs to complete before logging out"), 4000);
-            } else {
-              // All clear, proceed to logout
-              showNotification.warning(t("Logging out..."), 2000);
-              handleConfirmLogout();
-            }
+      {showLogoutConfirm && (
+        <LogoutConfirmModal
+          onClose={() => setShowLogoutConfirm(false)}
+          onConfirm={() => {
+            setShowLogoutConfirm(false);
+            showNotification.info(t("Logging out..."), 2000);
+            handleConfirmLogout();
           }}
         />
       )}

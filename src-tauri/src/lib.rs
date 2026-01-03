@@ -176,6 +176,20 @@ pub fn run() {
             commands::work_shift::save_work_shift_draft,
             commands::work_shift::clear_work_shift_draft,
 
+            // Workday
+            commands::workday::save_workday,
+            commands::workday::get_all_workdays,
+            commands::workday::get_pending_workdays,
+            commands::workday::get_active_workday,
+            commands::workday::get_workday_by_id,
+            commands::workday::update_workday,
+            commands::workday::update_workday_sync_status,
+            commands::workday::set_workday_server_id,
+            commands::workday::delete_workday,
+            commands::workday::get_workdays_by_date_range,
+            commands::workday::get_workdays_by_location,
+            commands::workday::clear_all_workdays,
+
             // Charges
             commands::charges::save_charges,
             commands::charges::save_charge_mappings,

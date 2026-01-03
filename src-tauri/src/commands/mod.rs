@@ -11,6 +11,7 @@ pub mod prouct_combo;
 pub mod category;
 pub mod cart_store;
 pub mod work_shift;
+pub mod workday;
 pub mod charges;
 pub mod payment_method;
 pub mod transaction_type;

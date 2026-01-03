@@ -239,6 +239,30 @@ CREATE TABLE `transaction_types` (
 	`deleted_by` text
 );
 --> statement-breakpoint
+CREATE TABLE `workdays` (
+	`id` integer PRIMARY KEY AUTOINCREMENT NOT NULL,
+	`workday_id` text,
+	`start_user` text,
+	`end_user` text,
+	`start_time` text,
+	`end_time` text,
+	`location_id` text NOT NULL,
+	`total_sales` real,
+	`total_taxes` real,
+	`total_ticket_count` integer,
+	`work_period_informations` text,
+	`department_ticket_informations` text,
+	`add_on` text,
+	`auto_closed` integer,
+	`external_processed` integer,
+	`work_period_day` text,
+	`business_date` text,
+	`sync_status` text DEFAULT 'PENDING',
+	`sync_error` text,
+	`created_at` text NOT NULL,
+	`updated_at` text
+);
+--> statement-breakpoint
 CREATE TABLE `work_shift_draft` (
 	`id` integer PRIMARY KEY NOT NULL,
 	`data` text NOT NULL,

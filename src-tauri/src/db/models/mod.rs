@@ -25,6 +25,8 @@ pub mod transaction_type;
 pub mod transaction_type_repo;
 pub mod ticket;
 pub mod ticket_repo;
+pub mod workday;
+pub mod workday_repo;
 pub mod kds_ticket;
 pub mod kds_ticket_repo;
 pub mod printer;

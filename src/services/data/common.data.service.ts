@@ -80,5 +80,9 @@ export const commonDataService = {
   getLocations(domain:string,token:string){
     return post(domain, "locations",token);
   }
-};
+};  
+
+
+
+
 

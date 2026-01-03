@@ -7,4 +7,6 @@ export interface WorkShiftState {
     startedBy?: string;
     endedBy?: string;
     openTillAmount?: number;
+    workdayId?: string; 
+    localWorkdayId?: number; 
 }
