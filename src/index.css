@@ -39,6 +39,17 @@
     --destructive: #ef4444;
     --destructive-foreground: #fafafa;
 
+    --success: #10b981;
+    --success-foreground: #fafafa;
+    --success-hover: #059669;
+
+    --warning: #f59e0b;
+    --warning-foreground: #fafafa;
+    --warning-hover: #d97706;
+
+    --tag-selected-bg: #dae4ff;
+    --tag-hover-border: #60a5fa;
+
     --ring: #a1a1aa;
     --radius: 0.5rem;
 
@@ -83,6 +94,17 @@
 
     --destructive: #993333;
     --destructive-foreground: #fafafa;
+
+    --success: #059669;
+    --success-foreground: #fafafa;
+    --success-hover: #047857;
+
+    --warning: #d97706;
+    --warning-foreground: #fafafa;
+    --warning-hover: #b45309;
+
+    --tag-selected-bg: #1e3a5f;
+    --tag-hover-border: #3b82f6;
 
     --ring: #b3b3b3;
 
@@ -146,7 +168,10 @@ body,
   -webkit-tap-highlight-color: transparent;
 }
 
-button, input, select, textarea {
+button,
+input,
+select,
+textarea {
   -webkit-user-select: text;
   user-select: text;
   touch-action: manipulation;
@@ -195,6 +220,30 @@ button, input, select, textarea {
     background-color: var(--destructive-foreground);
   }
 
+  .bg-success {
+    background-color: var(--success);
+  }
+
+  .bg-success-foreground {
+    background-color: var(--success-foreground);
+  }
+
+  .bg-success-hover {
+    background-color: var(--success-hover);
+  }
+
+  .bg-warning {
+    background-color: var(--warning);
+  }
+
+  .bg-warning-foreground {
+    background-color: var(--warning-foreground);
+  }
+
+  .bg-tag-selected {
+    background-color: var(--tag-selected-bg);
+  }
+
   .text-background {
     color: var(--background);
   }
@@ -235,8 +284,32 @@ button, input, select, textarea {
     color: var(--destructive-foreground);
   }
 
+  .text-success {
+    color: var(--success);
+  }
+
+  .text-success-foreground {
+    color: var(--success-foreground);
+  }
+
+  .text-warning {
+    color: var(--warning);
+  }
+
+  .text-warning-foreground {
+    color: var(--warning-foreground);
+  }
+
   .border-border {
     border-color: var(--border);
+  }
+
+  .border-primary {
+    border-color: var(--primary-hover);
+  }
+
+  .border-tag-hover {
+    border-color: var(--tag-hover-border);
   }
 
   .border-input {
@@ -278,6 +351,18 @@ button, input, select, textarea {
   .hover\:bg-primary-hover:hover {
     background-color: var(--primary-hover);
     color: var(--background);
+  }
+
+  .hover\:bg-success-hover:hover {
+    background-color: var(--success-hover);
+  }
+
+  .hover\:bg-warning-hover:hover {
+    background-color: var(--warning-hover);
+  }
+
+  .hover\:border-tag-hover:hover {
+    border-color: var(--tag-hover-border);
   }
 
   .safe-area {

@@ -1,4 +1,3 @@
-"use client"
 
 interface ProductProps {
   name: string
@@ -42,7 +41,7 @@ export default function ProductCard({
 
               <div className="w-full flex justify-end pt-2">
                 <p className="font-bold text-sm text-primary">
-                  {price.toFixed(2)}
+                 S$ {price.toFixed(2)}
                 </p>
               </div>
             </div>

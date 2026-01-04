@@ -1,7 +1,9 @@
 import CardDineIn from "../card/CardDineIn";
 import { useCart } from "@/ui/context/CartContext";
-
 import EmptyCart from "@/assets/empty-cart.png";
+import ProductTagGroupModal from "../../menu-selection/ProductTagGroupModal";
+import { useState } from "react";
+import type { CartItem } from "@/types/cart";
 
 const BoardContentDineIn = () => {
   const {
@@ -10,12 +12,29 @@ const BoardContentDineIn = () => {
     decrement,
     remove,
     isHydrated,
+    updateModifiers,
   } = useCart();
 
-
-
+  const [modalOpen, setModalOpen] = useState(false);
+  const [selectedCartItem, setSelectedCartItem] = useState<CartItem | null>(null);
 
   if (!isHydrated) return null;
+
+  const handleCardClick = (item: CartItem) => {
+    if (!item.product_id) return;
+    setSelectedCartItem(item);
+    setModalOpen(true);
+  };
+
+  const handleModalConfirm = (modifiers: { name: string; qty: number; price: number }[]) => {
+    if (!selectedCartItem || !selectedCartItem.product_id) return;
+
+    const currentModifiersTotal = selectedCartItem.modifiers?.reduce((sum, m) => sum + m.price * m.qty, 0) || 0;
+    const basePrice = selectedCartItem.price - currentModifiersTotal;
+
+    updateModifiers(selectedCartItem.id, modifiers, basePrice);
+    setModalOpen(false);
+  };
 
   return (
     <div className="w-full flex flex-col gap-2 p-2">
@@ -29,9 +48,11 @@ const BoardContentDineIn = () => {
                 menu={item.name}
                 quantity={item.quantity}
                 price={item.price}
+                modifiers={item.modifiers}
                 onIncrement={() => increment(item.id)}
                 onDecrement={() => decrement(item.id)}
                 onRemove={() => remove(item.id)}
+                onClick={() => handleCardClick(item)}
               />
             ))
           ) : (
@@ -52,7 +73,19 @@ const BoardContentDineIn = () => {
         </div>
       </div>
 
-     
+      {/* Product Tag Group Modal */}
+      {selectedCartItem && selectedCartItem.product_id && (
+        <ProductTagGroupModal
+          open={modalOpen}
+          productId={selectedCartItem.product_id}
+          productName={selectedCartItem.name}
+          productPrice={selectedCartItem.price - (selectedCartItem.modifiers?.reduce((sum, m) => sum + m.price * m.qty, 0) || 0)}
+          onClose={() => setModalOpen(false)}
+          onConfirm={handleModalConfirm}
+          initialModifiers={selectedCartItem.modifiers}
+          isEditMode={true}
+        />
+      )}
     </div>
   );
 };

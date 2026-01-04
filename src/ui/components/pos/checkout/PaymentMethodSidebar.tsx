@@ -1,4 +1,4 @@
-import { X } from "lucide-react";
+import { X, Loader2 } from "lucide-react";
 import { Button } from "@/ui/shadcn/components/ui/button";
 import { useTranslation } from "react-i18next";
 import { usePaymentMethods } from "@/ui/hooks/usePaymentMethods";
@@ -11,6 +11,7 @@ interface PaymentMethodsSidebarProps {
   onCancel: () => void;
   isPaymentReady: boolean;
   onPay: () => void;
+  isProcessing?: boolean;
 }
 
 export default function PaymentMethodsSidebar({
@@ -19,6 +20,8 @@ export default function PaymentMethodsSidebar({
   onMethodSelect,
   isPaymentReady,
   onPay,
+  isProcessing = false,
+  selectedMethod,
 }: PaymentMethodsSidebarProps) {
   const { t } = useTranslation();
   const { paymentMethods, loading, error } = usePaymentMethods();
@@ -66,23 +69,35 @@ export default function PaymentMethodsSidebar({
             </div>
           )}
 
-          {!loading && !error && paymentMethods.map((method) => (
-            <Button
-              key={method.id}
-              disabled={!isPaymentReady}
-              onClick={() => {
-                onMethodSelect(method.name);
-                onPay();
-              }}
-              className={`flex-1 w-full text-sm font-medium rounded-xl justify-center ${
-                isPaymentReady
-                  ? "bg-primary text-primary-foreground"
-                  : "bg-secondary text-secondary-foreground hover:bg-primary-hover"
-              }`}
-            >
-              {t(method.name)}
-            </Button>
-          ))}
+          {!loading && !error && paymentMethods.map((method) => {
+            const isSelected = selectedMethod === method.name;
+            const showSpinner = isProcessing && isSelected;
+
+            return (
+              <Button
+                key={method.id}
+                disabled={!isPaymentReady || isProcessing}
+                onClick={() => {
+                  onMethodSelect(method.name);
+                  onPay();
+                }}
+                className={`flex-1 w-full text-sm font-medium rounded-xl justify-center ${
+                  isPaymentReady && !isProcessing
+                    ? "bg-primary text-primary-foreground"
+                    : "bg-secondary text-secondary-foreground hover:bg-primary-hover"
+                }`}
+              >
+                {showSpinner ? (
+                  <span className="flex items-center gap-2">
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    {t("Processing...")}
+                  </span>
+                ) : (
+                  t(method.name)
+                )}
+              </Button>
+            );
+          })}
         </div>
       </div>
     </div>

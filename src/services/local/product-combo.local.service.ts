@@ -28,5 +28,5 @@ export interface ProductWithCombinations {
 export function getProductWithCombinations(
   productId: string
 ): Promise<ProductWithCombinations> {
-  return invoke("get_product_with_combinations", { productId });
+  return invoke("get_product_with_combos", { productId });
 }

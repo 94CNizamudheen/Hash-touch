@@ -210,6 +210,7 @@ export default function PaymentMobile() {
                     onCancel={() => setShowMethods(false)}
                     isPaymentReady={isPaymentReady}
                     onPay={onPay}
+                    isProcessing={loading}
                 />
             )}
 

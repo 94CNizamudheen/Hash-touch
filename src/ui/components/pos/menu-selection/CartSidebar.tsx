@@ -6,6 +6,9 @@ import { useNavigate } from "react-router-dom";
 import { useCart } from "@/ui/context/CartContext";
 import EmptyCart from "@/assets/empty-cart.png";
 import CardDineIn from "../common/card/CardDineIn";
+import ProductTagGroupModal from "./ProductTagGroupModal";
+import { useState } from "react";
+import type { CartItem } from "@/types/cart";
 
 type CartSidebarProps = {
   open: boolean;
@@ -22,7 +25,11 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
     remove,
     clear,
     isHydrated,
+    updateModifiers,
   } = useCart();
+
+  const [modalOpen, setModalOpen] = useState(false);
+  const [selectedCartItem, setSelectedCartItem] = useState<CartItem | null>(null);
 
   // Avoid flicker before SQLite hydration
   if (!isHydrated) return null;
@@ -36,6 +43,24 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
     navigate("/pos/payment-panel", {
       state: { items, total },
     });
+  };
+
+  const handleCardClick = (item: CartItem) => {
+    if (!item.product_id) return;
+    setSelectedCartItem(item);
+    setModalOpen(true);
+  };
+
+  const handleModalConfirm = (modifiers: { name: string; qty: number; price: number }[]) => {
+    if (!selectedCartItem || !selectedCartItem.product_id) return;
+
+    // Get the base price from product (we need to fetch it or store it)
+    // For now, we'll calculate it from the current item
+    const currentModifiersTotal = selectedCartItem.modifiers?.reduce((sum, m) => sum + m.price * m.qty, 0) || 0;
+    const basePrice = selectedCartItem.price - currentModifiersTotal;
+
+    updateModifiers(selectedCartItem.id, modifiers, basePrice);
+    setModalOpen(false);
   };
 
   return (
@@ -86,9 +111,11 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
                     menu={item.name}
                     quantity={item.quantity}
                     price={item.price}
+                    modifiers={item.modifiers}
                     onIncrement={() => increment(item.id)}
                     onDecrement={() => decrement(item.id)}
                     onRemove={() => remove(item.id)}
+                    onClick={() => handleCardClick(item)}
                   />
                 ))
               ) : (
@@ -150,6 +177,20 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
               </div>
             </footer>
           </motion.div>
+
+          {/* Product Tag Group Modal */}
+          {selectedCartItem && selectedCartItem.product_id && (
+            <ProductTagGroupModal
+              open={modalOpen}
+              productId={selectedCartItem.product_id}
+              productName={selectedCartItem.name}
+              productPrice={selectedCartItem.price - (selectedCartItem.modifiers?.reduce((sum, m) => sum + m.price * m.qty, 0) || 0)}
+              onClose={() => setModalOpen(false)}
+              onConfirm={handleModalConfirm}
+              initialModifiers={selectedCartItem.modifiers}
+              isEditMode={true}
+            />
+          )}
         </>
       )}
     </AnimatePresence>

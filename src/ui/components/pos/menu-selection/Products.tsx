@@ -1,18 +1,20 @@
 import type { Product } from "@/types/products";
 import { useProducts } from "@/ui/context/ProductContext";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import InputFilter from "../../common/InputFilter";
 import CategoryTabs from "./CategoryTabs";
 import ProductCard from "./ProductCard";
 import { cn } from "@/lib/utils";
 import ProductGroupTabs from "./ProductGroupTabs";
+import ProductTagGroupModal from "./ProductTagGroupModal";
+import { getProductWithCombinations } from "@/services/local/product-combo.local.service";
 
 
 export default function Products({
   onAddToOrder,
   tempStyle,
 }: {
-  onAddToOrder: (item: Product) => void;
+  onAddToOrder: (item: Product, modifiers?: { name: string; qty: number; price: number }[]) => void;
   tempStyle: boolean;
 }) {
   const {
@@ -23,6 +25,8 @@ export default function Products({
     loading,
   } = useProducts();
 
+  const [modalOpen, setModalOpen] = useState(false);
+  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
 
   const productGridRef = useRef<HTMLDivElement | null>(null);
 
@@ -36,6 +40,30 @@ export default function Products({
     }
   }
 
+  const handleProductClick = async (item: Product) => {
+    try {
+      const productData = await getProductWithCombinations(item.id);
+
+      // If product has tag groups, open modal
+      if (productData.combinations && productData.combinations.length > 0) {
+        setSelectedProduct(item);
+        setModalOpen(true);
+      } else {
+        // No tag groups, add directly to cart
+        onAddToOrder(item, []);
+      }
+    } catch (error) {
+      console.error("Failed to check product combinations:", error);
+      // On error, add directly to cart
+      onAddToOrder(item, []);
+    }
+  };
+
+  const handleModalConfirm = (modifiers: { name: string; qty: number; price: number }[]) => {
+    if (selectedProduct) {
+      onAddToOrder(selectedProduct, modifiers);
+    }
+  };
 
   useEffect(() => {
     productGridRef.current?.scrollTo({
@@ -83,7 +111,7 @@ export default function Products({
                     name={item.name}
                     price={item.price}
                     image={getProductImage(item.media)}
-                    onClick={() => onAddToOrder(item)}
+                    onClick={() => handleProductClick(item)}
                   />
                 ))}
               </div>
@@ -118,7 +146,7 @@ export default function Products({
                   name={item.name}
                   price={item.price}
                   image={getProductImage(item.media)}
-                  onClick={() => onAddToOrder(item)}
+                  onClick={() => handleProductClick(item)}
                 />
               ))
             ) : (
@@ -128,6 +156,17 @@ export default function Products({
             )}
           </div>
         </>
+      )}
+
+      {selectedProduct && (
+        <ProductTagGroupModal
+          open={modalOpen}
+          productId={selectedProduct.id}
+          productName={selectedProduct.name}
+          productPrice={selectedProduct.price}
+          onClose={() => setModalOpen(false)}
+          onConfirm={handleModalConfirm}
+        />
       )}
     </section>
   );

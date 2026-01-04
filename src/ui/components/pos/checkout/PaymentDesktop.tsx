@@ -274,6 +274,7 @@ useEffect(() => {
         onCancel={() => navigate("/pos")}
         isPaymentReady={isPaymentReady}
         onPay={onPay}
+        isProcessing={loading}
       />
 
       {showDrawer && (

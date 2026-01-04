@@ -194,8 +194,14 @@ export async function initialSync(
     )
   );
 
+  console.log("🏷️ Product Tag Groups Structure:", {
+    totalTagGroups: dbTagGroups.length,
+    sampleData: dbTagGroups.slice(0, 3),
+    productsWithTagGroups: [...new Set(dbTagGroups.map(tg => tg.product_id))].length,
+  });
+
   await productTagGroupLocal.save(dbTagGroups);
-  console.log(`Product tag groups synced: ${dbTagGroups.length}`);
+  console.log(`✅ Product tag groups synced: ${dbTagGroups.length}`);
 
 
   const dbProductTags = combinationsResponse.flatMap((g: any) =>
@@ -205,8 +211,8 @@ export async function initialSync(
           (tg.product_tags ?? []).map((t: any) => ({
             id: t.id,
 
-            tag_group_id: tg.id, 
-            product_id: p.id,  
+            tag_group_id: tg.id,
+            product_id: p.id,
             name: t.name,
             price: Number(t.price ?? 0),
 
@@ -222,8 +228,14 @@ export async function initialSync(
     )
   );
 
+  console.log("🔖 Product Tags (Options) Structure:", {
+    totalTags: dbProductTags.length,
+    sampleData: dbProductTags.slice(0, 5),
+    uniqueTagGroups: [...new Set(dbProductTags.map(t => t.tag_group_id))].length,
+  });
+
   await productTagLocal.save(dbProductTags);
-  console.log(` Product tags synced: ${dbProductTags.length}`);
+  console.log(`✅ Product tags synced: ${dbProductTags.length}`);
 
   // Sync charges
   const chargesResponse = await commonDataService.getCharges(domain, token, {

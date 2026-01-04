@@ -12,6 +12,8 @@ import StartShiftModal from "../../modal/work-shift/StartShiftModal";
 import WorkShiftSuccessModal from "../../modal/work-shift/WorkShiftSuccessModal";
 import { useLogout } from "@/ui/context/LogoutContext";
 import SplashScreen from "@/ui/components/common/SplashScreen";
+import ProductTagGroupModal from "../ProductTagGroupModal";
+import { getProductWithCombinations } from "@/services/local/product-combo.local.service";
 
 const ProductsMobile = () => {
   const {
@@ -26,10 +28,38 @@ const ProductsMobile = () => {
   const { shift, isHydrated } = useWorkShift();
   const [showSuccess, setShowSuccess] = useState(false);
   const { isLoggingOut } = useLogout();
+  const [modalOpen, setModalOpen] = useState(false);
+  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
 
   const handleAddToOrder = useCallback(
-    (item: Product) => addItem(item),
+    async (item: Product) => {
+      try {
+        const productData = await getProductWithCombinations(item.id);
+
+        // If product has tag groups, open modal
+        if (productData.combinations && productData.combinations.length > 0) {
+          setSelectedProduct(item);
+          setModalOpen(true);
+        } else {
+          // No tag groups, add directly to cart
+          addItem(item, []);
+        }
+      } catch (error) {
+        console.error("Failed to check product combinations:", error);
+        // On error, add directly to cart
+        addItem(item, []);
+      }
+    },
     [addItem]
+  );
+
+  const handleModalConfirm = useCallback(
+    (modifiers: { name: string; qty: number; price: number }[]) => {
+      if (selectedProduct) {
+        addItem(selectedProduct, modifiers);
+      }
+    },
+    [selectedProduct, addItem]
   );
 
   if (!isHydrated) return null;
@@ -92,6 +122,17 @@ const ProductsMobile = () => {
               </div>
             )}
           </div>
+
+          {selectedProduct && (
+            <ProductTagGroupModal
+              open={modalOpen}
+              productId={selectedProduct.id}
+              productName={selectedProduct.name}
+              productPrice={selectedProduct.price}
+              onClose={() => setModalOpen(false)}
+              onConfirm={handleModalConfirm}
+            />
+          )}
         </section>
       )}
     </>

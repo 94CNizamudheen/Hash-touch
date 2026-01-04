@@ -21,7 +21,7 @@ export default function ProductGroupTabs() {
               "px-10 py-4 rounded-lg border border-border text-sm font-semibold whitespace-nowrap transition-all",
               selectedGroup === group.id
                 ? "bg-primary text-primary-foreground shadow"
-                : "bg-secondary text-foreground hover:bg-blue-500"
+                : "bg-secondary text-foreground hover:bg-primary-hover"
             )}
           >
             {group.name}

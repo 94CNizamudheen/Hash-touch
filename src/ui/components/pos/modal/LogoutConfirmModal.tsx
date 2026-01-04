@@ -10,8 +10,8 @@ export default function LogoutConfirmModal({
   onClose: () => void;
 }) {
   return (
-    <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center">
-      <div className="bg-background p-6 rounded-xl w-[300px] space-y-4">
+    <div className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center">
+      <div className="bg-background p-6 rounded-xl w-[500px] space-y-4">
         <h3 className="font-semibold text-lg">Confirm Logout</h3>
         <p className="text-sm text-muted-foreground">
           Are you sure you want to logout?
@@ -20,7 +20,7 @@ export default function LogoutConfirmModal({
           <Button variant="secondary" onClick={onClose}>
             Cancel
           </Button>
-          <Button onClick={onConfirm}>Logout</Button>
+          <Button variant="destructive" onClick={onConfirm}>Logout</Button>
         </div>
       </div>
     </div>
