@@ -11,7 +11,7 @@ import InputFilter from "@/ui/components/common/InputFilter";
 
 const SoldOutPage = () => {
     const { t } = useTranslation();
-    const { items: allProducts } = useProducts();
+    const { items: allProducts, updateSoldOutInContext } = useProducts();
     const { showNotification } = useNotification();
 
     const [soldOutIds, setSoldOutIds] = useState<Set<string>>(new Set());
@@ -65,22 +65,24 @@ const SoldOutPage = () => {
 
     // Toggle sold out status
     const handleToggle = async (product: Product) => {
+        const newSoldOutStatus = !soldOutIds.has(product.id);
+
+        // 1️⃣ Optimistic UI update (THIS FIXES THE ISSUE)
+        updateSoldOutInContext(product.id, newSoldOutStatus);
+
+        setSoldOutIds(prev => {
+            const next = new Set(prev);
+            if (newSoldOutStatus) {
+                next.add(product.id);
+            } else {
+                next.delete(product.id);
+            }
+            return next;
+        });
+
         try {
-            const newSoldOutStatus = !soldOutIds.has(product.id);
-
-            // Update in database
+            // 2️⃣ Persist to SQLite
             await productLocal.updateSoldOutStatus(product.id, newSoldOutStatus);
-
-            // Update local state
-            setSoldOutIds((prev) => {
-                const next = new Set(prev);
-                if (newSoldOutStatus) {
-                    next.add(product.id);
-                } else {
-                    next.delete(product.id);
-                }
-                return next;
-            });
 
             showNotification.success(
                 newSoldOutStatus
@@ -90,9 +92,24 @@ const SoldOutPage = () => {
             );
         } catch (error) {
             console.error("Failed to update sold out status:", error);
+
+            // 3️⃣ Rollback UI if DB fails
+            updateSoldOutInContext(product.id, !newSoldOutStatus);
+
+            setSoldOutIds(prev => {
+                const next = new Set(prev);
+                if (!newSoldOutStatus) {
+                    next.add(product.id);
+                } else {
+                    next.delete(product.id);
+                }
+                return next;
+            });
+
             showNotification.error(t("Failed to update product status"));
         }
     };
+
 
     if (loading) {
         return (

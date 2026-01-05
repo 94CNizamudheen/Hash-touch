@@ -43,6 +43,8 @@ interface ProductContextType {
   loadProductWithCombinations: (
     productId: string
   ) => Promise<ProductWithCombinations>;
+
+  updateSoldOutInContext: (productId: string, isSoldOut: boolean) => void;
 }
 
 const ProductContext = createContext<ProductContextType | null>(null);
@@ -108,7 +110,7 @@ export const ProductProvider = ({ children }: { children: React.ReactNode }) => 
             name: sample.name,
             price: sample.price,
             overrides: sample.overrides
-            
+
           });
         }
 
@@ -188,12 +190,12 @@ export const ProductProvider = ({ children }: { children: React.ReactNode }) => 
     if (firstCat) setSelectedCategory(firstCat.id);
   }, [selectedGroup, groupCategories]);
 
-    // Debounce search input
+  // Debounce search input
 
   useEffect(() => {
     const timer = setTimeout(() => {
       setDebouncedSearch(search);
-    }, 500); 
+    }, 500);
 
     return () => clearTimeout(timer);
   }, [search]);
@@ -248,6 +250,25 @@ export const ProductProvider = ({ children }: { children: React.ReactNode }) => 
     setItems(effective);
   };
 
+  const updateSoldOutInContext = (productId: string, isSoldOut: boolean) => {
+    setRawItems(prev =>
+      prev.map(p =>
+        p.id === productId
+          ? { ...p, is_sold_out: isSoldOut ? 1 : 0 }
+          : p
+      )
+    );
+
+    setItems(prev =>
+      prev.map(p =>
+        p.id === productId
+          ? { ...p, is_sold_out: isSoldOut ? 1 : 0 }
+          : p
+      )
+    );
+  };
+
+
   return (
     <ProductContext.Provider
       value={{
@@ -269,6 +290,8 @@ export const ProductProvider = ({ children }: { children: React.ReactNode }) => 
 
         loadProductWithCombinations,
         applyOverrides,
+
+        updateSoldOutInContext,
       }}
     >
       {children}
