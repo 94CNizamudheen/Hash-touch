@@ -127,13 +127,6 @@ export const ProductProvider = ({ children }: { children: React.ReactNode }) => 
      Apply overrides when order mode changes
   ----------------------------------------- */
   useEffect(() => {
-    console.log("   Order mode ID:", appState?.selected_order_mode_id);
-    console.log("   Brand ID:", appState?.brand_id);
-    console.log("   Location ID:", appState?.selected_location_id);
-    console.log("   Device Role:", appState?.device_role);
-    console.log("   Raw items count:", rawItems.length);
-    console.log("   AppState object:", appState);
-
     if (!appState || rawItems.length === 0) {
       console.log("⚠️ No appState or no raw items, skipping override application");
       return;
@@ -157,7 +150,6 @@ export const ProductProvider = ({ children }: { children: React.ReactNode }) => 
 
       setItems(effectiveProducts);
     } else {
-      console.log("⚠️ Missing app state values, using raw products");
       setItems(rawItems);
     }
   }, [
@@ -179,7 +171,6 @@ export const ProductProvider = ({ children }: { children: React.ReactNode }) => 
       .sort((a, b) => a.sort_order - b.sort_order)[0];
 
     if (firstActiveGroup) {
-      console.log("🎯 Auto-selecting first product group:", firstActiveGroup.name);
       setSelectedGroup(firstActiveGroup.id);
     }
   }, [productGroups, selectedGroup]);
@@ -197,13 +188,12 @@ export const ProductProvider = ({ children }: { children: React.ReactNode }) => 
     if (firstCat) setSelectedCategory(firstCat.id);
   }, [selectedGroup, groupCategories]);
 
-  /* ----------------------------------------
-     Debounce search input
-  ----------------------------------------- */
+    // Debounce search input
+
   useEffect(() => {
     const timer = setTimeout(() => {
       setDebouncedSearch(search);
-    }, 300); // Wait 300ms after user stops typing
+    }, 500); 
 
     return () => clearTimeout(timer);
   }, [search]);
@@ -254,9 +244,6 @@ export const ProductProvider = ({ children }: { children: React.ReactNode }) => 
       locationId: appState.selected_location_id!,
       orderModeId,
     });
-
-    console.log("⚡ applyOverrides called with key:", key);
-
     const effective = rawItems.map(p => getEffectiveProduct(p, key));
     setItems(effective);
   };

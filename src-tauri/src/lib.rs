@@ -142,6 +142,7 @@ pub fn run() {
             commands::product::get_products,
             commands::product::save_products,
             commands::product::clear_products_cache,
+            commands::product::update_product_sold_out_status,
 
             // Product groups
             commands::product_group::get_product_groups,

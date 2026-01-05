@@ -1,6 +1,6 @@
 import type { Product } from "@/types/products";
 import { useProducts } from "@/ui/context/ProductContext";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import InputFilter from "../../common/InputFilter";
 import CategoryTabs from "./CategoryTabs";
 import ProductCard from "./ProductCard";
@@ -74,6 +74,9 @@ export default function Products({
     });
   }, [selectedCategory]);
 
+  const handleSearchChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    setSearch(e.target.value);
+  }, [setSearch]);
 
   return (
     <section className="w-full h-full flex flex-col bg-background overflow-hidden transition-all duration-300">
@@ -83,7 +86,7 @@ export default function Products({
           className="w-full"
           placeholder={t("Search product...")}
           value={search}
-          onChange={(e: any) => setSearch(e.target.value)}
+          onChange={handleSearchChange}
         />
         {!search.trim() && <ProductGroupTabs />}
       </div>
@@ -111,6 +114,7 @@ export default function Products({
                   <ProductCard
                     key={item.id}
                     name={item.name}
+                    isSoldOut={item.is_sold_out===1}
                     price={item.price}
                     image={getProductImage(item.media)}
                     onClick={() => handleProductClick(item)}
@@ -148,6 +152,7 @@ export default function Products({
                   name={item.name}
                   price={item.price}
                   image={getProductImage(item.media)}
+                  isSoldOut={item.is_sold_out === 1}
                   onClick={() => handleProductClick(item)}
                 />
               ))

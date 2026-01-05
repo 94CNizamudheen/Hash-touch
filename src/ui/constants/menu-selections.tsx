@@ -38,7 +38,7 @@ export const MENUSELECTIONNAVIGATION = [
     title: "Sold Out",
     icon: <Flag className="lg:w-4 lg:h-4 w-4 h-4" strokeWidth={2.5} />,
     position: "Top",
-    link: "",
+    link: "/pos/sold-out",
   },
     {
     id: 3,

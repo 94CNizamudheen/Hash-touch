@@ -10,6 +10,7 @@ export interface DbProduct {
     price:number;
     active:boolean;
     sort_order:number;
+    is_sold_out?:number;
     media?:string;
     overrides?:string;
 }
@@ -48,5 +49,8 @@ export const productLocal = {
   },
   clearCache():Promise<void>{
     return invoke("clear_products_cache")
+  },
+  updateSoldOutStatus(productId: string, isSoldOut: boolean): Promise<void> {
+    return invoke("update_product_sold_out_status", { productId, isSoldOut });
   }
 };

@@ -24,10 +24,10 @@ pub fn save_products(conn: &mut Connection, items: &[Product]) -> anyhow::Result
             r#"
             INSERT INTO products (
               id, name, code, description, category_id,
-              price, active, sort_order,
+              price, active, sort_order, is_sold_out,
               created_at, updated_at, deleted_at, media, overrides
             )
-            VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13)
+            VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14)
             ON CONFLICT(id) DO UPDATE SET
               name = excluded.name,
               code = excluded.code,
@@ -36,6 +36,7 @@ pub fn save_products(conn: &mut Connection, items: &[Product]) -> anyhow::Result
               price = excluded.price,
               active = excluded.active,
               sort_order = excluded.sort_order,
+              is_sold_out = COALESCE(excluded.is_sold_out, is_sold_out),
               updated_at = excluded.updated_at,
               deleted_at = excluded.deleted_at,
               media = excluded.media,
@@ -50,6 +51,7 @@ pub fn save_products(conn: &mut Connection, items: &[Product]) -> anyhow::Result
                 p.price,
                 if p.active { 1 } else { 0 },
                 p.sort_order,
+                p.is_sold_out,
                 p.created_at,
                 p.updated_at,
                 p.deleted_at,
@@ -68,7 +70,7 @@ pub fn get_products(conn: &Connection) -> anyhow::Result<Vec<Product>> {
         r#"
         SELECT
           id, name, code, description, category_id,
-          price, active, sort_order,
+          price, active, sort_order, is_sold_out,
           created_at, updated_at, deleted_at, media, overrides
         FROM products
         WHERE deleted_at IS NULL
@@ -86,16 +88,26 @@ pub fn get_products(conn: &Connection) -> anyhow::Result<Vec<Product>> {
             price: row.get(5)?,
             active: row.get::<_, i32>(6)? != 0,
             sort_order: row.get(7)?,
-            created_at: row.get(8)?,
-            updated_at: row.get(9)?,
-            deleted_at: row.get(10)?,
-            media: row.get(11)?,
-            overrides:row.get(12)?,
+            is_sold_out: row.get(8)?,
+            created_at: row.get(9)?,
+            updated_at: row.get(10)?,
+            deleted_at: row.get(11)?,
+            media: row.get(12)?,
+            overrides:row.get(13)?,
         })
     })?;
 
     Ok(rows.filter_map(Result::ok).collect())
 }
+
+pub fn update_sold_out_status(conn: &mut Connection, product_id: &str, is_sold_out: bool) -> anyhow::Result<()> {
+    conn.execute(
+        "UPDATE products SET is_sold_out = ?1 WHERE id = ?2",
+        params![if is_sold_out { 1 } else { 0 }, product_id],
+    )?;
+    Ok(())
+}
+
 pub fn clear_all(conn: &mut Connection) -> anyhow::Result<()> {
     let tx = conn.transaction()?;
 

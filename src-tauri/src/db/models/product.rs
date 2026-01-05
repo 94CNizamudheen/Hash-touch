@@ -11,6 +11,7 @@ pub struct Product {
     pub price: f64,
     pub active: bool,
     pub sort_order: i32,
+    pub is_sold_out: Option<i32>,
 
     pub created_at: Option<String>,
     pub updated_at: Option<String>,

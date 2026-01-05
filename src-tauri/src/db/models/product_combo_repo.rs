@@ -36,6 +36,7 @@ pub fn get_product_with_combinations(
                 category_id: None,
                 active: true,
                 sort_order: 0,
+                is_sold_out:None,
                 created_at: None,
                 updated_at: None,
                 deleted_at: None,

@@ -45,3 +45,10 @@ pub fn clear_products_cache(app: AppHandle) -> Result<(), String> {
     product_repo::clear_all(&mut conn)
         .map_err(|e| e.to_string())
 }
+
+#[tauri::command]
+pub fn update_product_sold_out_status(app: AppHandle, product_id: String, is_sold_out: bool) -> Result<(), String> {
+    let mut conn = migrate::connection(&app);
+    product_repo::update_sold_out_status(&mut conn, &product_id, is_sold_out)
+        .map_err(|e| e.to_string())
+}

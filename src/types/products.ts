@@ -18,6 +18,7 @@ export interface Product {
   price: number;
   active: boolean;
   sort_order: number;
+  is_sold_out?: number;
   media?: string;
   overrides?: string | ProductOverride[];
 }

@@ -13,11 +13,12 @@ export const productSqlite = sqliteTable("products", {
   price: real("price").notNull(),
   active: integer("active").default(1),
   sortOrder: integer("sort_order").default(0),
+  isSoldOut: integer("is_sold_out").default(0),
 
   createdAt: text("created_at"),
   updatedAt: text("updated_at"),
   deletedAt: text("deleted_at"),
 
-  media: text("media"), 
-  overrides: text("overrides"), 
+  media: text("media"),
+  overrides: text("overrides"),
 });

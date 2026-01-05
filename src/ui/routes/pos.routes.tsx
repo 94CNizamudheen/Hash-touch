@@ -14,6 +14,7 @@ import ActivityPage from "../components/pos/activity/ActivityPage";
 import SettingsPage from "../components/pos/settings/SettingsPage";
 import PrinterSettingsPage from "../components/pos/printer/PrinterSettingsPage";
 import DeviceCommunicationPage from "../components/pos/settings/DeviceCommunicationPage";
+import SoldOutPage from "../components/pos/sold-out/SoldOutPage"; 
 
 
 export default function PosRoutes() {
@@ -28,6 +29,7 @@ export default function PosRoutes() {
                   <Route element={<MenuLayout />}>
                     <Route index element={<MenuSelectionPage />} />
                     <Route path="activity" element={<ActivityPage />} />
+                    <Route path="sold-out" element={<SoldOutPage />} />
                     <Route path="settings" element={<SettingsPage />} />
                     <Route path="settings/printers" element={<PrinterSettingsPage />} />
                     <Route path="settings/devices" element={<DeviceCommunicationPage />} />
