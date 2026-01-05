@@ -32,7 +32,7 @@ export default function CartCard({
               {name}
             </h3>
             <span className="font-bold text-lg text-foreground whitespace-nowrap">
-              S$ {total.toFixed(2)}
+              $ {total.toFixed(2)}
             </span>
           </div>
 
@@ -45,7 +45,7 @@ export default function CartCard({
                     {modifier.name} x {modifier.qty} @ S$ {modifier.price.toFixed(2)}
                   </span>
                   <span className="text-foreground/80 font-medium whitespace-nowrap ml-4">
-                    S$ {(modifier.price * modifier.qty).toFixed(2)}
+                    $ {(modifier.price * modifier.qty).toFixed(2)}
                   </span>
                 </div>
               ))}

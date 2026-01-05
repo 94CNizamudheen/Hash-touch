@@ -25,27 +25,20 @@ interface BuildTicketParams {
 function getCurrentDateTime() {
   const now = new Date();
 
-  // Get date in YYYY-MM-DD format
+  // Get UTC date in YYYY-MM-DD format
   const date = now.toISOString().split("T")[0];
 
-  // Get time components
-  const hours = String(now.getHours()).padStart(2, '0');
-  const minutes = String(now.getMinutes()).padStart(2, '0');
-  const seconds = String(now.getSeconds()).padStart(2, '0');
+  // Get UTC time components from ISO string
+  const isoString = now.toISOString();
+  const timePart = isoString.split("T")[1].split(".")[0]; // HH:MM:SS
 
-  // Get timezone offset in +HH or -HH format
-  const offsetMinutes = -now.getTimezoneOffset();
-  const offsetHours = Math.floor(Math.abs(offsetMinutes) / 60);
-  const offsetSign = offsetMinutes >= 0 ? '+' : '-';
-  const timezone = `${offsetSign}${String(offsetHours).padStart(2, '0')}`;
-
-  // Format: "YYYY-MM-DD HH:MM:SS+TZ"
-  const timestamp = `${date} ${hours}:${minutes}:${seconds}${timezone}`;
+  // Format: "YYYY-MM-DD HH:MM:SS+00" (UTC)
+  const timestamp = `${date} ${timePart}+00`;
 
   return {
     date,
-    timestamp, 
-    datetime: now.toISOString(), 
+    timestamp,
+    datetime: isoString,
   };
 }
 

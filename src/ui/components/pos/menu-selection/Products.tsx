@@ -8,6 +8,7 @@ import { cn } from "@/lib/utils";
 import ProductGroupTabs from "./ProductGroupTabs";
 import ProductTagGroupModal from "./ProductTagGroupModal";
 import { getProductWithCombinations } from "@/services/local/product-combo.local.service";
+import { useTranslation } from "react-i18next";
 
 
 export default function Products({
@@ -24,6 +25,7 @@ export default function Products({
     setSearch,
     loading,
   } = useProducts();
+  const { t } = useTranslation();
 
   const [modalOpen, setModalOpen] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
@@ -79,7 +81,7 @@ export default function Products({
       <div className="p-4 border-b border-border bg-background sticky top-0 z-10 space-y-3">
         <InputFilter
           className="w-full"
-          placeholder="Search product..."
+          placeholder={t("Search product...")}
           value={search}
           onChange={(e: any) => setSearch(e.target.value)}
         />
@@ -101,7 +103,7 @@ export default function Products({
           >
             {loading ? (
               <div className="text-center py-10 text-muted-foreground">
-                Loading products...
+                {t("Loading products...")}
               </div>
             ) : filteredItems.length > 0 ? (
               <div className="grid gap-4 grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 content-start">
@@ -117,7 +119,7 @@ export default function Products({
               </div>
             ) : (
               <div className="text-center py-10 text-muted-foreground">
-                No products found
+                {t("No products found")}
               </div>
             )}
           </div>
@@ -137,7 +139,7 @@ export default function Products({
 
             {loading ? (
               <div className="col-span-full text-center py-10 text-muted-foreground">
-                Loading products...
+                {t("Loading products...")}
               </div>
             ) : filteredItems.length > 0 ? (
               filteredItems.map((item) => (
@@ -151,7 +153,7 @@ export default function Products({
               ))
             ) : (
               <div className="col-span-full text-center py-10 text-muted-foreground">
-                No products found
+                {t("No products found")}
               </div>
             )}
           </div>

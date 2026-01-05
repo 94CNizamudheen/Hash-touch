@@ -16,6 +16,8 @@ import { buildTicketRequest } from "@/ui/utils/ticketBuilder";
 import { ticketService } from "@/services/data/ticket.service";
 import LeftActionRail from "../LeftActionRail";
 import { ticketLocal } from "@/services/local/ticket.local.service";
+import { useNotification } from "@/ui/context/NotificationContext";
+
 
 export default function PaymentMobile() {
     const navigate = useNavigate();
@@ -38,7 +40,7 @@ export default function PaymentMobile() {
     const [showActions, setShowActions] = useState(false);
     const [loading, setLoading] = useState(false);
     const [isPaymentReady, setIsPaymentReady] = useState(false);
-
+    const {showNotification}= useNotification()
     // Set default payment method when payment methods are loaded
     useEffect(() => {
         if (paymentMethods.length > 0 && !selectedMethod) {
@@ -57,7 +59,10 @@ export default function PaymentMobile() {
         setInputValue((p) => (p === "0.00" || p === "0" ? k : p + k));
     };
 
-    const onPay = async () => {
+    const onPay = async (paymentMethodName?: string) => {
+        // Use provided payment method or fall back to state
+        const methodToUse = paymentMethodName || selectedMethod;
+
         // Round to 2 decimals for comparison to avoid floating point issues
         const tenderedRounded = Math.round(tendered * 100) / 100;
         const totalRounded = Math.round(total * 100) / 100;
@@ -82,9 +87,9 @@ export default function PaymentMobile() {
             }
 
             // Find selected payment method to get its ID
-            const selectedPaymentMethod = paymentMethods.find(pm => pm.name === selectedMethod);
+            const selectedPaymentMethod = paymentMethods.find(pm => pm.name === methodToUse);
             if (!selectedPaymentMethod) {
-                throw new Error(`Payment method "${selectedMethod}" not found`);
+                throw new Error(`Payment method "${methodToUse}" not found`);
             }
 
             // Find SALE and PAYMENT transaction types
@@ -100,15 +105,13 @@ export default function PaymentMobile() {
                 businessDate
             );
 
-            console.log("selected payment method", selectedPaymentMethod);
-
             // Build ticket request
             const ticketRequest = buildTicketRequest({
                 items,
                 charges,
                 subtotal,
                 total,
-                paymentMethod: selectedMethod,
+                paymentMethod: selectedPaymentMethod.name,
                 paymentMethodId: selectedPaymentMethod.id,
                 tenderedAmount: tendered,
                 locationId: appState.selected_location_id,
@@ -132,19 +135,27 @@ export default function PaymentMobile() {
             );
 
             if (result.offline) {
-                console.log("📴 Ticket saved offline for later sync");
-                alert("Ticket saved offline and will sync when internet is available");
+                showNotification.info("Ticket saved offline and will sync when internet is available");
             } else {
-                console.log("✅ Ticket created successfully online");
+               showNotification.info("✅ Ticket created successfully online");
             }
 
             // Dispatch custom event to notify Activity page
             window.dispatchEvent(new CustomEvent("ticketCreated"));
 
-            setShowDrawer(true);
+            // Check if payment method is cash (handle variations)
+            const paymentMethodName = selectedPaymentMethod.name.toLowerCase().trim();
+            const isCashPayment = paymentMethodName === "cash" || paymentMethodName.includes("cash");
+
+            if (isCashPayment) {
+                setShowDrawer(true);
+            } else {
+                setFinal({ total, balance });
+                await clear();
+                setShowSuccess(true);
+            }
         } catch (error) {
-            console.error("❌ Failed to create ticket:", error);
-            alert(`Failed to create ticket: ${error instanceof Error ? error.message : "Unknown error"}`);
+            showNotification.warning(`Failed to create ticket: ${error instanceof Error ? error.message : "Unknown error"}`);
         } finally {
             setLoading(false);
         }

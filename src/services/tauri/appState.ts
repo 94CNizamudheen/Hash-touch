@@ -29,6 +29,11 @@ export const appStateApi = {
   setLanguage(language: string): Promise<void> {
     return invoke("set_language", { language });
   },
+
+  setDirection(direction: string): Promise<void> {
+    return invoke("set_direction", { direction });
+  },
+
   clear():Promise<void>{
     return invoke("clear_app_state");
   },

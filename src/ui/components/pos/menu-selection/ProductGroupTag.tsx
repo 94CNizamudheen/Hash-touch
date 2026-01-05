@@ -45,7 +45,7 @@ export default function ProductGroupTag({
       aria-disabled={disabled}
       onClick={!disabled && !isSelected ? onClick : undefined}
       className={cn(
-        "cursor-pointer border-2 transition-all duration-200",
+        "cursor-pointer border-2 transition-all duration-200 w-48",
         "min-h-[140px]",
         "bg-secondary",
 

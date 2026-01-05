@@ -10,7 +10,7 @@ interface PaymentMethodsSidebarProps {
   onMethodSelect: (method: string) => void;
   onCancel: () => void;
   isPaymentReady: boolean;
-  onPay: () => void;
+  onPay: (paymentMethodName?: string) => void;
   isProcessing?: boolean;
 }
 
@@ -79,7 +79,7 @@ export default function PaymentMethodsSidebar({
                 disabled={!isPaymentReady || isProcessing}
                 onClick={() => {
                   onMethodSelect(method.name);
-                  onPay();
+                  onPay(method.name);
                 }}
                 className={`flex-1 w-full text-sm font-medium rounded-xl justify-center ${
                   isPaymentReady && !isProcessing

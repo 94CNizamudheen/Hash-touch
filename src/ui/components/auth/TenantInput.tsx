@@ -81,9 +81,13 @@ export default function TenantInput({
                   placeholder={placeholder}
                   autoComplete="off"
                   className="
-                    border-none 
+                    border-none
                     text-sm
                     placeholder:text-muted-foreground
+                    [&::-ms-reveal]:hidden
+                    [&::-ms-clear]:hidden
+                    [&::-webkit-credentials-auto-fill-button]:hidden
+                    [&::-webkit-textfield-decoration-container]:hidden
                   "
                   onFocus={() => {
                     setShowKeyboard(true);

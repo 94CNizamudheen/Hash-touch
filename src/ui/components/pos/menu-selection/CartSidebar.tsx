@@ -9,6 +9,7 @@ import CardDineIn from "../common/card/CardDineIn";
 import ProductTagGroupModal from "./ProductTagGroupModal";
 import { useState } from "react";
 import type { CartItem } from "@/types/cart";
+import { useTranslation } from "react-i18next";
 
 type CartSidebarProps = {
   open: boolean;
@@ -17,6 +18,7 @@ type CartSidebarProps = {
 
 const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
   const navigate = useNavigate();
+  const { t } = useTranslation();
 
   const {
     items,
@@ -85,14 +87,14 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
             animate={{ x: 0 }}
             exit={{ x: "-100%" }}
             transition={{ type: "tween", duration: 0.3 }}
-            className="safe-area fixed left-0 top-0 bottom-0 w-[80%] sm:w-[60%] 
+            className=" fixed left-0 top-0 bottom-0 w-[80%] sm:w-[60%] 
                        bg-background z-50 shadow-2xl flex flex-col 
                        pointer-events-auto border-r border-border rounded-r-2xl"
           >
             {/* Header */}
             <div className="flex-shrink-0 flex items-center justify-between p-4 border-b border-border bg-secondary">
               <h3 className="text-lg font-semibold text-foreground">
-                Your Cart
+                {t("Your Cart")}
               </h3>
               <button
                 onClick={onClose}
@@ -126,7 +128,7 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
                     className="w-32 h-32 opacity-80 mb-3"
                   />
                   <p className="text-center text-muted-foreground text-sm">
-                    No items in cart
+                    {t("No items in cart")}
                   </p>
                 </div>
               )}
@@ -136,7 +138,7 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
             <footer className="flex-shrink-0 border-t border-border p-3 flex flex-col gap-3 bg-background">
               {/* Total */}
               <div className="flex justify-between text-sm font-medium text-foreground border-b border-border pb-2">
-                <span>Total</span>
+                <span>{t("Total")}</span>
                 <span>${total.toFixed(2)}</span>
               </div>
 
@@ -150,13 +152,13 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
                   className="flex-1 h-10 bg-primary text-primary-foreground text-sm font-medium rounded-[var(--radius)] hover:bg-primary-hover"
                   disabled={!items.length}
                 >
-                  Settle
+                  {t("Settle")}
                 </Button>
                 <Button
                   onClick={onClose}
                   className="flex-1 h-10 bg-secondary text-foreground text-sm font-medium rounded-[var(--radius)] hover:bg-secondary"
                 >
-                  Close
+                  {t("Close")}
                 </Button>
               </div>
 
@@ -166,13 +168,13 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
                   className="flex-1 h-10 bg-secondary text-foreground text-sm font-medium rounded-[var(--radius)] hover:bg-secondary"
                   disabled={!items.length}
                 >
-                  Clear Cart
+                  {t("Clear Cart")}
                 </Button>
                 <Button
                   className="flex-1 h-10 bg-secondary text-foreground text-sm font-medium rounded-[var(--radius)] hover:bg-secondary"
                   disabled={!items.length}
                 >
-                  Print Ticket
+                  {t("Print Ticket")}
                 </Button>
               </div>
             </footer>

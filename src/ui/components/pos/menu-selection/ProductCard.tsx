@@ -41,7 +41,7 @@ export default function ProductCard({
 
               <div className="w-full flex justify-end pt-2">
                 <p className="font-bold text-sm text-primary">
-                 S$ {price.toFixed(2)}
+                 $ {price.toFixed(2)}
                 </p>
               </div>
             </div>
@@ -60,7 +60,7 @@ export default function ProductCard({
 
             <div className="w-full flex justify-end pt-2">
               <p className="font-bold text-sm text-primary">
-               S$ {price.toFixed(2)}
+               $ {price.toFixed(2)}
               </p>
             </div>
           </div>

@@ -12,6 +12,7 @@ import { useNavigate } from "react-router-dom";
 
 import { useTheme } from "@/ui/context/ThemeContext";
 import { Moon, Sun } from "lucide-react";
+import DirectionToggle from "@/ui/components/common/DirectionToggle";
 import { useWorkShift } from "@/ui/context/WorkShiftContext";
 import { useAppState } from "@/ui/hooks/useAppState";
 import { productLocal } from "@/services/local/product.local.service";
@@ -22,6 +23,7 @@ import SplashScreen from "@/ui/components/common/SplashScreen";
 import { useLogout } from "@/ui/context/LogoutContext";
 import { deviceService } from "@/services/device/device.service";
 import { useNotification } from "@/ui/context/NotificationContext";
+import { initialSync } from "@/services/data/initialSync.service";
 
 const MenuSelectionSidebarMobile = () => {
   const { t } = useTranslation();
@@ -49,6 +51,8 @@ const MenuSelectionSidebarMobile = () => {
   const [pendingTicketsCount, setPendingTicketsCount] = useState(0);
   const { isLoggingOut, setIsLoggingOut } = useLogout();
   const { showNotification } = useNotification();
+  const [isSyncing, setIsSyncing] = useState(false);
+  const [syncStatus, setSyncStatus] = useState<"syncing" | "synced">("syncing");
 
   // Load pending tickets count
   useEffect(() => {
@@ -72,6 +76,40 @@ const MenuSelectionSidebarMobile = () => {
 
   const toggleTheme = () => {
     setTheme(theme === "dark" ? "light" : "dark");
+  };
+
+  const handleStartSync = async () => {
+    if (!appState?.tenant_domain || !appState?.access_token) {
+      showNotification.error(t("Cannot sync: Missing tenant or access token"));
+      return;
+    }
+
+    if (!appState?.selected_location_id || !appState?.brand_id) {
+      showNotification.error(t("Cannot sync: No location selected"));
+      return;
+    }
+
+    try {
+      setIsSyncing(true);
+      setSyncStatus("syncing");
+
+      await initialSync(appState.tenant_domain, appState.access_token, {
+        channel: appState.device_role ?? "POS",
+        locationId: appState.selected_location_id,
+        brandId: appState.brand_id,
+        orderModeIds: appState.order_mode_ids ?? [],
+      });
+
+      setSyncStatus("synced");
+      await new Promise(resolve => setTimeout(resolve, 1000));
+
+      showNotification.success(t("Sync completed successfully"), 3000);
+    } catch (error) {
+      console.error("Sync failed:", error);
+      showNotification.error(t("Sync failed") + ": " + (error instanceof Error ? error.message : "Unknown error"));
+    } finally {
+      setIsSyncing(false);
+    }
   };
 
   const openModal = async (content: string) => {
@@ -156,6 +194,11 @@ const MenuSelectionSidebarMobile = () => {
     return <SplashScreen type={1} />;
   }
 
+  // Show splash screen during sync
+  if (isSyncing) {
+    return <SplashScreen type={4} syncStatus={syncStatus} />;
+  }
+
   return (
     <>
       {isModalOpen && modalContent === "void" && (
@@ -234,7 +277,12 @@ const MenuSelectionSidebarMobile = () => {
                     toggleTheme();
                     return;
                   }
-                  
+
+                  if (item.title === "Start Sync") {
+                    handleStartSync();
+                    return;
+                  }
+
                   if (item.title === "Logout") {
                     handleLogoutClick();
                     return;
@@ -247,7 +295,7 @@ const MenuSelectionSidebarMobile = () => {
 
                   item.action?.(openModal);
                   if (item.link) router(item.link);
-                  
+
                 }}
                 className="flex items-center gap-3 p-3 bg-navigation rounded-lg cursor-pointer active:scale-[0.98]"
               >
@@ -271,6 +319,11 @@ const MenuSelectionSidebarMobile = () => {
                     )}
               </div>
             ))}
+          </div>
+
+          {/* Direction Toggle */}
+          <div className="px-3 pb-3">
+            <DirectionToggle className="w-full" />
           </div>
         </div>
 

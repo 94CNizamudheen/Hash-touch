@@ -7,6 +7,7 @@ import {
   type ProductWithCombinations,
   type ProductTagGroupUI,
 } from "@/services/local/product-combo.local.service";
+import { useTranslation } from "react-i18next";
 
 interface SelectedTag {
   groupId: string;
@@ -36,11 +37,13 @@ interface ValidationError {
 export default function ProductTagGroupModal({
   open,
   productId,
+  productName,
   onClose,
   onConfirm,
   initialModifiers = [],
   isEditMode = false,
 }: ProductTagGroupModalProps) {
+  const { t } = useTranslation();
   const [productData, setProductData] = useState<ProductWithCombinations | null>(null);
   const [selectedTags, setSelectedTags] = useState<SelectedTag[]>([]);
   const [loading, setLoading] = useState(false);
@@ -188,15 +191,15 @@ export default function ProductTagGroupModal({
         errors.push({
           groupId: group.id,
           groupName: group.name,
-          message: `Please select at least ${group.min_items} item(s)`,
+          message: `${t("Please select at least")} ${group.min_items} ${t("item(s)")}`,
         });
       }
-      
+
       if (selectedCount > group.max_items) {
         errors.push({
           groupId: group.id,
           groupName: group.name,
-          message: `Please select no more than ${group.max_items} item(s)`,
+          message: `${t("Please select no more than")} ${group.max_items} ${t("item(s)")}`,
         });
       }
     });
@@ -258,22 +261,23 @@ export default function ProductTagGroupModal({
             <div className="flex-1 overflow-y-auto p-6">
               {loading ? (
                 <div className="flex items-center justify-center py-10">
-                  <p className="text-gray-500">Loading options...</p>
+                  <p className="text-gray-500">{t("Loading options...")}</p>
                 </div>
               ) : productData && productData.combinations.length > 0 ? (
                 <div className="space-y-6">
+                  <h1 className="font-semibold text-lg text-foreground flex-1">{productName}</h1>
                   {productData.combinations.map((group) => (
                     <div key={group.id} className="space-y-3">
                       {/* Group Header */}
                       <div className="flex items-center justify-between p-3 border-2 border-blue-300 rounded-lg">
                         <h4 className="font-medium text-lg">{group.name}</h4>
                         <span className="text-sm text-gray-600">
-                          Min: {group.min_items} | Max: {group.max_items} | Selected: {getSelectedCountForGroup(group.id)}
+                          {t("Min")}: {group.min_items} | {t("Max")}: {group.max_items} | {t("Selected")}: {getSelectedCountForGroup(group.id)}
                         </span>
                       </div>
 
                       {/* Options Grid */}
-                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      <div className="grid grid-cols-1 md:grid-cols-4 gap-2">
                         {group.options.map((option) => (
                           <ProductGroupTag
                             key={option.id}
@@ -294,14 +298,14 @@ export default function ProductTagGroupModal({
                 </div>
               ) : (
                 <div className="flex items-center justify-center py-10">
-                  <p className="text-gray-500">No customization options available</p>
+                  <p className="text-gray-500">{t("No customization options available")}</p>
                 </div>
               )}
 
               {/* Validation Errors */}
               {validationErrors.length > 0 && (
                 <div className="mt-6 p-4 bg-red-50 border border-red-200 rounded-lg">
-                  <p className="font-medium text-red-800 mb-2">Please fix the following:</p>
+                  <p className="font-medium text-red-800 mb-2">{t("Please fix the following:")}</p>
                   <ul className="space-y-1">
                     {validationErrors.map((error, index) => (
                       <li key={index} className="text-sm text-red-700 flex items-start">
@@ -323,14 +327,14 @@ export default function ProductTagGroupModal({
                   onClick={onClose}
                   className="px-8 h-11 bg-red-500 text-white hover:bg-red-600 rounded-md font-medium"
                 >
-                  Cancel
+                  {t("Cancel")}
                 </Button>
                 <Button
                   onClick={handleConfirm}
                   disabled={loading}
                   className="px-8 h-11 bg-blue-600 text-white hover:bg-blue-700 rounded-md font-medium disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  {isEditMode ? "Save Changes" : "Add to Cart"}
+                  {isEditMode ? t("Save Changes") : t("Add to Cart")}
                 </Button>
               </div>
             </div>

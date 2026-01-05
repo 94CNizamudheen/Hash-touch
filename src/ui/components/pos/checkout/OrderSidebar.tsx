@@ -37,7 +37,7 @@ export default function OrderSidebar({
         if (isMobileOverlay && e.target === e.currentTarget) onClose();
       }}
     >
-      <div className="w-[480px]  h-screen bg-background flex flex-col border-r border-border shadow-lg safe-area ">
+      <div className="w-[480px]  h-screen bg-background flex flex-col border-r border-border shadow-lg ">
         {/* Header */}
 
         {isMobileOverlay && (
@@ -63,7 +63,7 @@ export default function OrderSidebar({
             )))
             : (
               <div className="text-center text-sm text-muted-foreground py-10">
-                No items in order
+                {t("No items in order")}
               </div>
             )}
         </div>

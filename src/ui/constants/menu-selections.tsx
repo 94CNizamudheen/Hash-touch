@@ -9,12 +9,13 @@ import {
   // Ticket,
   ChartBarBigIcon,
   Globe,
+  Flag,
   // BriefcaseBusiness,
   // MousePointer2Icon,
 } from "lucide-react";
 // import { Icons } from "../icons";
 
-
+import { MdOutlineCloudSync } from "react-icons/md";
 
 export const MENUSELECTIONNAVIGATION = [
 
@@ -32,7 +33,20 @@ export const MENUSELECTIONNAVIGATION = [
     position: "Top",
     link: "/pos/activity",
   },
-
+  {
+    id: 3,
+    title: "Sold Out",
+    icon: <Flag className="lg:w-4 lg:h-4 w-4 h-4" strokeWidth={2.5} />,
+    position: "Top",
+    link: "",
+  },
+    {
+    id: 3,
+    title: "Start Sync",
+    icon: <MdOutlineCloudSync className="lg:w-4 lg:h-4 w-4 h-4"  />,
+    position: "Top",
+    link: "",
+  },
   {
     id: 8,
     title: "Settings",
@@ -54,13 +68,7 @@ export const MENUSELECTIONNAVIGATION = [
     position: "Top",
 
   },
-  {
-    id: 11,
-    title: "Logout",
-    icon: <LogOut className="lg:w-4 lg:h-4 w-4 h-4" strokeWidth={2.5} />,
-    position: "Top",
-    action: (openModal: (c: string) => void) => openModal("logout"),
-  },
+
   {
     id: 14,
     title: "Language",
@@ -68,11 +76,33 @@ export const MENUSELECTIONNAVIGATION = [
     position: "Top",
     action: (openModal: (c: string) => void) => openModal("language"),
   },
+  {
+    id: 15,
+    title: "Direction",
+    icon: null,
+    position: "Top",
+  },
+    {
+    id: 11,
+    title: "Logout",
+    icon: <LogOut className="lg:w-4 lg:h-4 w-4 h-4" strokeWidth={2.5} />,
+    position: "Top",
+    action: (openModal: (c: string) => void) => openModal("logout"),
+  },
+
 
 
   /* =========================
      BOTTOM SECTION
   ========================= */
+  {
+    id: 12,
+    title: "Location",
+    icon: <MapPin className="lg:w-4 lg:h-4 w-4 h-4" strokeWidth={2.5} />,
+    position: "Bottom",
+    action: (openModal: (c: string) => void) => openModal("location"),
+    highlight: true, // for blue background
+  },
 
   {
     id: 13,
@@ -87,13 +117,5 @@ export const MENUSELECTIONNAVIGATION = [
     icon: <Home className="lg:w-4 lg:h-4 w-4 h-4" strokeWidth={2.5} />,
     position: "Bottom",
     link: "/pos",
-  },
-    {
-    id: 12,
-    title: "Location",
-    icon: <MapPin className="lg:w-4 lg:h-4 w-4 h-4" strokeWidth={2.5} />,
-    position: "Bottom",
-    action: (openModal: (c: string) => void) => openModal("location"),
-    highlight: true, // for blue background
   },
 ];

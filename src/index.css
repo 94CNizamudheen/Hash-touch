@@ -36,7 +36,7 @@
     --accent: #272727;
     --accent-foreground: #D9D9D9;
 
-    --destructive: #ef4444;
+    --destructive: rgb(217, 86, 86);
     --destructive-foreground: #fafafa;
 
     --success: #10b981;

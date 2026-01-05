@@ -71,7 +71,10 @@ useEffect(() => {
     setInputValue((p) => (p === "0.00" || p === "0" ? k : p + k));
   };
 
-  const onPay = async () => {
+  const onPay = async (paymentMethodName?: string) => {
+    // Use provided payment method or fall back to state
+    const methodToUse = paymentMethodName || selectedMethod;
+
     // Round to 2 decimals for comparison to avoid floating point issues
     const tenderedRounded = Math.round(tendered * 100) / 100;
     const totalRounded = Math.round(total * 100) / 100;
@@ -96,9 +99,9 @@ useEffect(() => {
       }
 
       // Find selected payment method to get its ID
-      const selectedPaymentMethod = paymentMethods.find(pm => pm.name === selectedMethod);
+      const selectedPaymentMethod = paymentMethods.find(pm => pm.name === methodToUse);
       if (!selectedPaymentMethod) {
-        throw new Error(`Payment method "${selectedMethod}" not found`);
+        throw new Error(`Payment method "${methodToUse}" not found`);
       }
 
       // Find SALE and PAYMENT transaction types
@@ -108,27 +111,20 @@ useEffect(() => {
       if (!saleTransactionType || !paymentTransactionType) {
         throw new Error("Required transaction types (SALE, PAYMENT) not found. Please sync data.");
       }
-
-      console.log("selected payment method", selectedPaymentMethod);
-
       // Get business date (today in YYYY-MM-DD format)
       const businessDate = new Date().toISOString().split("T")[0];
-
       // Get sequential queue number for this location and date
       const queueNumber = await ticketLocal.getNextQueueNumber(
         appState.selected_location_id,
         businessDate
       );
-
-      console.log(`🎫 Generated queue number: ${queueNumber} for location ${appState.selected_location_id} on ${businessDate}`);
-
       // Build ticket request
       const ticketRequest = buildTicketRequest({
         items,
         charges,
         subtotal,
         total,
-        paymentMethod: selectedMethod,
+        paymentMethod: selectedPaymentMethod.name,
         paymentMethodId: selectedPaymentMethod.id,
         tenderedAmount: tendered,
         locationId: appState.selected_location_id,
@@ -140,7 +136,7 @@ useEffect(() => {
         paymentTransactionTypeId: paymentTransactionType.id,
         transactionTypes,
         queueNumber
-        
+
       });
 
       console.log("📝 Creating ticket:", ticketRequest);
@@ -153,10 +149,9 @@ useEffect(() => {
       );
 
       if (result.offline) {
-        console.log("📴 Ticket saved offline for later sync");
-        alert("Ticket saved offline and will sync when internet is available");
+        showNotification.warning("Ticket saved offline and will sync when internet is available");
       } else {
-        console.log("✅ Ticket created successfully online");
+        showNotification.success("✅ Ticket created successfully online");
       }
 
       // Dispatch custom event to notify Activity page
@@ -186,14 +181,23 @@ useEffect(() => {
         });
         console.log("📡 Order broadcasted to KDS and Queue displays");
       } catch (error) {
-        console.error("❌ Failed to broadcast order:", error);
-        // Don't fail the entire transaction if broadcast fails
+        showNotification.warning(`Failed to broadcast order:${error}`)
       }
 
-      setShowDrawer(true);
+      // Check if payment method is cash (handle variations)
+      const paymentMethodName = selectedPaymentMethod.name.toLowerCase().trim();
+      const isCashPayment = paymentMethodName === "cash" || paymentMethodName.includes("cash");
+
+      if (isCashPayment) {
+        setShowDrawer(true);
+      } else {
+      
+        setFinal({ total, balance });
+        await clear();
+        setShowSuccess(true);
+      }
     } catch (error) {
-      console.error("❌ Failed to create ticket:", error);
-      alert(`Failed to create ticket: ${error instanceof Error ? error.message : "Unknown error"}`);
+      showNotification.error(`Failed to create ticket: ${error instanceof Error ? error.message : "Unknown error"}`);
     } finally {
       setLoading(false);
     }

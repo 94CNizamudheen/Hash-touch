@@ -12,6 +12,7 @@ export interface AppState {
   order_mode_ids: string[];
   theme?: string | null;
   language?: string | null;
+  direction?: string | null;
 
   selected_order_mode_id?: string | null;
   selected_order_mode_name?: string | null;

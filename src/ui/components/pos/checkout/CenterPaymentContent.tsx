@@ -22,7 +22,7 @@ export default function CenterPaymentContent({
   onKey,
   onPaymentReady,
 }: Props) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
 
   // Generate dynamic quick amounts based on total
   const generateQuickAmounts = (total: number): number[] => {
@@ -34,6 +34,30 @@ export default function CenterPaymentContent({
   };
 
   const quickAmounts = generateQuickAmounts(total);
+
+  // Arabic numerals mapping
+  const arabicNumerals: { [key: string]: string } = {
+    "0": "٠",
+    "1": "١",
+    "2": "٢",
+    "3": "٣",
+    "4": "٤",
+    "5": "٥",
+    "6": "٦",
+    "7": "٧",
+    "8": "٨",
+    "9": "٩",
+    ".": ".",
+    "C": "م"
+  };
+
+  // Get display text for keypad button
+  const getKeypadDisplay = (key: string): string => {
+    if (i18n.language === "ar") {
+      return arabicNumerals[key] || key;
+    }
+    return key === "C" ? t("C") : key;
+  };
 
   return (
     <div className="flex flex-col h-full px-1   ">
@@ -121,7 +145,7 @@ export default function CenterPaymentContent({
               onClick={() => onKey(k)}
               className="h-20 rounded-lg text-2xl font-semibold border bg-white hover:bg-gray-50 transition active:scale-95"
             >
-              {k}
+              {getKeypadDisplay(k)}
             </button>
           ))}
         </div>

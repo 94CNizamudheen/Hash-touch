@@ -12,10 +12,12 @@ import { appStateApi } from "@/services/tauri/appState";
 interface ThemeContextType {
   theme: string;
   language: string;
+  direction: string;
   isHydrated: boolean;
 
   setTheme: (t: string) => void;
   setLanguage: (l: string) => void;
+  setDirection: (d: string) => void;
 }
 
 const ThemeContext = createContext<ThemeContextType | null>(null);
@@ -23,6 +25,7 @@ const ThemeContext = createContext<ThemeContextType | null>(null);
 export const ThemeProvider = ({ children }: { children: ReactNode }) => {
   const [theme, setThemeState] = useState("light");
   const [language, setLanguageState] = useState("en");
+  const [direction, setDirectionState] = useState("ltr");
   const [isHydrated, setIsHydrated] = useState(false);
 
 
@@ -32,6 +35,7 @@ export const ThemeProvider = ({ children }: { children: ReactNode }) => {
         const state = await appStateApi.get();
         if (state?.theme) setThemeState(state.theme);
         if (state?.language) setLanguageState(state.language);
+        if (state?.direction) setDirectionState(state.direction);
       } catch (e) {
         console.error("Theme hydrate failed:", e);
       } finally {
@@ -50,8 +54,8 @@ export const ThemeProvider = ({ children }: { children: ReactNode }) => {
 
   useEffect(() => {
     if (!isHydrated) return;
-    document.body.dir = language === "ar" ? "rtl" : "ltr";
-  }, [language, isHydrated]);
+    document.body.dir = direction;
+  }, [direction, isHydrated]);
 
 
   const setTheme = (t: string) => {
@@ -64,14 +68,21 @@ export const ThemeProvider = ({ children }: { children: ReactNode }) => {
     if (isHydrated) appStateApi.setLanguage(l).catch(console.error);
   };
 
+  const setDirection = (d: string) => {
+    setDirectionState(d);
+    if (isHydrated) appStateApi.setDirection(d).catch(console.error);
+  };
+
   return (
     <ThemeContext.Provider
       value={{
         theme,
         language,
+        direction,
         isHydrated,
         setTheme,
         setLanguage,
+        setDirection,
       }}
     >
       {children}

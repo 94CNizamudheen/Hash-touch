@@ -55,6 +55,7 @@ export const ProductProvider = ({ children }: { children: React.ReactNode }) => 
   const [selectedGroup, setSelectedGroup] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("");
   const [search, setSearch] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
   const [loading, setLoading] = useState(true);
 
   const { state: appState } = useAppState();
@@ -197,14 +198,25 @@ export const ProductProvider = ({ children }: { children: React.ReactNode }) => 
   }, [selectedGroup, groupCategories]);
 
   /* ----------------------------------------
+     Debounce search input
+  ----------------------------------------- */
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearch(search);
+    }, 300); // Wait 300ms after user stops typing
+
+    return () => clearTimeout(timer);
+  }, [search]);
+
+  /* ----------------------------------------
      Filter products for UI
   ----------------------------------------- */
   const filteredItems = useMemo(() => {
     let result = [...items];
 
     // If searching, search globally (ignore category)
-    if (search.trim()) {
-      const term = search.toLowerCase();
+    if (debouncedSearch.trim()) {
+      const term = debouncedSearch.toLowerCase();
       result = result.filter(p => p.name.toLowerCase().includes(term));
     } else {
       // Only filter by category when NOT searching
@@ -214,7 +226,7 @@ export const ProductProvider = ({ children }: { children: React.ReactNode }) => 
     }
 
     return result;
-  }, [items, selectedCategory, search]);
+  }, [items, selectedCategory, debouncedSearch]);
 
   /* ----------------------------------------
      Load combos for one product

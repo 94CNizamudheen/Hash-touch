@@ -20,6 +20,8 @@ import SplashScreen from "@/ui/components/common/SplashScreen";
 import { useLogout } from "@/ui/context/LogoutContext";
 import { useNotification } from "@/ui/context/NotificationContext";
 import { logoutService } from "@/services/auth/logout.service";
+import DirectionToggle from "@/ui/components/common/DirectionToggle";
+import { initialSync } from "@/services/data/initialSync.service";
 
 
 
@@ -47,6 +49,8 @@ const MenuSelectionSidebar = ({
   const [pendingTicketsCount, setPendingTicketsCount] = useState(0);
   const { isLoggingOut, setIsLoggingOut } = useLogout();
   const { showNotification } = useNotification();
+  const [isSyncing, setIsSyncing] = useState(false);
+  const [syncStatus, setSyncStatus] = useState<"syncing" | "synced">("syncing");
 
 
   const { theme, setTheme, isHydrated } = useTheme();
@@ -78,6 +82,40 @@ const MenuSelectionSidebar = ({
   }, []);
 
   if (!isHydrated || loading) return null;
+
+  const handleStartSync = async () => {
+    if (!appState?.tenant_domain || !appState?.access_token) {
+      showNotification.error(t("Cannot sync: Missing tenant or access token"));
+      return;
+    }
+
+    if (!appState?.selected_location_id || !appState?.brand_id) {
+      showNotification.error(t("Cannot sync: No location selected"));
+      return;
+    }
+
+    try {
+      setIsSyncing(true);
+      setSyncStatus("syncing");
+
+      await initialSync(appState.tenant_domain, appState.access_token, {
+        channel: appState.device_role ?? "POS",
+        locationId: appState.selected_location_id,
+        brandId: appState.brand_id,
+        orderModeIds: appState.order_mode_ids ?? [],
+      });
+
+      setSyncStatus("synced");
+      await new Promise(resolve => setTimeout(resolve, 1000));
+
+      showNotification.success(t("Sync completed successfully"), 3000);
+    } catch (error) {
+      console.error("Sync failed:", error);
+      showNotification.error(t("Sync failed") + ": " + (error instanceof Error ? error.message : "Unknown error"));
+    } finally {
+      setIsSyncing(false);
+    }
+  };
 
   const openModal = async (content: string) => {
     switch (content) {
@@ -161,6 +199,11 @@ const MenuSelectionSidebar = ({
     return <SplashScreen type={1} />;
   }
 
+  // Show splash screen during sync
+  if (isSyncing) {
+    return <SplashScreen type={4} syncStatus={syncStatus} />;
+  }
+
   return (
     <>
       {/* Existing modals */}
@@ -199,7 +242,7 @@ const MenuSelectionSidebar = ({
 
       <div
         className={cn(
-          "group flex flex-col justify-between h-full transition-all  duration-300  safe-area",
+          "group flex flex-col justify-between h-full transition-all  duration-300 ",
           "w-16 lg:w-36 "
         )}
       >
@@ -211,8 +254,16 @@ const MenuSelectionSidebar = ({
                 <div
                   key={item.id}
                   onClick={() => {
+                    // ❌ Direction handled only by switch
+                    if (item.title === "Direction") return;
+
                     if (item.title === "Dark Mode") {
                       toggleTheme();
+                      return;
+                    }
+
+                    if (item.title === "Start Sync") {
+                      handleStartSync();
                       return;
                     }
 
@@ -230,46 +281,54 @@ const MenuSelectionSidebar = ({
                     if (item.link) router(item.link);
                   }}
                   className={cn(
-                    "bg-secondary  flex items-center gap-2 p-2 xl:p-3 rounded-lg cursor-pointer hover:bg-sidebar-hover"
+                    "bg-secondary flex items-center gap-2 p-2 xl:p-3 rounded-lg cursor-pointer hover:bg-sidebar-hover"
                   )}
                 >
-                  <div className="relative flex-shrink-0">
-                    {item.title === "Dark Mode" ? (
-                      theme === "dark" ? (
-                        <Sun className="lg:w-5 lg:h-4 w-4 h-4" strokeWidth={2.5} />
-                      ) : (
-                        <Moon className="lg:w-5 lg:h-4 w-4 h-4" strokeWidth={2.5} />
-                      )
-                    ) : (
-                      item.icon
-                    )}
-                    {item.title === "Activities" && pendingTicketsCount > 0 && (
-                      <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-4 h-4 flex items-center justify-center">
-                        {pendingTicketsCount > 9 ? "9+" : pendingTicketsCount}
-                      </span>
-                    )}
-                  </div>
+                  {/* Direction Toggle - Full Width */}
+                  {item.title === "Direction" ? (
+                    <DirectionToggle className="w-full" />
+                  ) : (
+                    <>
+                      {/* LEFT ICON */}
+                      <div className="relative flex-shrink-0">
+                        {item.title === "Dark Mode" ? (
+                          theme === "dark" ? (
+                            <Sun className="lg:w-5 lg:h-4 w-4 h-4" strokeWidth={2.5} />
+                          ) : (
+                            <Moon className="lg:w-5 lg:h-4 w-4 h-4" strokeWidth={2.5} />
+                          )
+                        ) : (
+                          item.icon
+                        )}
 
-                  <p
-                    className={cn(
-                      "text-navigation font-normal text-sm truncate transition-all duration-200",
-                      "opacity-0 w-0 overflow-hidden",
-                      "group-hover:opacity-100 group-hover:w-auto",
-                      "lg:opacity-100 lg:w-auto"
-                    )}
-                  >
-                    {item.title === "Dark Mode"
-                      ? theme === "dark"
-                        ? t("Light Mode")
-                        : t("Dark Mode")
-                      : t(item.title)}
-                  </p>
+                        {item.title === "Activities" && pendingTicketsCount > 0 && (
+                          <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-4 h-4 flex items-center justify-center">
+                            {pendingTicketsCount > 9 ? "9+" : pendingTicketsCount}
+                          </span>
+                        )}
+                      </div>
+
+                      {/* LABEL */}
+                      <p
+                        className={cn(
+                          "text-navigation font-normal text-sm truncate transition-all duration-200",
+                          "opacity-0 w-0 overflow-hidden",
+                          "group-hover:opacity-100 group-hover:w-auto",
+                          "lg:opacity-100 lg:w-auto"
+                        )}
+                      >
+                        {item.title === "Dark Mode"
+                          ? theme === "dark"
+                            ? t("Light Mode")
+                            : t("Dark Mode")
+                          : t(item.title)}
+                      </p>
+                    </>
+                  )}
                 </div>
               )
           )}
         </div>
-
-
 
         {/* ===== Bottom ===== */}
         {showDineInBoard ? (

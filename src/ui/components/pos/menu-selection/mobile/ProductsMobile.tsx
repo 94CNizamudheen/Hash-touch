@@ -14,6 +14,7 @@ import { useLogout } from "@/ui/context/LogoutContext";
 import SplashScreen from "@/ui/components/common/SplashScreen";
 import ProductTagGroupModal from "../ProductTagGroupModal";
 import { getProductWithCombinations } from "@/services/local/product-combo.local.service";
+import { useTranslation } from "react-i18next";
 
 const ProductsMobile = () => {
   const {
@@ -22,6 +23,7 @@ const ProductsMobile = () => {
     setSearch,
     loading,
   } = useProducts();
+  const { t } = useTranslation();
 
   const { addItem } = useCart();
   const { state: appState } = useAppState();
@@ -92,7 +94,7 @@ const ProductsMobile = () => {
           <div className="sticky top-0 z-10 p-3 flex flex-col gap-3 border-b border-border bg-background">
             <InputFilter
               className="w-full"
-              placeholder="Search product..."
+              placeholder={t("Search product...")}
               value={search}
               onChange={(e: any) => setSearch(e.target.value)}
             />
@@ -106,7 +108,7 @@ const ProductsMobile = () => {
           <div className="grid grid-cols-2 gap-3 p-3">
             {loading ? (
               <div className="col-span-full text-center py-10 text-muted-foreground">
-                Loading products...
+                {t("Loading products...")}
               </div>
             ) : filteredItems.length > 0 ? (
               filteredItems.map((item) => (
@@ -118,7 +120,7 @@ const ProductsMobile = () => {
               ))
             ) : (
               <div className="col-span-full text-center py-10 text-muted-foreground">
-                No products found
+                {t("No products found")}
               </div>
             )}
           </div>

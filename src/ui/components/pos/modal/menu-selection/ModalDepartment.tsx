@@ -40,6 +40,7 @@ const ModalDepartment = ({
     <Sheet open={isModal} onOpenChange={onClose}>
       <SheetContent
         side="left"
+        showCloseButton={false}
         className="max-h-[90%] sm:max-h-[70%] my-auto rounded-r-2xl p-8 sm:w-auto"
       >
         <SheetHeader className="border-b border-accent px-4 sm:px-5 pb-1 sm:pb-4">
@@ -81,7 +82,8 @@ const ModalDepartment = ({
           <SheetClose asChild>
             <Button
               type="button"
-              className="bg-accent-foreground text-black dark:text-white w-full sm:w-auto"
+              className=" text-black dark:text-white w-full sm:w-auto"
+              variant="destructive"
             >
               Cancel
             </Button>

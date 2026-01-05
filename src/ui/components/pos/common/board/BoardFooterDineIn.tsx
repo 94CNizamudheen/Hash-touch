@@ -40,7 +40,7 @@ const BoardFooterDineIn = () => {
 
   return (
     <>
-      <footer className="w-full shrink-0 border-t border-border bg-background px-4 py-4 flex flex-col gap-3 pb-safe">
+      <footer className="w-full shrink-0 border-t border-border bg-background px-4 py-4 flex flex-col gap-3 ">
       {/* Totals Section */}
       {items.length > 0 && (
         <div className="shrink-0 bg-background  border-border">
