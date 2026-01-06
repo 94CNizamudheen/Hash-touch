@@ -48,7 +48,7 @@ export default function Home({ onRoleSelected }: Props) {
     <div className="min-h-screen bg-blue-300 flex items-center justify-center p-6">
       <div className="max-w-3xl w-full space-y-6">
         <div className="bg-white rounded-2xl shadow p-6">
-          <h1 className="text-2xl font-semibold mb-2">Welcome to HashOne</h1>
+          <h1 className="text-2xl font-semibold mb-2">Welcome to HashOne-Touch</h1>
           <p className="text-sm text-zinc-600 mb-4">Select the device role for this installation.</p>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-6">

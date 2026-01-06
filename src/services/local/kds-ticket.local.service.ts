@@ -13,7 +13,7 @@ export const kdsTicketLocal = {
         order_id: ticket.orderId,
         location_id: ticket.locationId,
         order_mode_name: ticket.orderModeName,
-        status: ticket.status,
+        status:ticket.status,
         items: ticket.items,
         total_amount: ticket.totalAmount,
         token_number: ticket.tokenNumber,
@@ -42,12 +42,13 @@ export const kdsTicketLocal = {
         orderId: t.order_id,
         locationId: t.location_id,
         orderModeName: t.order_mode_name,
-        status: t.status,
+        status:t.status,
         items: t.items,
         totalAmount: t.total_amount,
         tokenNumber: t.token_number,
         createdAt: t.created_at,
         updatedAt: t.updated_at,
+        
       }));
     } catch (error) {
       console.error("Failed to get all KDS tickets:", error);
@@ -69,12 +70,13 @@ export const kdsTicketLocal = {
         orderId: t.order_id,
         locationId: t.location_id,
         orderModeName: t.order_mode_name,
-        status: t.status,
+        status:t.status,
         items: t.items,
         totalAmount: t.total_amount,
         tokenNumber: t.token_number,
         createdAt: t.created_at,
         updatedAt: t.updated_at,
+
       }));
     } catch (error) {
       console.error("Failed to get active KDS tickets:", error);
@@ -95,7 +97,7 @@ export const kdsTicketLocal = {
         orderId: t.order_id,
         locationId: t.location_id,
         orderModeName: t.order_mode_name,
-        status: t.status,
+        status:t.status,
         items: t.items,
         totalAmount: t.total_amount,
         tokenNumber: t.token_number,
@@ -113,7 +115,7 @@ export const kdsTicketLocal = {
    */
   async updateStatus(ticketId: string, status: KdsStatus): Promise<void> {
     try {
-      await invoke("update_kds_ticket_status", { ticket_id: ticketId, status });
+      await invoke("update_kds_ticket_status", { ticketId, status });
     } catch (error) {
       console.error("Failed to update KDS ticket status:", error);
       throw error;
@@ -125,7 +127,7 @@ export const kdsTicketLocal = {
    */
   async deleteTicket(ticketId: string): Promise<void> {
     try {
-      await invoke("delete_kds_ticket", { ticket_id: ticketId });
+      await invoke("delete_kds_ticket", { ticketId });
     } catch (error) {
       console.error("Failed to delete KDS ticket:", error);
       throw error;

@@ -2,7 +2,11 @@ import { PanelsRightBottom } from "lucide-react";
 import { useState } from "react";
 import MobileBottomRightSidebar from "./MobileBottomRightSidebar";
 
-const RightBottomSidebar = () => {
+interface RightBottomSidebarProps {
+  wsConnected: boolean;
+}
+
+const RightBottomSidebar = ({ wsConnected }: RightBottomSidebarProps) => {
   const [open, setOpen] = useState(false);
 
   return (
@@ -14,7 +18,11 @@ const RightBottomSidebar = () => {
         <PanelsRightBottom size={20} className="stroke-primary" />
       </button>
 
-      <MobileBottomRightSidebar open={open} onClose={() => setOpen(false)} />
+      <MobileBottomRightSidebar
+        open={open}
+        onClose={() => setOpen(false)}
+        wsConnected={wsConnected}
+      />
     </>
   );
 };

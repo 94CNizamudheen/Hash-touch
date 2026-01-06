@@ -1,12 +1,13 @@
 
-import { Settings, CheckCircle, Power, Grid3x3 } from "lucide-react";
+import { Settings, CheckCircle, Power } from "lucide-react";
 import { Button } from "@/ui/shadcn/components/ui/button";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/ui/shadcn/components/ui/select";
+// import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/ui/shadcn/components/ui/select";
 import {  useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { X } from "lucide-react";
 import logo from "@/assets/logo_2.png";
 import { kdsSettingsLocal } from "@/services/local/kds-settings.local.service";
+import { logoutService } from "@/services/auth/logout.service";
 
 interface Props {
     open: boolean;
@@ -15,7 +16,8 @@ interface Props {
 
 const MobileRightSidebar = ({ open, onClose }: Props) => {
     const navigate = useNavigate();
-    const [viewMode, setViewMode] = useState("Classic");
+    const [_, setViewMode] = useState("Classic");
+    const [isLoggingOut, setIsLoggingOut] = useState(false);
 
     // Load view mode from SQLite on mount
     useEffect(() => {
@@ -38,13 +40,33 @@ const MobileRightSidebar = ({ open, onClose }: Props) => {
         loadViewMode();
     }, []);
 
-    const handleChange = async (value: string) => {
-        setViewMode(value);
-        try {
-            await kdsSettingsLocal.saveViewMode(value);
-        } catch (error) {
-            console.error("Failed to save view mode:", error);
+    // const handleChange = async (value: string) => {
+    //     setViewMode(value);
+    //     try {
+    //         await kdsSettingsLocal.saveViewMode(value);
+    //     } catch (error) {
+    //         console.error("Failed to save view mode:", error);
+    //     }
+    // };
+
+    const handleLogout = async () => {
+        if (!confirm("Are you sure you want to logout? All data will be cleared.")) {
+            return;
         }
+
+        setIsLoggingOut(true);
+        try {
+            await logoutService.logout();
+        } catch (error) {
+            console.error("Logout failed:", error);
+            setIsLoggingOut(false);
+            alert("Logout failed. Please try again.");
+        }
+    };
+
+    const handleSetiingsClick = async () => {
+        navigate('/kds/settings');
+        onClose()
     };
 
     return (
@@ -75,25 +97,6 @@ const MobileRightSidebar = ({ open, onClose }: Props) => {
                     <h2 className="text-lg font-semibold">Kitchen Display</h2>
                 </div>
 
-                {/* View Mode Dropdown */}
-                <div className="mb-4">
-                    <p className="text-sm font-medium text-gray-700 mb-1">View Mode</p>
-
-                    <Select value={viewMode} onValueChange={handleChange}>
-                        <SelectTrigger className="w-full border px-3 py-2">
-                            <Grid3x3 size={16} className="mr-2 text-gray-600" />
-                            <SelectValue />
-                        </SelectTrigger>
-
-                        <SelectContent>
-                            <SelectItem value="Classic">Classic</SelectItem>
-                            <SelectItem value="Department">Department</SelectItem>
-                            <SelectItem value="Bind Table">Bind Table</SelectItem>
-                            <SelectItem value="Tabular">Tabular</SelectItem>
-                        </SelectContent>
-                    </Select>
-                </div>
-
                 {/* Action buttons */}
                 <div className="space-y-3 fixed bottom-5 w-full">
                     {/* Check Button */}
@@ -106,18 +109,21 @@ const MobileRightSidebar = ({ open, onClose }: Props) => {
                     <Button
                         variant="secondary"
                         className="w-full flex items-center justify-start gap-3 py-5 shadow-none"
-                        onClick={() => navigate("/settings")}
+                        onClick={handleSetiingsClick}
                     >
                         <Settings size={20} />
                         <span className="text-sm">Settings</span>
                     </Button>
 
+                    {/* Logout */}
                     <Button
                         variant="destructive"
                         className="w-full flex items-center justify-start gap-3 py-5"
+                        onClick={handleLogout}
+                        disabled={isLoggingOut}
                     >
                         <Power size={20} />
-                        <span className="text-sm">Power</span>
+                        <span className="text-sm">{isLoggingOut ? "Logging out..." : "Logout"}</span>
                     </Button>
                 </div>
             </div>

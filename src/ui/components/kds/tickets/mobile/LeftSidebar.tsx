@@ -35,6 +35,9 @@ const LeftSidebar = () => {
             preparationTime: '10 min',
             tableNumber: kdsTicket.orderModeName || 'Dine In',
             items,
+            orderMode: kdsTicket.orderModeName,
+            queueNumber: kdsTicket.tokenNumber,
+            status: kdsTicket.status
           };
         });
         setTickets(transformedTickets);

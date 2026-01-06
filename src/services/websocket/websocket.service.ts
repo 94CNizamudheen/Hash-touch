@@ -57,6 +57,17 @@ class WebSocketService {
       throw error;
     }
   }
+
+  // Send to POS only
+  async broadcastToPOS(message: DeviceMessage): Promise<void> {
+    try {
+      await invoke("broadcast_to_pos", { message });
+      console.log("📤 Message sent to POS devices");
+    } catch (error) {
+      console.error("❌ Failed to broadcast to POS:", error);
+      throw error;
+    }
+  }
 }
 
 export const websocketService = new WebSocketService();

@@ -1,9 +1,9 @@
 import { Outlet } from "react-router-dom";
 import MobileKdsHeader from "./MobileKdsHeader";
 import MobileKdsFooter from "./MobileKdsFooter";
-import { KdsWebSocketProvider, useKdsWebSocket } from "@/ui/context/KdsWebSocketContext";
+import { useKdsWebSocket } from "@/ui/context/KdsWebSocketContext";
 
-const KdsMobileLayoutContent = () => {
+const KdsMobileLayout = () => {
   const { isConnected } = useKdsWebSocket();
 
   return (
@@ -16,18 +16,8 @@ const KdsMobileLayoutContent = () => {
 
       <MobileKdsFooter
         wsConnected={isConnected}
-        lastSync={new Date().toLocaleTimeString()}
       />
-
     </div>
-  );
-};
-
-const KdsMobileLayout = () => {
-  return (
-    <KdsWebSocketProvider>
-      <KdsMobileLayoutContent />
-    </KdsWebSocketProvider>
   );
 };
 

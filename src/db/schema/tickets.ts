@@ -4,13 +4,16 @@ import { v4 as uuidv4 } from "uuid";
 export const ticketsSqlite = sqliteTable("tickets", {
   id: text("id").primaryKey().$defaultFn(() => uuidv4()),
 
-  // Ticket data stored as JSONclick the 
+  // Ticket data stored as JSON
   ticketData: text("ticket_data").notNull(), // Stringified TicketRequest
 
   // Sync status
   syncStatus: text("sync_status").notNull().default("PENDING"), // PENDING, SYNCING, SYNCED, FAILED
   syncError: text("sync_error"),
   syncAttempts: integer("sync_attempts").default(0),
+
+  // Order status (for KDS workflow)
+  orderStatus: text("order_status").default("PENDING"), // PENDING, IN_PROGRESS, READY, COMPLETED
 
   // Metadata
   locationId: text("location_id"),
@@ -24,3 +27,4 @@ export const ticketsSqlite = sqliteTable("tickets", {
   updatedAt: text("updated_at"),
   syncedAt: text("synced_at"),
 });
+

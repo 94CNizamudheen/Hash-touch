@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { Wifi, WifiOff, ArrowLeft } from "lucide-react";
 import { appStateApi } from "@/services/tauri/appState";
 import { useAppState } from "@/ui/hooks/useAppState";
-import { useWebSocketConnection } from "@/ui/hooks/useWebSocketConnection";
+import { useKdsWebSocket } from "@/ui/context/KdsWebSocketContext";
 import SplashScreen from "@/ui/components/common/SplashScreen";
 
 export default function KdsConnectionPage() {
@@ -20,19 +20,7 @@ export default function KdsConnectionPage() {
     error,
     connect,
     disconnect,
-  } = useWebSocketConnection({
-    onConnected: () => {
-      console.log("✅ Connected to POS");
-      setShowSplash(false);
-    },
-    onDisconnected: () => {
-      console.log("🔌 Disconnected from POS");
-    },
-    onError: (err) => {
-      console.error("❌ Connection error:", err.message);
-      setShowSplash(false);
-    },
-  });
+  } = useKdsWebSocket();
 
   /* =========================
      LOAD SAVED URL (ONCE)
@@ -53,16 +41,17 @@ export default function KdsConnectionPage() {
   }, []);
 
   /* =========================
-     AUTO REDIRECT IF CONNECTED
+     HIDE SPLASH ON CONNECTION STATE CHANGE
   ========================= */
   useEffect(() => {
-    if (isConnected) {
-      const t = setTimeout(() => {
-        navigate(-1); // back to settings
-      }, 1500);
-      return () => clearTimeout(t);
+    if (isConnected || error) {
+      const timer = setTimeout(() => {
+        setShowSplash(false);
+      }, 0);
+      return () => clearTimeout(timer);
     }
-  }, [isConnected, navigate]);
+  }, [isConnected, error]);
+
 
   /* =========================
      CONNECT
@@ -174,9 +163,13 @@ export default function KdsConnectionPage() {
                 value={inputUrl}
                 onChange={(e) => setInputUrl(e.target.value)}
                 placeholder="ws://192.168.1.100:9001"
-                disabled={isConnected}
-                className="w-full px-4 py-3 rounded-lg border font-mono text-sm disabled:bg-gray-100"
+                className="w-full px-4 py-3 rounded-lg border font-mono text-sm"
               />
+              {isConnected && (
+                <p className="text-xs text-amber-600 mt-1">
+                  Disconnect first to change the server URL
+                </p>
+              )}
             </div>
 
             {/* ACTION BUTTON */}

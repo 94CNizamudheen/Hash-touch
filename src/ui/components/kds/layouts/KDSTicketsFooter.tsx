@@ -1,5 +1,10 @@
-import { RefreshCcw, CheckCircle, Wifi, WifiOff } from "lucide-react";
-import { useState, useEffect } from "react";
+import { cn } from "@/lib/utils";
+import { Button } from "@/ui/shadcn/components/ui/button";
+import { useLocation, useNavigate } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { Wifi, WifiOff, CheckCircle } from "lucide-react";
+
+import { KDS_FOOTER_NAVIGATION } from "@/ui/constants/kdsFooterNavigation";
 
 interface KDSTicketsFooterProps {
   wsConnected: boolean;
@@ -7,6 +12,11 @@ interface KDSTicketsFooterProps {
 
 const KDSTicketsFooter = ({ wsConnected }: KDSTicketsFooterProps) => {
   const [, setLastSync] = useState(new Date());
+  const navigate = useNavigate();
+  const { pathname } = useLocation();
+
+  const isActive = (path?: string) =>
+    path ? pathname === path : false;
 
   useEffect(() => {
     const timer = setInterval(() => setLastSync(new Date()), 1000);
@@ -14,18 +24,11 @@ const KDSTicketsFooter = ({ wsConnected }: KDSTicketsFooterProps) => {
   }, []);
 
   return (
-    <footer className="flex items-center justify-between px-4 py-3 border-t bg-blue-50">
-      {/* Left Section */}
+    <footer className="flex items-center justify-between px-4 py-3 border-t bg-background">
+      {/* LEFT STATUS SECTION */}
       <div className="flex items-center gap-6">
-        {/* <div className="flex items-center gap-2">
-          <RefreshCcw size={18} className="text-blue-600" />
-          <span className="text-sm font-semibold text-gray-900">
-            Count: <span className="text-blue-600">5</span>
-          </span>
-        </div> */}
-
         <div className="flex items-center gap-2">
-          <div className="w-5 h-5 bg-green-500 rounded-full flex items-center justify-center">
+          <div className="w-5 h-5 bg-success rounded-full flex items-center justify-center">
             <CheckCircle size={14} className="text-white" />
           </div>
           <span className="text-sm font-medium text-gray-900">
@@ -35,9 +38,10 @@ const KDSTicketsFooter = ({ wsConnected }: KDSTicketsFooterProps) => {
 
         <div className="flex items-center gap-2">
           <div
-            className={`w-5 h-5 ${
-              wsConnected ? "bg-green-500" : "bg-red-500"
-            } rounded-full flex items-center justify-center`}
+            className={cn(
+              "w-5 h-5 rounded-full flex items-center justify-center",
+              wsConnected ? "bg-success" : "bg-destructive"
+            )}
           >
             {wsConnected ? (
               <Wifi size={14} className="text-white" />
@@ -45,37 +49,53 @@ const KDSTicketsFooter = ({ wsConnected }: KDSTicketsFooterProps) => {
               <WifiOff size={14} className="text-white" />
             )}
           </div>
-
           <span className="text-sm font-medium text-gray-900">
             {wsConnected ? "POS Connected" : "POS Disconnected"}
           </span>
         </div>
-
-        {/* <span className="text-sm text-gray-700">
-          Last Sync:{" "}
-          <span className="font-semibold text-blue-600">
-            {lastSync.toLocaleTimeString("en-US", { hour12: true })}
-          </span>
-        </span> */}
       </div>
 
-      {/* Right Section */}
-      <div className="flex gap-3">
-        {/* <button className="border border-gray-300 bg-white rounded-md px-4 py-1.5 text-sm font-medium hover:bg-gray-50 transition-colors">
-          Recall Item
-        </button>
+      {/* RIGHT NAVIGATION (CONFIG DRIVEN) */}
+      <div className="flex gap-2">
+        {KDS_FOOTER_NAVIGATION.map((item) => {
+          const active = isActive(item.link);
 
-        <button className="border border-gray-300 bg-white rounded-md px-4 py-1.5 text-sm font-medium hover:bg-gray-50 transition-colors">
-          Recall Ticket 
-        </button> */}
+          return (
+            <Button
+              key={item.id}
+              onClick={() => {
+                if (item.link) navigate(item.link);
+                if (item.action) item.action();
+              }}
+              className={cn(
+                "flex items-center gap-2 p-2 xl:p-3 rounded-lg transition-all",
+                "cursor-pointer",
 
-        <button
-          onClick={() => window.location.reload()}
-          className="bg-blue-600 text-white px-4 py-1.5 rounded-md flex items-center gap-2 text-sm font-medium hover:bg-blue-700 transition-colors"
-        >
-          <RefreshCcw size={16} /> Refresh
-        </button>
+                // WARNING (Refresh)
+                item.variant === "warning" &&
+                "bg-warning text-warning-foreground hover:bg-warning/90",
+
+                // NORMAL NAV ITEMS
+                item.variant !== "warning" &&
+                (active
+                  ? "bg-primary text-primary-foreground"
+                  : "bg-secondary text-navigation hover:bg-sidebar-hover")
+              )}
+            >
+              {/* ICON */}
+              <div className="flex-shrink-0">
+                {item.icon}
+              </div>
+
+              {/* LABEL */}
+              <span className="text-sm font-normal truncate">
+                {item.title}
+              </span>
+            </Button>
+          );
+        })}
       </div>
+
     </footer>
   );
 };

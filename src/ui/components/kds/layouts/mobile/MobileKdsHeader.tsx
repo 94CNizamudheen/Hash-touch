@@ -1,5 +1,5 @@
 import RightMenuBar from "../../tickets/mobile/RightMenuBar";
-import SearchBar from "../../tickets/mobile/SearchBar";
+// import SearchBar from "../../tickets/mobile/SearchBar";
 import LeftSidebar from "../../tickets/mobile/LeftSidebar";
 import logo from '@/assets/logo.png';
 
@@ -15,9 +15,9 @@ const MobileKdsHeader = () => {
 
         <RightMenuBar />
       </div>
-      <div className="px-5 pb-2">
+      {/* <div className="px-5 pb-2">
         <SearchBar />
-      </div>
+      </div> */}
 
     </div>
   );

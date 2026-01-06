@@ -3,6 +3,9 @@ import { WebSocketClient } from "@/services/websocket/WebSocketClient";
 import { websocketService } from "@/services/websocket/websocket.service";
 import { deviceService } from "@/services/local/device.local.service";
 import { useAppState } from "@/ui/hooks/useAppState";
+import { kdsTicketLocal } from "@/services/local/kds-ticket.local.service";
+import { localEventBus, LocalEventTypes } from "@/services/eventbus/LocalEventBus";
+import { useNotificationSound } from "../hooks/useNotificationSound";
 
 interface KdsWebSocketContextType {
   isConnected: boolean;
@@ -23,6 +26,7 @@ export const KdsWebSocketProvider = ({ children }: { children: ReactNode }) => {
   const [client, setClient] = useState<WebSocketClient | null>(null);
   const clientRef = useRef<WebSocketClient | null>(null);
   const hasAttemptedAutoConnect = useRef(false);
+  const { playSound } = useNotificationSound();
 
   const connect = useCallback(async (wsUrl: string, deviceRole: string) => {
     // Skip for POS devices (they run as server)
@@ -123,6 +127,62 @@ export const KdsWebSocketProvider = ({ children }: { children: ReactNode }) => {
       }, 0);
     }
   }, [loading, state, isConnected, isConnecting, connect]);
+
+  // Global WebSocket listener for incoming orders (KDS only)
+  useEffect(() => {
+    // Only listen for orders if we're a KDS device and connected
+    if (!state || state.device_role === "POS" || !isConnected || !client) return;
+
+    const handleNewOrder = async (message: any) => {
+      console.log("[KdsWebSocketContext] 🆕 Received new_order globally:", message);
+
+      const orderData = message.payload;
+
+      // Play notification sound
+      playSound();
+
+      try {
+        await kdsTicketLocal.saveTicket({
+          id: orderData.ticket_id || `kds-${Date.now()}`,
+          ticketNumber: String(orderData.ticket_number),
+          orderId: orderData.ticket_id || "",
+          locationId: orderData.location_id || "",
+          orderModeName: orderData.order_mode || "Dine In",
+          status:"IN_PROGRESS",
+          items: JSON.stringify(orderData.items || []),
+          totalAmount: orderData.total_amount || 0,
+          tokenNumber: orderData.token_number || 0,
+          createdAt: orderData.created_at || new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        });
+
+        console.log("[KdsWebSocketContext] ✅ Ticket saved to local database");
+
+        // Emit local event so UI components can react
+        localEventBus.emit(LocalEventTypes.TICKET_CREATED, orderData);
+
+        // Optional: Show browser notification if page is not focused
+        if (document.hidden && "Notification" in window && Notification.permission === "granted") {
+          new Notification("New Order", {
+            body: `Ticket #${orderData.ticket_number}`,
+            icon: "/icon.png",
+          });
+        }
+      } catch (error) {
+        console.error("[KdsWebSocketContext] ❌ Failed to save ticket:", error);
+      }
+    };
+
+    // Register the global listener
+    console.log("[KdsWebSocketContext] 📡 Registering global new_order listener");
+    client.on("new_order", handleNewOrder);
+
+    // Cleanup when disconnecting
+    return () => {
+      console.log("[KdsWebSocketContext] 🔌 Removing global new_order listener");
+      client.off("new_order", handleNewOrder);
+    };
+  }, [isConnected, client, state,playSound]);
 
   return (
     <KdsWebSocketContext.Provider

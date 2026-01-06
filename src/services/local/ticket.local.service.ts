@@ -7,6 +7,7 @@ export interface DbTicket {
   sync_status: "PENDING" | "SYNCING" | "SYNCED" | "FAILED";
   sync_error?: string | null;
   sync_attempts: number;
+  order_status?: "IN_PROGRESS" | "READY" | "COMPLETED" | null;
   location_id?: string | null;
   order_mode_name?: string | null;
   ticket_amount?: number | null;
@@ -33,6 +34,7 @@ export const ticketLocal = {
     queueNumber?: number;
     ticketNumber?: number;
     syncStatus?: "PENDING" | "SYNCING" | "SYNCED" | "FAILED";
+    orderStatus?:  "IN_PROGRESS" | "READY" | "COMPLETED";
   }): Promise<string> {
     const now = new Date().toISOString();
     const ticketId = `ticket-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
@@ -43,6 +45,7 @@ export const ticketLocal = {
       sync_status: metadata?.syncStatus || "PENDING",
       sync_error: null,
       sync_attempts: 0,
+      order_status: metadata?.orderStatus || "IN_PROGRESS",
       location_id: metadata?.locationId || null,
       order_mode_name: metadata?.orderModeName || null,
       ticket_amount: metadata?.ticketAmount || null,
@@ -72,9 +75,19 @@ export const ticketLocal = {
     error?: string
   ): Promise<void> {
     return invoke("update_ticket_sync_status", {
-      ticketId,
+      ticket_id:ticketId,
       status,
       error: error || null,
+    });
+  },
+
+  updateOrderStatus(
+    ticketId: string,
+    orderStatus: "IN_PROGRESS" | "READY" | "COMPLETED"
+  ): Promise<void> {
+    return invoke("update_ticket_order_status", {
+      ticket_id:ticketId,
+      order_status:orderStatus,
     });
   },
 

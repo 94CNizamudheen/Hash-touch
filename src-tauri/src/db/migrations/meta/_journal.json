@@ -5,15 +5,8 @@
     {
       "idx": 0,
       "version": "6",
-      "when": 1767461756328,
-      "tag": "0000_tricky_nico_minoru",
-      "breakpoints": true
-    },
-    {
-      "idx": 1,
-      "version": "6",
-      "when": 1767611877913,
-      "tag": "0001_powerful_wildside",
+      "when": 1767684611166,
+      "tag": "0000_previous_mandarin",
       "breakpoints": true
     }
   ]

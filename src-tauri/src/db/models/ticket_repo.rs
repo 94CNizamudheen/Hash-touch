@@ -5,17 +5,18 @@ pub fn save_ticket(conn: &mut Connection, ticket: &Ticket) -> anyhow::Result<()>
     conn.execute(
         r#"
         INSERT INTO tickets (
-          id, ticket_data, sync_status, sync_error, sync_attempts,
+          id, ticket_data, sync_status, sync_error, sync_attempts, order_status,
           location_id, order_mode_name, ticket_amount, items_count,
           queue_number, ticket_number,
           created_at, updated_at, synced_at
         )
-        VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14)
+        VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15)
         ON CONFLICT(id) DO UPDATE SET
           ticket_data = excluded.ticket_data,
           sync_status = excluded.sync_status,
           sync_error = excluded.sync_error,
           sync_attempts = excluded.sync_attempts,
+          order_status = excluded.order_status,
           updated_at = excluded.updated_at,
           synced_at = excluded.synced_at
         "#,
@@ -25,6 +26,7 @@ pub fn save_ticket(conn: &mut Connection, ticket: &Ticket) -> anyhow::Result<()>
             ticket.sync_status,
             ticket.sync_error,
             ticket.sync_attempts,
+            ticket.order_status,
             ticket.location_id,
             ticket.order_mode_name,
             ticket.ticket_amount,
@@ -43,7 +45,7 @@ pub fn get_all_tickets(conn: &Connection) -> anyhow::Result<Vec<Ticket>> {
     let mut stmt = conn.prepare(
         r#"
         SELECT
-          id, ticket_data, sync_status, sync_error, sync_attempts,
+          id, ticket_data, sync_status, sync_error, sync_attempts, order_status,
           location_id, order_mode_name, ticket_amount, items_count,
           queue_number, ticket_number,
           created_at, updated_at, synced_at
@@ -59,15 +61,16 @@ pub fn get_all_tickets(conn: &Connection) -> anyhow::Result<Vec<Ticket>> {
             sync_status: row.get(2)?,
             sync_error: row.get(3)?,
             sync_attempts: row.get(4)?,
-            location_id: row.get(5)?,
-            order_mode_name: row.get(6)?,
-            ticket_amount: row.get(7)?,
-            items_count: row.get(8)?,
-            queue_number: row.get(9)?,
-            ticket_number: row.get(10)?,
-            created_at: row.get(11)?,
-            updated_at: row.get(12)?,
-            synced_at: row.get(13)?,
+            order_status: row.get(5)?,
+            location_id: row.get(6)?,
+            order_mode_name: row.get(7)?,
+            ticket_amount: row.get(8)?,
+            items_count: row.get(9)?,
+            queue_number: row.get(10)?,
+            ticket_number: row.get(11)?,
+            created_at: row.get(12)?,
+            updated_at: row.get(13)?,
+            synced_at: row.get(14)?,
         })
     })?;
 
@@ -78,7 +81,7 @@ pub fn get_pending_tickets(conn: &Connection) -> anyhow::Result<Vec<Ticket>> {
     let mut stmt = conn.prepare(
         r#"
         SELECT
-          id, ticket_data, sync_status, sync_error, sync_attempts,
+          id, ticket_data, sync_status, sync_error, sync_attempts, order_status,
           location_id, order_mode_name, ticket_amount, items_count,
           queue_number, ticket_number,
           created_at, updated_at, synced_at
@@ -95,15 +98,16 @@ pub fn get_pending_tickets(conn: &Connection) -> anyhow::Result<Vec<Ticket>> {
             sync_status: row.get(2)?,
             sync_error: row.get(3)?,
             sync_attempts: row.get(4)?,
-            location_id: row.get(5)?,
-            order_mode_name: row.get(6)?,
-            ticket_amount: row.get(7)?,
-            items_count: row.get(8)?,
-            queue_number: row.get(9)?,
-            ticket_number: row.get(10)?,
-            created_at: row.get(11)?,
-            updated_at: row.get(12)?,
-            synced_at: row.get(13)?,
+            order_status: row.get(5)?,
+            location_id: row.get(6)?,
+            order_mode_name: row.get(7)?,
+            ticket_amount: row.get(8)?,
+            items_count: row.get(9)?,
+            queue_number: row.get(10)?,
+            ticket_number: row.get(11)?,
+            created_at: row.get(12)?,
+            updated_at: row.get(13)?,
+            synced_at: row.get(14)?,
         })
     })?;
 
@@ -159,6 +163,24 @@ pub fn get_sync_stats(conn: &Connection) -> anyhow::Result<(i32, i32, i32)> {
 
 pub fn clear_all_tickets(conn: &mut Connection) -> anyhow::Result<()> {
     conn.execute("DELETE FROM tickets", [])?;
+    Ok(())
+}
+
+pub fn update_ticket_order_status(
+    conn: &mut Connection,
+    ticket_id: &str,
+    order_status: &str,
+) -> anyhow::Result<()> {
+    let now = chrono::Utc::now().to_rfc3339();
+
+    conn.execute(
+        r#"
+        UPDATE tickets
+        SET order_status = ?1, updated_at = ?2
+        WHERE id = ?3
+        "#,
+        params![order_status, now, ticket_id],
+    )?;
     Ok(())
 }
 

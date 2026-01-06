@@ -37,6 +37,23 @@ pub async fn broadcast_to_queue(
 }
 
 #[command]
+pub async fn broadcast_to_pos(
+    ws_state: State<'_, WsState>,
+    message: DeviceMessage,
+) -> Result<(), String> {
+    let devices = ws_state.server.get_devices();
+
+    let count = devices.read().await.len();
+    if count == 0 {
+        log::warn!("⚠️ No connected POS devices");
+    }
+
+    broadcast_to_device_type(&devices, "POS", &message)
+        .await
+        .map_err(|e| format!("Failed to broadcast to POS: {}", e))
+}
+
+#[command]
 pub async fn broadcast_order(
     ws_state: State<'_, WsState>,
     order_data: serde_json::Value,

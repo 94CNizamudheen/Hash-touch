@@ -1,4 +1,4 @@
-export type KdsStatus = "PENDING" | "IN_PROGRESS" | "READY";
+export type KdsStatus = "COMPLETED" | "IN_PROGRESS" | "READY";
 
 export interface KDSTicketData {
   id: string;

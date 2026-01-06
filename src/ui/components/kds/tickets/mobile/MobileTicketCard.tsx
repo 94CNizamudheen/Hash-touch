@@ -7,7 +7,7 @@ interface Props {
   ticket: Ticket;
   theme: ThemeSettings;
   onToggleItem: (ticketId: string, itemId: string) => void;
-  onMarkAsDone: (ticketId: string) => void;
+  onMarkAsDone?: (ticketId: string) => void;
 }
 
 const MobileTicketCard = ({ ticket, theme, onToggleItem, onMarkAsDone }: Props) => {
@@ -33,6 +33,13 @@ const MobileTicketCard = ({ ticket, theme, onToggleItem, onMarkAsDone }: Props) 
     return theme.elapsedColor15plus;
   };
 
+  const formatQueueNumber = (queueNumber: number | string | undefined) => {
+    if (queueNumber === undefined || queueNumber === null) return '000';
+    const num = typeof queueNumber === 'string' ? parseInt(queueNumber, 10) : queueNumber;
+    if (isNaN(num)) return '000';
+    return num.toString().padStart(3, '0');
+  };
+
   const allDone = ticket.items.every((i) => i.status === "completed");
 
   return (
@@ -42,21 +49,44 @@ const MobileTicketCard = ({ ticket, theme, onToggleItem, onMarkAsDone }: Props) 
     >
       {/* MOBILE Header */}
       <div
-        className="px-3 py-2 flex justify-between items-center"
+        className="px-3 py-2"
         style={{
           backgroundColor: getHeaderBgColor(),
           color: theme.headerTextColor,
         }}
       >
-        <div className="text-sm font-bold">
-          #{ticket.orderNumber}
-        </div>
-
-        <div className="text-xs opacity-80">
-          {new Date(ticket.receivedTime).toLocaleTimeString("en-US", {
-            hour: "2-digit",
-            minute: "2-digit",
-          })}
+        <div className="flex justify-between items-start">
+          <div>
+            <h3
+              className="font-semibold"
+              style={{
+                fontSize: theme.headerFontSize,
+                fontWeight: theme.headerFontWeight,
+              }}
+            >
+              Order #{ticket.orderNumber}
+            </h3>
+            <p className="text-sm opacity-90">{ticket.orderMode}</p>
+          </div>
+          <div className="text-right">
+            <p className="text-xs font-medium">
+              {new Date(ticket.receivedTime).toLocaleTimeString("en-US", {
+                hour: "2-digit",
+                minute: "2-digit",
+                second: "2-digit",
+                hour12: true,
+              })}
+            </p>
+            <p
+              className="font-bold"
+              style={{
+                fontSize: theme.headerFontSize,
+                fontWeight: theme.headerFontWeight,
+              }}
+            >
+              {formatQueueNumber(ticket.queueNumber)}
+            </p>
+          </div>
         </div>
       </div>
 
@@ -68,53 +98,59 @@ const MobileTicketCard = ({ ticket, theme, onToggleItem, onMarkAsDone }: Props) 
           color: allDone ? theme.completedTextColor : theme.bodyTextColor,
         }}
       >
-        {/* Table & Admin */}
-        <div className="flex justify-between text-xs font-medium pb-1">
-          <span>Table: {ticket.tableNumber}</span>
-          {theme.showAdminId && <span>Admin: {ticket.adminId}</span>}
-        </div>
+
 
         {/* ITEMS LIST */}
-        <div className="space-y-2">
+        <div className="space-y-3">
           {ticket.items.map((item) => {
             const isCompleted = item.status === "completed";
+            const bgColor = isCompleted
+              ? theme.itemCompletedBg
+              : allDone
+              ? theme.allCompletedItemPendingBg
+              : theme.itemPendingBg;
+            const borderColor = isCompleted
+              ? theme.itemCompletedBorder
+              : allDone
+              ? theme.allCompletedItemPendingBorder
+              : theme.itemPendingBorder;
+            const textColor = isCompleted ? theme.itemCompletedText : theme.itemPendingText;
+
             return (
               <div
                 key={item.id}
-                className="p-2 rounded-lg border-2 flex items-start gap-2 active:scale-[0.98] transition-all"
                 onClick={() => onToggleItem(ticket.id, item.id)}
+                className="cursor-pointer hover:opacity-90 transition-all border-2"
                 style={{
-                  backgroundColor: isCompleted
-                    ? theme.itemCompletedBg
-                    : theme.itemPendingBg,
-                  borderColor: isCompleted
-                    ? theme.itemCompletedBorder
-                    : theme.itemPendingBorder,
-                  color: isCompleted
-                    ? theme.itemCompletedText
-                    : theme.itemPendingText,
+                  backgroundColor: bgColor,
+                  borderColor: borderColor,
+                  color: textColor,
+                  borderRadius: theme.itemBorderRadius,
+                  padding: theme.itemPadding,
                 }}
               >
-                {/* Checkmark */}
-                {isCompleted && (
-                  <div className="bg-white rounded-full p-[2px] mt-0.5">
-                    <Check
-                      size={14}
-                      style={{ color: theme.itemCompletedBg }}
-                    />
-                  </div>
-                )}
-
-                <div className="flex-1">
-                  <p className="text-sm font-semibold">
-                    {item.quantity} × {item.name}
-                  </p>
-
-                  {item.notes && (
-                    <p className="text-xs italic opacity-80">
-                      Notes: {item.notes}
-                    </p>
+                <div className="flex items-start gap-2">
+                  {isCompleted && (
+                    <div className="bg-white rounded-full p-0.5 mt-0.5">
+                      <Check size={14} style={{ color: theme.itemCompletedBg }} />
+                    </div>
                   )}
+                  <div className="flex-1">
+                    <p
+                      style={{
+                        fontSize: theme.itemFontSize,
+                        fontWeight: theme.itemFontWeight,
+                      }}
+                    >
+                      {item.quantity}- {item.name}
+                    </p>
+                    <p className="text-sm opacity-90">Normal</p>
+                    {item.notes && (
+                      <p className="text-sm opacity-90 font-semibold">
+                        (Notes: {item.notes})
+                      </p>
+                    )}
+                  </div>
                 </div>
               </div>
             );
@@ -122,29 +158,36 @@ const MobileTicketCard = ({ ticket, theme, onToggleItem, onMarkAsDone }: Props) 
         </div>
 
         {/* Preparation Time */}
-        {theme.showPreparationTime && (
-          <p className="text-center pt-1 text-xs opacity-80">
-            Prep:{" "}
-            <span
-              className="font-bold"
-              style={{ color: getHeaderBgColor() }}
-            >
-              {ticket.preparationTime}
-            </span>
-          </p>
+        {theme.showPreparationTime && !allDone && (
+          <div className="text-center pt-2">
+            <p className="text-sm font-medium">
+              Preparation time:{" "}
+              <span
+                className="font-bold"
+                style={{ color: getHeaderBgColor() }}
+              >
+                {ticket.preparationTime}
+              </span>
+            </p>
+          </div>
         )}
 
         {/* DONE BUTTON */}
-        <button
-          onClick={() => onMarkAsDone(ticket.id)}
-          className="w-full py-2 text-sm rounded-lg font-semibold active:scale-[0.97] transition"
-          style={{
-            backgroundColor: theme.buttonBgColor,
-            color: theme.buttonTextColor,
-          }}
-        >
-          Mark Done
-        </button>
+        {!allDone && (
+          <button
+            onClick={() => onMarkAsDone(ticket.id)}
+            className="w-full py-3 rounded-lg font-semibold active:scale-[0.97] transition"
+            style={{
+              backgroundColor: theme.buttonBgColor,
+              color: theme.buttonTextColor,
+              borderRadius: theme.buttonBorderRadius,
+              fontSize: theme.buttonFontSize,
+              fontWeight: theme.buttonFontWeight,
+            }}
+          >
+            Mark as done
+          </button>
+        )}
       </div>
     </div>
   );

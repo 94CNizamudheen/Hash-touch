@@ -1,14 +1,14 @@
 import { useState, useEffect, useCallback } from "react";
 import { useKdsSettings } from "@/ui/context/KdsSettingsContext";
-import { useKdsWebSocket } from "@/ui/context/KdsWebSocketContext";
 import TicketCard from "./TicketCard";
 import { useMediaQuery } from "usehooks-ts";
 import MobileTicketCard from "./mobile/MobileTicketCard";
 import { kdsTicketLocal } from "@/services/local/kds-ticket.local.service";
+import { kdsService } from "@/services/core/kds.service";
 import { localEventBus, LocalEventTypes } from "@/services/eventbus/LocalEventBus";
-import { useNotificationSound } from "@/ui/hooks/useNotificationSound";
 import type { Ticket, TicketItem } from "./ticket.types";
 import type { KDSTicketData, KDSTicketItem } from "@/types/kds";
+import { ticketLocal } from "@/services/local/ticket.local.service";
 
 /**
  * Transform KDSTicketData from database to Ticket format for UI
@@ -32,22 +32,21 @@ function transformKdsTicketToTicket(kdsTicket: KDSTicketData): Ticket {
   return {
     id: kdsTicket.id,
     orderNumber: kdsTicket.ticketNumber,
-    restaurant: kdsTicket.locationId || 'Location',
-    adminId: kdsTicket.orderId || '',
     receivedTime: new Date(kdsTicket.createdAt),
-    preparationTime: '10 min', // TODO: Calculate from createdAt
-    tableNumber: kdsTicket.orderModeName || 'Dine In',
+    preparationTime: '10 min', 
+    orderMode: kdsTicket.orderModeName || 'Dine In',
     items,
+    queueNumber:kdsTicket.tokenNumber||0,
+    status:kdsTicket.status
   };
 }
 
 const Tickets = () => {
   const { settings } = useKdsSettings();
-  const { isConnected, client } = useKdsWebSocket();
   const [tickets, setTickets] = useState<Ticket[]>([]);
+  const [kdsTicketsMap, setKdsTicketsMap] = useState<Map<string, KDSTicketData>>(new Map());
   const [loading, setLoading] = useState(true);
   const isDesktop = useMediaQuery('(min-width: 768px)');
-  const { playSound } = useNotificationSound();
 
   // Load tickets from database
   const loadTickets = useCallback(async () => {
@@ -56,11 +55,20 @@ const Tickets = () => {
       const kdsTickets = await kdsTicketLocal.getActiveTickets();
       console.log(`[Tickets] Loaded ${kdsTickets.length} active tickets`);
 
+      // Create a map for quick lookup
+      const ticketsMap = new Map<string, KDSTicketData>();
+      kdsTickets.forEach(ticket => {
+        ticketsMap.set(ticket.id, ticket);
+      });
+      setKdsTicketsMap(ticketsMap);
+
       const transformedTickets = kdsTickets.map(transformKdsTicketToTicket);
-      setTickets(transformedTickets);
+      const inProgressTickets = transformedTickets.filter((t) => t.status === "IN_PROGRESS");
+      setTickets(inProgressTickets);
     } catch (error) {
       console.error('[Tickets] Failed to load tickets:', error);
       setTickets([]);
+      setKdsTicketsMap(new Map());
     } finally {
       setLoading(false);
     }
@@ -72,59 +80,16 @@ const Tickets = () => {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // WebSocket listener for new orders from POS
+  // LocalEventBus listener for new tickets (created via global WebSocket listener in KdsWebSocketContext)
   useEffect(() => {
-    // Wait for WebSocket connection to be established
-    if (!isConnected || !client) {
-      console.log('[Tickets] Waiting for WebSocket connection...', { isConnected, hasClient: !!client });
-      return;
-    }
+    const unsubscribe = localEventBus.subscribe(LocalEventTypes.TICKET_CREATED, async () => {
+      console.log('[Tickets] Ticket created event received, reloading...');
+      await loadTickets();
+    });
 
-    console.log('[Tickets] ✅ WebSocket connected, registering new_order listener');
-
-    const handleNewOrder = async (message: any) => {
-      console.log('[Tickets] Received new_order via WebSocket:', message);
-
-      const orderData = message.payload;
-
-      // Play notification sound
-      playSound();
-
-      // Save to local database
-      try {
-        await kdsTicketLocal.saveTicket({
-          id: orderData.ticket_id || `kds-${Date.now()}`,
-          ticketNumber: String(orderData.ticket_number || `T${Date.now()}`),
-          orderId: orderData.ticket_id || '',
-          locationId: orderData.location_id || '',
-          orderModeName: orderData.order_mode || 'Dine In',
-          status: 'PENDING',
-          items: JSON.stringify(orderData.items || []),
-          totalAmount: orderData.total_amount || 0,
-          tokenNumber: orderData.token_number || 0,
-          createdAt: orderData.created_at || new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
-        });
-
-        console.log('[Tickets] Saved new ticket to database');
-
-        // Reload tickets to show new one
-        await loadTickets();
-
-        // Emit local event for notification badge
-        localEventBus.emit(LocalEventTypes.TICKET_CREATED, orderData);
-      } catch (error) {
-        console.error('[Tickets] Failed to save new ticket:', error);
-      }
-    };
-
-    client.on('new_order', handleNewOrder);
-
-    return () => {
-      console.log('[Tickets] Cleaning up new_order listener');
-      client.off('new_order', handleNewOrder);
-    };
-  }, [isConnected, client, playSound, loadTickets]);
+    return unsubscribe;
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // LocalEventBus listener for ticket removal
   useEffect(() => {
@@ -138,15 +103,35 @@ const Tickets = () => {
   }, []);
 
   // Handle marking ticket as done
-  const handleMarkAsDone = async (ticketId: string) => {
-    console.log('[Tickets] Marking ticket as done:', ticketId);
+  const handleMarkAsDone = useCallback(async (ticketId: string) => {
+    try {
+      // Get the original KDS ticket data
+      const kdsTicket = kdsTicketsMap.get(ticketId);
 
-    // Optimistically remove from UI
-    setTickets((prev) => prev.filter((ticket) => ticket.id !== ticketId));
+      if (!kdsTicket) {
+        console.error('[Tickets] Could not find KDS ticket data for:', ticketId);
+        return;
+      }
 
-    // The actual deletion will be handled by kdsService.updateTicketStatus
-    // which is called from the TicketCard component
-  };
+      // Optimistically remove from UI
+      setTickets((prev) => prev.filter((ticket) => ticket.id !== ticketId));
+
+      // Update status to READY in database and broadcast to POS/Queue
+      await kdsService.markTicketReady(
+        ticketId,
+        kdsTicket.ticketNumber,
+        kdsTicket.orderId,
+        kdsTicket.tokenNumber
+      );
+      await ticketLocal.updateOrderStatus(ticketId,"READY")
+
+      console.log('[Tickets] ✅ Ticket marked as READY and broadcasted to POS/Queue');
+    } catch (error) {
+      console.error('[Tickets] Failed to mark ticket as done:', error);
+      // Reload tickets to restore UI state on error
+      await loadTickets();
+    }
+  }, [kdsTicketsMap, loadTickets]);
 
   // Handle toggling item status
   const handleToggleItem = (ticketId: string, itemId: string) => {
@@ -183,7 +168,7 @@ const Tickets = () => {
         }
       });
     }
-  }, [tickets, settings.autoMarkDone]);
+  }, [tickets, settings.autoMarkDone,handleMarkAsDone]);
 
   if (loading) {
     return (
@@ -206,9 +191,9 @@ const Tickets = () => {
     >
       {/* MOBILE */}
       {!isDesktop && (
-        <div className="flex gap-3 overflow-x-auto pb-4">
+        <div className="flex flex-col gap-5 pb-4">
           {tickets.map((t) => (
-            <div key={t.id} className="flex-shrink-0 w-80">
+            <div key={t.id} className="w-full">
               <MobileTicketCard
                 ticket={t}
                 theme={settings}
@@ -223,7 +208,7 @@ const Tickets = () => {
       {/* DESKTOP */}
       {isDesktop && (
         <div
-          className="flex overflow-x-auto pb-4"
+          className="flex overflow-x-auto no-scrollbar pb-4 my-7 "
           style={{
             gap: settings.pageGap,
           }}

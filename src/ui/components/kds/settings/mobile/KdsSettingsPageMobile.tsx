@@ -12,10 +12,10 @@ const KdsSettingsPageMobile = () => {
   const [activeSection, setActiveSection] = useState<SectionId>("card");
 
   return (
-    <div className="flex flex-col h-screen bg-white safe-area">
+    <div className="flex flex-col  bg-white safe-area">
       <MobileSettingsTop onReset={resetSettings} />
 
-      <div className="flex flex-1 overflow-hidden">
+      <div className="flex flex-1 overflow-hidden ">
         <MobileSettingsLeftSide
           activeSection={activeSection}
           setActiveSection={setActiveSection}

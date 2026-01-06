@@ -6,7 +6,7 @@ import type { ThemeSettings, Ticket } from "./ticket.types";
 interface TicketCardProps {
   ticket: Ticket;
   theme: ThemeSettings;
-  onMarkAsDone: (ticketId: string) => void;
+  onMarkAsDone?: (ticketId: string) => void;
   onToggleItem: (ticketId: string, itemId: string) => void;
 }
 
@@ -41,6 +41,13 @@ const TicketCard = ({ ticket, theme, onMarkAsDone, onToggleItem }: TicketCardPro
     });
   };
 
+  const formatQueueNumber = (queueNumber: number | string | undefined) => {
+    if (queueNumber === undefined || queueNumber === null) return '000';
+    const num = typeof queueNumber === 'string' ? parseInt(queueNumber, 10) : queueNumber;
+    if (isNaN(num)) return '000';
+    return num.toString().padStart(3, '0');
+  };
+
   const allItemsCompleted = ticket.items.every(item => item.status === 'completed');
 
   return (
@@ -70,17 +77,17 @@ const TicketCard = ({ ticket, theme, onMarkAsDone, onToggleItem }: TicketCardPro
             >
               Order #{ticket.orderNumber}
             </h3>
-            <p className="text-sm opacity-90">{ticket.restaurant}</p>
+            <p className="opacity-90">{ticket.orderMode}</p>
           </div>
           <div className="text-right">
             <p className="text-sm font-medium">{formatTime(ticket.receivedTime)}</p>
-            <p 
-              style={{ 
+            <p
+              style={{
                 fontSize: theme.headerFontSize,
                 fontWeight: theme.headerFontWeight,
               }}
             >
-              {ticket.tableNumber}
+              {formatQueueNumber(ticket.queueNumber)}
             </p>
           </div>
         </div>
@@ -94,18 +101,6 @@ const TicketCard = ({ ticket, theme, onMarkAsDone, onToggleItem }: TicketCardPro
           color: allItemsCompleted ? theme.completedTextColor : theme.bodyTextColor,
         }}
       >
-        {/* Admin ID */}
-        {theme.showAdminId && (
-          <p 
-            className="text-sm font-medium mb-2"
-            style={{ 
-              color: allItemsCompleted ? theme.completedTextColor : theme.bodyTextColor 
-            }}
-          >
-            Admin- {ticket.adminId}
-          </p>
-        )}
-
         {/* Items */}
         {ticket.items.map((item) => {
           const isCompleted = item.status === 'completed';
@@ -163,14 +158,18 @@ const TicketCard = ({ ticket, theme, onMarkAsDone, onToggleItem }: TicketCardPro
             className="text-center pt-2"
             style={{ color: allItemsCompleted ? theme.completedTextColor : theme.bodyTextColor }}
           >
-            <p className="text-sm font-medium">
+            {!allItemsCompleted&&(
+              <p className="text-sm font-medium">
               Preparation time: <span className="font-bold" style={{ color: getHeaderBgColor() }}>{ticket.preparationTime}</span>
             </p>
+            )}
+            
           </div>
         )}
 
         {/* Mark as Done Button */}
-        <button
+        {!allItemsCompleted&&(
+          <button
           onClick={() => onMarkAsDone(ticket.id)}
           onMouseEnter={() => setIsHovering(true)}
           onMouseLeave={() => setIsHovering(false)}
@@ -184,8 +183,10 @@ const TicketCard = ({ ticket, theme, onMarkAsDone, onToggleItem }: TicketCardPro
             padding: `${theme.buttonPadding} 0`,
           }}
         >
-          Mark as done
+           Mark as done
         </button>
+        )}
+        
       </div>
     </div>
   );

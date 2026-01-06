@@ -7,6 +7,7 @@ pub struct Ticket {
     pub sync_status: String, // PENDING, SYNCING, SYNCED, FAILED
     pub sync_error: Option<String>,
     pub sync_attempts: i32,
+    pub order_status: Option<String>, // PENDING, IN_PROGRESS, READY, COMPLETED
     pub location_id: Option<String>,
     pub order_mode_name: Option<String>,
     pub ticket_amount: Option<i32>,

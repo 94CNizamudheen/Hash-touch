@@ -3,13 +3,12 @@ import RightBottomSidebar from "../../tickets/mobile/RightBottomSidebar";
 
 interface MobileKdsFooterProps {
   wsConnected: boolean;
-  lastSync?: string;
 }
 
-const MobileKdsFooter = ({ wsConnected, lastSync }: MobileKdsFooterProps) => {
+const MobileKdsFooter = ({ wsConnected }: MobileKdsFooterProps) => {
   return (
     <div className="flex items-center justify-between p-2 border-t bg-gray-100">
-      <LeftSyncNetwork />
+      <LeftSyncNetwork wsConnected={wsConnected} />
 
       <div className="text-xs text-gray-700 flex-1 text-center">
         <span className="text-green-500 font-semibold">●</span> Local DB |{" "}
@@ -20,11 +19,11 @@ const MobileKdsFooter = ({ wsConnected, lastSync }: MobileKdsFooterProps) => {
         >
           ●
         </span>{" "}
-        POS {wsConnected ? "Online" : "Offline"} | Last Sync:{" "}
-        {lastSync ?? "--:--"}
+        POS {wsConnected ? "Online" : "Offline"} 
+      
       </div>
 
-      <RightBottomSidebar />
+      <RightBottomSidebar wsConnected={wsConnected} />
     </div>
   );
 };

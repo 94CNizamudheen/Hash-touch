@@ -78,3 +78,15 @@ pub fn get_max_queue_number(
     ticket_repo::get_max_queue_number(&conn, &location_id, &business_date)
         .map_err(|e| e.to_string())
 }
+
+#[tauri::command]
+pub fn update_ticket_order_status(
+    app: AppHandle,
+    ticket_id: String,
+    order_status: String,
+) -> Result<(), String> {
+    println!("🦀 Rust Command: update_ticket_order_status {} to {}", ticket_id, order_status);
+    let mut conn = migrate::connection(&app);
+    ticket_repo::update_ticket_order_status(&mut conn, &ticket_id, &order_status)
+        .map_err(|e| e.to_string())
+}

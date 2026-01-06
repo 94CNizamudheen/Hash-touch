@@ -1,13 +1,15 @@
+import type { KdsStatus } from "@/types/kds";
+
 // ticket.types.ts
 export interface Ticket {
   id: string;
   orderNumber: string;
-  restaurant: string;
-  adminId: string;
+  orderMode: string;
+  status:KdsStatus
   receivedTime: Date;
   preparationTime: string;
-  tableNumber: string;
   items: TicketItem[];
+  queueNumber:number;
 }
 
 export interface TicketItem {

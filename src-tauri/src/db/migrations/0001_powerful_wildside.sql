@@ -1,1 +1,0 @@
-ALTER TABLE `products` ADD `is_sold_out` integer DEFAULT 0;

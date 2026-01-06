@@ -217,6 +217,7 @@ pub fn run() {
             commands::ticket::get_sync_stats,
             commands::ticket::clear_all_tickets,
             commands::ticket::get_max_queue_number,
+            commands::ticket::update_ticket_order_status,
 
             // KDS Tickets
             commands::kds_ticket::save_kds_ticket,
@@ -240,6 +241,7 @@ pub fn run() {
             // WebSocket
             commands::websocket::broadcast_to_kds,
             commands::websocket::broadcast_to_queue,
+            commands::websocket::broadcast_to_pos,
             commands::websocket::broadcast_order,
         ])
         .run(tauri::generate_context!())

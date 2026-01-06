@@ -1,9 +1,9 @@
 import { Outlet } from "react-router-dom";
 import KDSTicketHeader from "./KDSTicketHeader";
 import KDSTicketsFooter from "./KDSTicketsFooter";
-import { KdsWebSocketProvider, useKdsWebSocket } from "@/ui/context/KdsWebSocketContext";
+import { useKdsWebSocket } from "@/ui/context/KdsWebSocketContext";
 
-const KDSTicketsDesktopLayoutContent = () => {
+const KDSTicketsDesktopLayout = () => {
   const { isConnected } = useKdsWebSocket();
 
   return (
@@ -16,14 +16,6 @@ const KDSTicketsDesktopLayoutContent = () => {
 
       <KDSTicketsFooter wsConnected={isConnected} />
     </div>
-  );
-};
-
-const KDSTicketsDesktopLayout = () => {
-  return (
-    <KdsWebSocketProvider>
-      <KDSTicketsDesktopLayoutContent />
-    </KdsWebSocketProvider>
   );
 };
 
