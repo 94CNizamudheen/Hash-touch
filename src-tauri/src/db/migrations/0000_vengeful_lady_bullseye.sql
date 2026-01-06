@@ -209,6 +209,20 @@ CREATE TABLE `products` (
 	`overrides` text
 );
 --> statement-breakpoint
+CREATE TABLE `queue_tokens` (
+	`id` text PRIMARY KEY NOT NULL,
+	`ticket_id` text NOT NULL,
+	`ticket_number` text NOT NULL,
+	`token_number` integer NOT NULL,
+	`status` text DEFAULT 'WAITING' NOT NULL,
+	`source` text,
+	`location_id` text,
+	`order_mode` text,
+	`created_at` text DEFAULT CURRENT_TIMESTAMP NOT NULL,
+	`called_at` text,
+	`served_at` text
+);
+--> statement-breakpoint
 CREATE TABLE `tickets` (
 	`id` text PRIMARY KEY NOT NULL,
 	`ticket_data` text NOT NULL,

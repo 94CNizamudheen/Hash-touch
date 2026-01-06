@@ -1,8 +1,10 @@
+import type { QueueStatus } from "./queue";
+
   
 export type DeviceRole = "POS" | "KIOSK" | "QUEUE" | "KDS";
 export type SyncStatus = "PENDING" | "SYNCED" | "FAILED";
 export type OrderStatus = "PLACED" | "PAID" | "READY" | "COMPLETED" | "CANCELLED";
-export type QueueStatus = "WAITING" | "CALLED" | "SERVED";
+// export type QueueStatus = "WAITING" | "CALLED" | "SERVED";
 export type KdsStatus = "PENDING" | "IN_PROGRESS" | "READY";
 export type PaymentMethod =  "CASH"  | "CREDIT_CARD"  | "E_WALLET"  | "BANK_TRANSFER"  | "CRM_POINTS"  | "TABSQUARE"  | "QUICK_DINE"  | "MALL_VOUCHER"  | "STRIPE";
 export type PrinterTypes=  "network"| "usb" ;
@@ -44,16 +46,16 @@ export interface OrderItem {
 }
 export type NewOrderItem = Omit<OrderItem, "id" | "createdAt" | "updatedAt" | "syncStatus">;
 
-export interface QueueToken {
-  id: string;
-  order_id: string;
-  token_number: number;
-  status: QueueStatus;
-  syncStatus?: SyncStatus;
-  created_at: Date;
-  updated_at: Date;
-}
-export type NewQueueToken = Omit<QueueToken, "id" | "createdAt" | "updatedAt" | "syncStatus">;
+// export interface QueueToken {
+//   id: string;
+//   order_id: string;
+//   token_number: number;
+//   status: QueueStatus;
+//   syncStatus?: SyncStatus;
+//   created_at: Date;
+//   updated_at: Date;
+// }
+// export type NewQueueToken = Omit<QueueToken, "id" | "createdAt" | "updatedAt" | "syncStatus">;
 
 
 export interface KDSTicket {

@@ -1,33 +1,60 @@
-/**
- * Queue Service - Stub implementation
- * TODO: Implement full queue service with queue display integration
- */
 
-export type QueueStatus = "WAITING" | "CALLED" | "SERVED";
 
-export interface QueueToken {
-  id: string;
-  tokenNumber: number;
-  status: QueueStatus;
-  orderId?: string;
-  createdAt: string;
-  calledAt?: string;
-  servedAt?: string;
-}
+import type { } from "@/types/common";
+import { queueTokenLocal } from "@/services/local/queue-token.local.service";
+import {
+  localEventBus,
+  LocalEventTypes,
+} from "@/services/eventbus/LocalEventBus";
+import type { QueueStatus, QueueTokenData } from "@/types/queue";
 
 export const queueService = {
-  /**
-   * Update queue token status by token number
-   * @param tokenNumber - The queue token number
-   * @param status - The new status
-   */
+
+  async getActiveTokens(): Promise<QueueTokenData[]> {
+    const tokens = await queueTokenLocal.getActiveTokens();
+
+    // Map DB shape → UI shape (if needed)
+    return tokens.map((t) => ({
+      id: t.id,
+      ticketId: t.ticketId,
+      ticketNumber: t.ticketNumber,
+      tokenNumber: t.tokenNumber,
+      status: t.status as QueueStatus,
+      source: t.source,
+      locationId: t.locationId,
+      orderMode: t.orderMode,
+      createdAt: t.createdAt,
+      calledAt: t.calledAt,
+      servedAt: t.servedAt,
+    }));
+  },
+
+
   async updateTokenStatusByNumber(
     tokenNumber: number,
     status: QueueStatus
   ): Promise<void> {
-    console.log(`[Queue Service] Updating token ${tokenNumber} to ${status}`);
+    console.log(
+      `[Queue Service] Updating token ${tokenNumber} → ${status}`
+    );
 
-    // TODO: Implement actual queue update (local database + WebSocket)
-    // For now, this is a no-op stub
+    await queueTokenLocal.updateStatus(tokenNumber, status);
+
+    if (status === "CALLED") {
+      localEventBus.emit(LocalEventTypes.QUEUE_TOKEN_CALLED, {
+        tokenNumber,
+      });
+    }
+
+    if (status === "SERVED") {
+      localEventBus.emit(LocalEventTypes.QUEUE_TOKEN_SERVED, {
+        tokenNumber,
+      });
+    }
+
+    localEventBus.emit(LocalEventTypes.QUEUE_UPDATED, {
+      tokenNumber,
+      status,
+    });
   },
 };

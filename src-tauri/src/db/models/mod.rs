@@ -31,3 +31,5 @@ pub mod kds_ticket;
 pub mod kds_ticket_repo;
 pub mod printer;
 pub mod printer_repo;
+pub mod queue_token;
+pub mod queue_token_repo;

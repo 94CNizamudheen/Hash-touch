@@ -73,4 +73,9 @@ export const LocalEventTypes = {
   KDS_TICKET_REMOVED: "kds:ticket_removed",
   KDS_STATUS_CHANGED: "kds:status_changed",
   KDS_TICKET_UPDATED: "kds:ticket_updated",
+  // QUEUE Events
+  QUEUE_UPDATED: "queue:updated",
+  QUEUE_TOKEN_CALLED: "queue:token_called",
+  QUEUE_TOKEN_SERVED: "queue:token_served",
+  
 } as const;

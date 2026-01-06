@@ -243,6 +243,11 @@ pub fn run() {
             commands::websocket::broadcast_to_queue,
             commands::websocket::broadcast_to_pos,
             commands::websocket::broadcast_order,
+
+            //queue_token
+            commands::queue_token::save_queue_token,
+            commands::queue_token::get_active_queue_tokens,
+            commands::queue_token::update_queue_token_status,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

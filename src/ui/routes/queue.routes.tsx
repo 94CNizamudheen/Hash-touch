@@ -1,13 +1,21 @@
 
 import { Routes, Route, Navigate } from "react-router-dom";
+import QueueDisplay from "../components/queue/Queue";
+import { QueueWebSocketProvider } from "../context/QueueWebSocketContext";
+import { LogoutProvider } from "../context/LogoutContext";
 
-const QueueHome = () => <div>Queue Display</div>;
+
 
 export default function QueueRoutes() {
   return (
-    <Routes>
-      <Route index element={<QueueHome />} />
-      <Route path="*" element={<Navigate to="" replace />} />
-    </Routes>
+    <LogoutProvider>
+      <QueueWebSocketProvider>
+        <Routes>
+          <Route index element={<QueueDisplay />} />
+          <Route path="*" element={<Navigate to="" replace />} />
+        </Routes>
+      </QueueWebSocketProvider>
+    </LogoutProvider>
+
   );
 }
