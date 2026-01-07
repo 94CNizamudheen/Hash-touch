@@ -25,9 +25,9 @@ pub fn save_products(conn: &mut Connection, items: &[Product]) -> anyhow::Result
             INSERT INTO products (
               id, name, code, description, category_id,
               price, active, sort_order, is_sold_out,
-              created_at, updated_at, deleted_at, media, overrides
+              created_at, updated_at, deleted_at, media, overrides, is_product_tag
             )
-            VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14)
+            VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15)
             ON CONFLICT(id) DO UPDATE SET
               name = excluded.name,
               code = excluded.code,
@@ -40,7 +40,8 @@ pub fn save_products(conn: &mut Connection, items: &[Product]) -> anyhow::Result
               updated_at = excluded.updated_at,
               deleted_at = excluded.deleted_at,
               media = excluded.media,
-              overrides=excluded.overrides
+              overrides=excluded.overrides,
+              is_product_tag=excluded.is_product_tag
             "#,
             params![
                 p.id,
@@ -56,7 +57,8 @@ pub fn save_products(conn: &mut Connection, items: &[Product]) -> anyhow::Result
                 p.updated_at,
                 p.deleted_at,
                 p.media,
-                p.overrides
+                p.overrides,
+                p.is_product_tag
             ],
         )?;
     }
@@ -71,7 +73,7 @@ pub fn get_products(conn: &Connection) -> anyhow::Result<Vec<Product>> {
         SELECT
           id, name, code, description, category_id,
           price, active, sort_order, is_sold_out,
-          created_at, updated_at, deleted_at, media, overrides
+          created_at, updated_at, deleted_at, media, overrides, is_product_tag
         FROM products
         WHERE deleted_at IS NULL
         ORDER BY sort_order, name
@@ -94,6 +96,7 @@ pub fn get_products(conn: &Connection) -> anyhow::Result<Vec<Product>> {
             deleted_at: row.get(11)?,
             media: row.get(12)?,
             overrides:row.get(13)?,
+            is_product_tag:row.get(14)?,
         })
     })?;
 

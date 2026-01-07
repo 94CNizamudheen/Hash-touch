@@ -20,4 +20,5 @@ pub struct Product {
     // store as JSON string
     pub media: Option<String>,
     pub overrides:Option<String>,
+    pub is_product_tag:bool,
 }

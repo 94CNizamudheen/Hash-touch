@@ -239,6 +239,7 @@ pub fn clear_all_data(app: AppHandle) -> Result<(), String> {
         "devices",
         "cart_draft",
         "work_shift_draft",
+        "queue_tokens"
     ];
 
     for table in tables_to_clear {

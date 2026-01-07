@@ -20,7 +20,7 @@ pub fn get_product_with_combinations(
         r#"
         SELECT
           id, name, description, price, media, overrides
-        FROM products
+        FROM products, is_product_tag
         WHERE id = ? AND deleted_at IS NULL
         "#,
         [product_id],
@@ -32,6 +32,7 @@ pub fn get_product_with_combinations(
                 price: row.get(3)?,
                 media: row.get(4)?,
                 overrides:row.get(5)?,
+                is_product_tag:row.get(6)?,
                 code: None,
                 category_id: None,
                 active: true,

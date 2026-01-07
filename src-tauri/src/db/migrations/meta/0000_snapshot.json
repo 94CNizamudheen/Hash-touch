@@ -1,7 +1,7 @@
 {
   "version": "6",
   "dialect": "sqlite",
-  "id": "9d35bb99-e817-42a5-a2b4-dd7f3115d1f4",
+  "id": "7e5a6721-23e3-4ed8-b47f-23890a197e6a",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "tables": {
     "app_state": {
@@ -1348,6 +1348,13 @@
         "overrides": {
           "name": "overrides",
           "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "is_product_tag": {
+          "name": "is_product_tag",
+          "type": "integer",
           "primaryKey": false,
           "notNull": false,
           "autoincrement": false

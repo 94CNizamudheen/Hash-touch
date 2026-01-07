@@ -18,10 +18,6 @@ export default function QueueLogout() {
 
 
     const handleLogout = async () => {
-        if (!confirm("Are you sure you want to logout? All data will be cleared.")) {
-            return;
-        }
-
         setIsLoggingOut(true);
         try {
             await logoutService.logout();

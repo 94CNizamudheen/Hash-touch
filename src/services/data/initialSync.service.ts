@@ -133,13 +133,13 @@ export async function initialSync(
         price: Number(p.price ?? 0),
         active: Boolean(p.active),
         sort_order: Number(p.sort_order ?? 0),
-
         created_at: p.created_at ?? null,
         updated_at: p.updated_at ?? null,
         deleted_at: p.deleted_at ?? null,
-
+        
         media: JSON.stringify(p.media ?? []),
         overrides: overridesStr,
+        is_product_tag:p.is_product_tag,
       };
     })
   )

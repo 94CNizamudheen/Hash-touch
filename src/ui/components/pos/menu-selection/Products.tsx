@@ -42,6 +42,9 @@ export default function Products({
     }
   }
 
+  // Filter out products where is_product_tag === true
+  const displayProducts = filteredItems.filter(item => !item.is_product_tag);
+
   const handleProductClick = async (item: Product) => {
     try {
       const productData = await getProductWithCombinations(item.id);
@@ -108,9 +111,9 @@ export default function Products({
               <div className="text-center py-10 text-muted-foreground">
                 {t("Loading products...")}
               </div>
-            ) : filteredItems.length > 0 ? (
+            ) : displayProducts.length > 0 ? (
               <div className="grid gap-4 grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 content-start">
-                {filteredItems.map((item) => (
+                {displayProducts.map((item) => (
                   <ProductCard
                     key={item.id}
                     name={item.name}
@@ -145,8 +148,8 @@ export default function Products({
               <div className="col-span-full text-center py-10 text-muted-foreground">
                 {t("Loading products...")}
               </div>
-            ) : filteredItems.length > 0 ? (
-              filteredItems.map((item) => (
+            ) : displayProducts.length > 0 ? (
+              displayProducts.map((item) => (
                 <ProductCard
                   key={item.id}
                   name={item.name}

@@ -1,4 +1,3 @@
-"use client"
 
 import { useCallback, useEffect, useState } from "react"
 
@@ -13,7 +12,7 @@ import SplashScreen from "../common/SplashScreen"
 export default function QueueDisplay() {
   const [tokens, setTokens] = useState<QueueTokenData[]>([])
   const [loading, setLoading] = useState(false)
-  const [lastSync, setLastSync] = useState<string>("")
+
   const { isConnected } = useQueueWebSocket()
 
   const fetchTokens = useCallback(async () => {
@@ -22,15 +21,7 @@ export default function QueueDisplay() {
       const listed = await queueService.getActiveTokens()
       console.log("listed", listed)
       setTokens(listed)
-      const now = new Date()
-      setLastSync(
-        now.toLocaleTimeString("en-US", {
-          hour: "2-digit",
-          minute: "2-digit",
-          second: "2-digit",
-          hour12: true,
-        }),
-      )
+
     } catch (error) {
       console.error("❌ Failed to fetch queue tokens", error)
     } finally {
@@ -74,11 +65,7 @@ export default function QueueDisplay() {
       <QueueHeader wsConnected={isConnected} />
 
       {/* ------------------------------ Last Sync Bar -------------------------------- */}
-      <div
-        className="px-4 py-3 text-center border-b border-border bg-secondary "
-        
-      >
-      </div>
+
 
       {/* ------------------------------ Ready for pick up (Called Tokens) -------------------------------- */}
       <section className="flex-1 flex flex-col px-4 py-6 overflow-hidden">

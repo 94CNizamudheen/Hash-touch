@@ -1,6 +1,7 @@
 import { sqliteTable, text, integer, real } from "drizzle-orm/sqlite-core";
 import { v4 as uuidv4 } from "uuid";
 
+
 export const productSqlite = sqliteTable("products", {
   id: text("id").primaryKey().$defaultFn(() => uuidv4()),
 
@@ -21,4 +22,5 @@ export const productSqlite = sqliteTable("products", {
 
   media: text("media"),
   overrides: text("overrides"),
+  isProductTag:integer("is_product_tag")
 });

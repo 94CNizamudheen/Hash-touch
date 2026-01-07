@@ -206,7 +206,8 @@ CREATE TABLE `products` (
 	`updated_at` text,
 	`deleted_at` text,
 	`media` text,
-	`overrides` text
+	`overrides` text,
+	`is_product_tag` integer
 );
 --> statement-breakpoint
 CREATE TABLE `queue_tokens` (

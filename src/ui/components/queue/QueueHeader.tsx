@@ -13,23 +13,16 @@ export default function QueueHeader({ wsConnected }: QueueHeaderProps) {
   const navigate = useNavigate();
 
   return (
-    <header className="flex items-center justify-between px-4 py-3 bg-slate-900 border-b border-slate-700">
+    <header className="flex items-center justify-between px-4 py-3 border-b border-border ">
       {/* Left: Logo + Title */}
       <div className="flex items-center gap-3">
         <img
           src={logo}
           alt="Logo"
-          className="h-20 w-50 object-contain"
+          className="h-10 w-50 object-contain"
         />
-        <div className="ml-3">
-          <h1 className=" text-lg md:text-xl font-bold text-blue-400">
-            Queue Display
-          </h1>
-          <p className="text-xs text-slate-400">
-            Now Serving
-          </p>
-        </div>
       </div>
+      
 
       {/* Right: Wifi + Settings */}
       <div className="flex items-center gap-3">

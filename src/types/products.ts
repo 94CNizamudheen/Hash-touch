@@ -21,6 +21,7 @@ export interface Product {
   is_sold_out?: number;
   media?: string;
   overrides?: string | ProductOverride[];
+  is_product_tag?:boolean;
 }
 
 export interface Category {
