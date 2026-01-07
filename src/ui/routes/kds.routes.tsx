@@ -5,7 +5,8 @@ import CompletedTickets from "@/ui/components/kds/tickets/CompletedTickets";
 import KdsSettingsPage from "@/ui/components/kds/settings/KdsSettingsPage";
 import KdsConnectionPage from "@/ui/components/kds/settings/KdsConnectionPage";
 import { KdsSettingsProvider } from "../context/KdsSettingsContext";
-import { KdsWebSocketProvider } from "../context/KdsWebSocketContext";
+import { KdsWebSocketProvider } from "../context/web-socket/KdsWebSocketContext";
+
 
 export default function KdsRoutes() {
   return (

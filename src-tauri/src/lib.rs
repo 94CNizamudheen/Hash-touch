@@ -9,6 +9,7 @@ use tauri::Manager;
 
 use websocket::WebSocketServer;
 use websocket::event_bus::EventBus;
+use websocket::ws_routes::register_ws_routes;
 
 /// ==============================
 /// Shared App State
@@ -52,14 +53,25 @@ pub fn run() {
 
             let ws_server = Arc::new(WebSocketServer::new(event_tx));
 
-            // Store in Tauri state
-            app.manage(WsState {
+            // Store in Tauri state - DON'T wrap in Arc again!
+            let ws_state = WsState {
                 server: ws_server.clone(),
-            });
+            };
+
+            // Manage the raw WsState, not Arc<WsState>
+            app.manage(ws_state.clone());
 
             app.manage(EventBusState {
                 bus: event_bus.clone(),
             });
+
+            // ⚠️ REGISTER WEBSOCKET ROUTES HERE
+            let event_bus_for_routes = Arc::new(event_bus.clone());
+            let ws_state_for_routes = Arc::new(ws_state.clone());
+            tauri::async_runtime::spawn(async move {
+                register_ws_routes(event_bus_for_routes, ws_state_for_routes).await;
+            });
+            log::info!("✅ WebSocket routes registration initiated");
 
             // Start EventBus
             tauri::async_runtime::spawn(async move {
@@ -98,7 +110,7 @@ pub fn run() {
                         }
                     });
                 } else {
-                    log::info!("📴 Non-POS device ({}) - Running as client only", role);
+                    log::info!("🔴 Non-POS device ({}) - Running as client only", role);
                 }
             } else {
                 log::info!("⏳ No device role set yet - WebSocket server will start when POS role is selected");

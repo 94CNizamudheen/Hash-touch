@@ -5,7 +5,7 @@ import { deviceService } from "@/services/local/device.local.service";
 import { useAppState } from "@/ui/hooks/useAppState";
 import { kdsTicketLocal } from "@/services/local/kds-ticket.local.service";
 import { localEventBus, LocalEventTypes } from "@/services/eventbus/LocalEventBus";
-import { useNotificationSound } from "../hooks/useNotificationSound";
+import { useNotificationSound } from "../../hooks/useNotificationSound";
 
 interface KdsWebSocketContextType {
   isConnected: boolean;

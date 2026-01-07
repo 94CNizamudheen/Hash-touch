@@ -4,14 +4,14 @@ export type QueueStatus = "WAITING" | "CALLED" | "SERVED";
 
 export interface QueueTokenData {
   id: string;
-  ticketId: string;
-  ticketNumber: string;
-  tokenNumber: number;
+  ticket_id: string;
+  ticket_number: string;
+  token_number: number;
   status: QueueStatus;
   source?: "POS" | "KDS";
-  locationId?: string;
-  orderMode?: string;
-  createdAt: string;
-  calledAt?: string;
-  servedAt?: string;
+  location_id?: string;
+  order_mode?: string;
+  created_at: string;
+  called_at?: string;
+  served_at?: string;
 }

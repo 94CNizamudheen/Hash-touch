@@ -8,7 +8,6 @@ import { kdsService } from "@/services/core/kds.service";
 import { localEventBus, LocalEventTypes } from "@/services/eventbus/LocalEventBus";
 import type { Ticket, TicketItem } from "./ticket.types";
 import type { KDSTicketData, KDSTicketItem } from "@/types/kds";
-import { ticketLocal } from "@/services/local/ticket.local.service";
 
 /**
  * Transform KDSTicketData from database to Ticket format for UI
@@ -104,34 +103,32 @@ const Tickets = () => {
 
   // Handle marking ticket as done
   const handleMarkAsDone = useCallback(async (ticketId: string) => {
-    try {
-      // Get the original KDS ticket data
-      const kdsTicket = kdsTicketsMap.get(ticketId);
+  try {
+    const kdsTicket = kdsTicketsMap.get(ticketId);
 
-      if (!kdsTicket) {
-        console.error('[Tickets] Could not find KDS ticket data for:', ticketId);
-        return;
-      }
-
-      // Optimistically remove from UI
-      setTickets((prev) => prev.filter((ticket) => ticket.id !== ticketId));
-
-      // Update status to READY in database and broadcast to POS/Queue
-      await kdsService.markTicketReady(
-        ticketId,
-        kdsTicket.ticketNumber,
-        kdsTicket.orderId,
-        kdsTicket.tokenNumber
-      );
-      await ticketLocal.updateOrderStatus(ticketId,"READY")
-
-      console.log('[Tickets] ✅ Ticket marked as READY and broadcasted to POS/Queue');
-    } catch (error) {
-      console.error('[Tickets] Failed to mark ticket as done:', error);
-      // Reload tickets to restore UI state on error
-      await loadTickets();
+    if (!kdsTicket) {
+      console.error('[KDS] Ticket not found:', ticketId);
+      return;
     }
-  }, [kdsTicketsMap, loadTickets]);
+
+    // Optimistic UI update
+    setTickets((prev) => prev.filter((t) => t.id !== ticketId));
+
+    // KDS → POS (READY)
+    await kdsService.markTicketReady(
+      ticketId,
+      kdsTicket.ticketNumber,
+      kdsTicket.orderId,
+      kdsTicket.tokenNumber
+    );
+
+    console.log('[KDS] ✅ Ticket marked READY and sent to POS');
+  } catch (error) {
+    console.error('[KDS] Failed to mark ticket READY:', error);
+    await loadTickets(); 
+  }
+}, [kdsTicketsMap, loadTickets]);
+
 
   // Handle toggling item status
   const handleToggleItem = (ticketId: string, itemId: string) => {

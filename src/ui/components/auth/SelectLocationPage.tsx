@@ -122,7 +122,7 @@ export default function SelectLocationPage({
         ) : (
           <>
             {/* Location Grid */}
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-3 gap-3">
               {locations.map((loc) => {
                 const isActive = selected?.id === loc.id;
 

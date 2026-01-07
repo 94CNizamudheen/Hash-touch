@@ -16,16 +16,16 @@ export const queueService = {
     // Map DB shape → UI shape (if needed)
     return tokens.map((t) => ({
       id: t.id,
-      ticketId: t.ticketId,
-      ticketNumber: t.ticketNumber,
-      tokenNumber: t.tokenNumber,
+      ticket_id: t.ticket_id,
+      ticket_number: t.ticket_number,
+      token_number: t.token_number,
       status: t.status as QueueStatus,
       source: t.source,
-      locationId: t.locationId,
-      orderMode: t.orderMode,
-      createdAt: t.createdAt,
-      calledAt: t.calledAt,
-      servedAt: t.servedAt,
+      location_id: t.location_id,
+      order_mode: t.order_mode,
+      created_at: t.created_at,
+      called_at: t.called_at,
+      served_at: t.served_at,
     }));
   },
 

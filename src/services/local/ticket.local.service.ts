@@ -75,7 +75,7 @@ export const ticketLocal = {
     error?: string
   ): Promise<void> {
     return invoke("update_ticket_sync_status", {
-      ticket_id:ticketId,
+      ticketId,
       status,
       error: error || null,
     });
@@ -86,8 +86,8 @@ export const ticketLocal = {
     orderStatus: "IN_PROGRESS" | "READY" | "COMPLETED"
   ): Promise<void> {
     return invoke("update_ticket_order_status", {
-      ticket_id:ticketId,
-      order_status:orderStatus,
+      ticketId,
+      orderStatus,
     });
   },
 

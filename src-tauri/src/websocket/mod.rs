@@ -11,7 +11,7 @@ use tokio_tungstenite::{accept_async, tungstenite::Message};
 
 pub mod event_bus;
 pub mod printer;
-
+pub mod ws_routes;
 /// ==============================
 /// Device Message (shared payload)
 /// ==============================

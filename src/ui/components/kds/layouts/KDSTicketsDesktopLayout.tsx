@@ -1,7 +1,7 @@
 import { Outlet } from "react-router-dom";
 import KDSTicketHeader from "./KDSTicketHeader";
 import KDSTicketsFooter from "./KDSTicketsFooter";
-import { useKdsWebSocket } from "@/ui/context/KdsWebSocketContext";
+import { useKdsWebSocket } from "@/ui/context/web-socket/KdsWebSocketContext";
 
 const KDSTicketsDesktopLayout = () => {
   const { isConnected } = useKdsWebSocket();

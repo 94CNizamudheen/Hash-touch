@@ -1,7 +1,7 @@
 import { Outlet } from "react-router-dom";
 import MobileKdsHeader from "./MobileKdsHeader";
 import MobileKdsFooter from "./MobileKdsFooter";
-import { useKdsWebSocket } from "@/ui/context/KdsWebSocketContext";
+import { useKdsWebSocket } from "@/ui/context/web-socket/KdsWebSocketContext";
 
 const KdsMobileLayout = () => {
   const { isConnected } = useKdsWebSocket();

@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { Wifi, WifiOff, ArrowLeft } from "lucide-react";
 import { appStateApi } from "@/services/tauri/appState";
 import { useAppState } from "@/ui/hooks/useAppState";
-import { useKdsWebSocket } from "@/ui/context/KdsWebSocketContext";
+import { useKdsWebSocket } from "@/ui/context/web-socket/KdsWebSocketContext";
 import SplashScreen from "@/ui/components/common/SplashScreen";
 
 export default function KdsConnectionPage() {
