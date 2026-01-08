@@ -20,7 +20,8 @@ pub fn get_app_state(conn: &Connection) -> anyhow::Result<AppState> {
                kds_view_mode,
                kds_settings,
                ws_server_mode,
-               ws_server_url
+               ws_server_url,
+               setup_code
         FROM app_state
         WHERE id = 1
         "#,
@@ -52,6 +53,8 @@ pub fn get_app_state(conn: &Connection) -> anyhow::Result<AppState> {
                 kds_settings: row.get(14)?,
                 ws_server_mode: row.get(15)?,
                 ws_server_url: row.get(16)?,
+                setup_code:row.get(17)?,
+
             })
         },
     ) {
@@ -82,6 +85,7 @@ pub fn get_app_state(conn: &Connection) -> anyhow::Result<AppState> {
                 kds_settings: Some("{}".to_string()),
                 ws_server_mode: Some(0),
                 ws_server_url: Some("ws://localhost:9001".to_string()),
+                setup_code:Some("grid".to_string()),
             })
         }
 
@@ -102,24 +106,3 @@ pub fn update_app_state(
     Ok(())
 }
 
-
-// pub fn clear_device_data(conn: &Connection) -> anyhow::Result<()> {
-//     conn.execute(
-//         r#"
-//         UPDATE app_state
-//         SET selected_location_id = NULL,
-//             selected_location_name = NULL,
-//             order_mode_ids = NULL,
-//             order_mode_names = NULL,
-//             selected_order_mode_id = NULL,
-//             selected_order_mode_name = NULL,
-//             device_role = NULL,
-//             kds_view_mode = 'grid',
-//             kds_settings = '{}',
-//             updated_at = CURRENT_TIMESTAMP
-//         WHERE id = 1
-//         "#,
-//         [],
-//     )?;
-//     Ok(())
-// }

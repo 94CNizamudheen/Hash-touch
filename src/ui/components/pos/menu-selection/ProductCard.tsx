@@ -1,4 +1,4 @@
-
+import { useSetup } from "@/ui/context/SetupContext";
 interface ProductProps {
   name: string
   price: number
@@ -8,6 +8,7 @@ interface ProductProps {
 }
 
 export default function ProductCard({ name, price, image, isSoldOut = false, onClick }: ProductProps) {
+  const { currencyCode } = useSetup();
   const hasImage = Boolean(image)
   const displayPrice = typeof price === "number" ? price : 0
 
@@ -56,7 +57,7 @@ export default function ProductCard({ name, price, image, isSoldOut = false, onC
 
               <div className="w-full flex justify-end pt-2">
                 <p className={`font-bold text-sm ${isSoldOut ? "text-muted-foreground" : "text-primary"}`}>
-                  ${displayPrice.toFixed(2)}
+                   {currencyCode} {displayPrice.toFixed(2)}
                 </p>
               </div>
             </div>
@@ -85,7 +86,7 @@ export default function ProductCard({ name, price, image, isSoldOut = false, onC
 
             <div className="w-full flex justify-end pt-2">
               <p className={`font-bold text-sm ${isSoldOut ? "text-muted-foreground" : "text-primary"}`}>
-                ${displayPrice.toFixed(2)}
+                 {currencyCode}  {displayPrice.toFixed(2)}
               </p>
             </div>
           </div>

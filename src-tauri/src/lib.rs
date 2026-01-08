@@ -144,11 +144,20 @@ pub fn run() {
             commands::app_state::set_ws_server_mode,
             commands::app_state::set_ws_server_url,
             commands::app_state::get_local_ip,
+            commands::app_state::set_setup_code,
+            commands::app_state::open_role_window,
+            commands::app_state::get_configured_roles,
 
             // Device
             commands::device::get_devices,
             commands::device::save_device,
             commands::device::get_device,
+
+            //Setup
+
+            commands::setup::save_setup,
+            commands::setup::get_setup_by_code,
+
 
             // Products
             commands::product::get_products,

@@ -3,6 +3,7 @@ import { useTranslation } from "react-i18next";
 import { useCharges } from "@/ui/hooks/useCharges";
 import type { CartItem } from "@/types/cart";
 import CartCard from "./CartCard";
+import { useSetup } from "@/ui/context/SetupContext";
 
 interface OrderSidebarProps {
   items: CartItem[];
@@ -23,11 +24,12 @@ export default function OrderSidebar({
   const { t } = useTranslation();
   const isMobileOverlay = isOpen && window.innerWidth < 1024;
 
-  const { charges, totalCharges, totalTax } = useCharges(items, total);
+  const { charges, totalCharges } = useCharges(items, total);
 
   const subtotal = total;
   const grandTotal = subtotal + totalCharges;
   const balance = tenderedAmount - grandTotal;
+      const { currencyCode } = useSetup();
 
 
   return (
@@ -50,7 +52,7 @@ export default function OrderSidebar({
 
 
 
-        <div className="flex-1 overflow-y-auto px-3 py-3 space-y-2 items-center mt-2">
+        <div className="flex-1 overflow-y-auto px-2 py-3 space-y-2 items-center mt-2">
           {items.length > 0 ? (
             items.map((item) => (
               <CartCard
@@ -72,7 +74,7 @@ export default function OrderSidebar({
           <div className="px-4 py-3 space-y-1 text-xs">
             <div className="flex justify-between">
               <span>{t("Sub Total")}</span>
-              <span>${subtotal.toFixed(2)}</span>
+              <span>{currencyCode} {subtotal.toFixed(2)}</span>
             </div>
 
             {/* Display individual charges */}
@@ -85,32 +87,26 @@ export default function OrderSidebar({
                   {charge.name} ({charge.percentage}%)
                 </span>
 
-                <span>${charge.amount.toFixed(2)}</span>
+                <span>{currencyCode} {charge.amount.toFixed(2)}</span>
               </div>
             ))}
 
 
-            {/* Display total tax if there are any tax charges */}
-            {totalTax > 0 && (
-              <div className="flex justify-between font-medium">
-                <span>{t("Total Tax")}</span>
-                <span>${totalTax.toFixed(2)}</span>
-              </div>
-            )}
 
-            <div className="flex justify-between font-semibold text-sm pt-1 border-t border-border">
+
+            <div className="flex justify-between font-semibold text-md pt-1 border-t border-border">
               <span>{t("Grand Total")}</span>
-              <span>${grandTotal.toFixed(2)}</span>
+              <span>{currencyCode} {grandTotal.toFixed(2)}</span>
             </div>
             {tenderedAmount > 0 && (
               <>
                 <div className="flex justify-between text-xs pt-1">
                   <span>{t("Tendered")}</span>
-                  <span>${tenderedAmount.toFixed(2)}</span>
+                  <span>{currencyCode} {tenderedAmount.toFixed(2)}</span>
                 </div>
                 <div className={`flex justify-between font-bold text-sm pt-1 ${balance >= 0 ? 'text-green-600' : 'text-destructive'}`}>
                   <span>{t("Balance")}</span>
-                  <span>${Math.abs(balance).toFixed(2)} {balance < 0 ? `(${t("Due")})` : `(${t("Change")})`}</span>
+                  <span>{currencyCode} {Math.abs(balance).toFixed(2)} {balance < 0 ? `(${t("Due")})` : `(${t("Change")})`}</span>
                 </div>
               </>
             )}

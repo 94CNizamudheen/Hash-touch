@@ -43,7 +43,7 @@ export default function TenantLogin({
   const form = useForm<TenantLoginForm>({
     resolver: zodResolver(tenantSchema),
     defaultValues: {
-      domain: "default_tenant",
+      domain: "",
       email: "",
       password: "",
     },

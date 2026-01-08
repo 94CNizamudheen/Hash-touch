@@ -1,5 +1,6 @@
 import type { Product } from "@/types/products";
 import { useAnimation } from "@/ui/context/AnimationContext";
+import { useSetup } from "@/ui/context/SetupContext";
 
 function getImageFromMedia(media?: string): string | undefined {
   try {
@@ -17,6 +18,7 @@ interface ProductCardMobileProps {
 }
 
 const ProductCardMobile = ({ item, onAdd }: ProductCardMobileProps) => {
+  const {currencyCode,}= useSetup()
   const { triggerAnimation } = useAnimation();
 
   const image = getImageFromMedia(item.media);
@@ -108,7 +110,7 @@ const ProductCardMobile = ({ item, onAdd }: ProductCardMobileProps) => {
               isSoldOut ? "text-muted-foreground" : "text-blue-600"
             }`}
           >
-            ${item.price.toFixed(2)}
+              {currencyCode} {item.price.toFixed(2)}
           </span>
         </div>
       </div>

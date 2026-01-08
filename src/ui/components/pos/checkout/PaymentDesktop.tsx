@@ -12,11 +12,13 @@ import { ticketService } from "@/services/data/ticket.service";
 import { ticketLocal } from "@/services/local/ticket.local.service";
 import { printerService, type ReceiptData } from "@/services/local/printer.local.service";
 import { websocketService } from "@services/websocket/websocket.service";
+
 import LeftActionRail from "./LeftActionRail";
 import OrderSidebar from "./OrderSidebar";
 import CenterPaymentContent from "./CenterPaymentContent";
 import PaymentMethodsSidebar from "./PaymentMethodSidebar";
 import PaymentSuccessModal from "./PaymentSuccessModal";
+
 import { transactionTypeLocal } from "@/services/local/transaction-type.local.service";
 import { useNotification } from "@/ui/context/NotificationContext";
 
@@ -26,30 +28,25 @@ export default function PaymentDesktop() {
   const { state: appState } = useAppState();
   const { paymentMethods } = usePaymentMethods();
   const { transactionTypes } = useTransactionTypes();
+  const { showNotification } = useNotification();
 
   const subtotal = items.reduce((s, i) => s + i.price * i.quantity, 0);
   const { charges, totalCharges } = useCharges(items, subtotal);
   const total = subtotal + totalCharges;
 
-  const [inputValue, setInputValue] = useState("0.00");
+  const [inputValue, setInputValue] = useState("");
   const [selectedMethod, setSelectedMethod] = useState("");
   const [showDrawer, setShowDrawer] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
   const [loading, setLoading] = useState(false);
   const [final, setFinal] = useState({ total: 0, balance: 0 });
-  const [isPaymentReady, setIsPaymentReady] = useState(false);
-  const {showNotification}= useNotification();
 
-useEffect(() => {
-  const loadTransactionTypes = async () => {
-    const transactionTypes = await transactionTypeLocal.getAllTransactionTypes();
-    console.log("transaction types stored in db", transactionTypes);
-  };
+  /* Load transaction types */
+  useEffect(() => {
+    transactionTypeLocal.getAllTransactionTypes();
+  }, []);
 
-  loadTransactionTypes();
-}, []);
-
-  // Set default payment method when payment methods are loaded
+  /* Default payment method */
   useEffect(() => {
     if (paymentMethods.length > 0 && !selectedMethod) {
       setSelectedMethod(paymentMethods[0].name);
@@ -58,36 +55,34 @@ useEffect(() => {
 
   if (!isHydrated) return null;
 
-  const tendered = parseFloat(inputValue) || 0;
-  const balance = tendered - total;
+  /* 🔑 DERIVED PAYMENT STATE */
+  const tendered = parseFloat(inputValue);
+  const isPaymentReady =
+    !isNaN(tendered) &&
+    tendered > 0 &&
+    tendered >= total;
 
-  console.log("tendered amount:", tendered.toFixed(2))
-  console.log("total amount:", total.toFixed(2))
-  console.log("balance amount:", balance.toFixed(2))
+  const balance = isNaN(tendered) ? 0 : tendered - total;
 
+  /* Keypad handler */
   const onKey = (k: string) => {
-    if (k === "C") return setInputValue("0.00");
+    if (k === "C") return setInputValue("");
     if (k === "." && inputValue.includes(".")) return;
-    setInputValue((p) => (p === "0.00" || p === "0" ? k : p + k));
+
+    setInputValue((p) => (p === "" || p === "0" ? k : p + k));
   };
 
+  /* Payment handler */
   const onPay = async (paymentMethodName?: string) => {
-    // Use provided payment method or fall back to state
-    const methodToUse = paymentMethodName || selectedMethod;
-
-    // Round to 2 decimals for comparison to avoid floating point issues
-    const tenderedRounded = Math.round(tendered * 100) / 100;
-    const totalRounded = Math.round(total * 100) / 100;
-
-    if (tenderedRounded < totalRounded) {
-      showNotification.error("Insufficient payment")
+    if (!isPaymentReady) {
+      showNotification.error("Insufficient payment");
       return;
     }
 
+    const methodToUse = paymentMethodName || selectedMethod;
     setLoading(true);
 
     try {
-      // Validate appState
       if (
         !appState?.tenant_domain ||
         !appState?.access_token ||
@@ -98,27 +93,26 @@ useEffect(() => {
         throw new Error("Missing required application state");
       }
 
-      // Find selected payment method to get its ID
-      const selectedPaymentMethod = paymentMethods.find(pm => pm.name === methodToUse);
+      const selectedPaymentMethod = paymentMethods.find(
+        (pm) => pm.name === methodToUse
+      );
       if (!selectedPaymentMethod) {
         throw new Error(`Payment method "${methodToUse}" not found`);
       }
 
-      // Find SALE and PAYMENT transaction types
       const saleTransactionType = transactionTypes.find(tt => tt.name === "SALE");
       const paymentTransactionType = transactionTypes.find(tt => tt.name === "PAYMENT");
 
       if (!saleTransactionType || !paymentTransactionType) {
-        throw new Error("Required transaction types (SALE, PAYMENT) not found. Please sync data.");
+        throw new Error("Transaction types not found");
       }
-      // Get business date (today in YYYY-MM-DD format)
+
       const businessDate = new Date().toISOString().split("T")[0];
-      // Get sequential queue number for this location and date
       const queueNumber = await ticketLocal.getNextQueueNumber(
         appState.selected_location_id,
         businessDate
       );
-      // Build ticket request
+
       const ticketRequest = buildTicketRequest({
         items,
         charges,
@@ -135,13 +129,9 @@ useEffect(() => {
         saleTransactionTypeId: saleTransactionType.id,
         paymentTransactionTypeId: paymentTransactionType.id,
         transactionTypes,
-        queueNumber
-
+        queueNumber,
       });
 
-      console.log("📝 Creating ticket:", ticketRequest);
-
-      // Create ticket (will handle online/offline automatically)
       const result = await ticketService.createTicket(
         appState.tenant_domain,
         appState.access_token,
@@ -149,16 +139,14 @@ useEffect(() => {
       );
 
       if (result.offline) {
-        showNotification.warning("Ticket saved offline and will sync when internet is available");
+        showNotification.warning("Ticket saved offline and will sync later");
       } else {
-        showNotification.success("✅ Ticket created successfully online");
+        showNotification.success("Ticket created successfully");
       }
 
-      // Dispatch custom event to notify Activity page
       window.dispatchEvent(new CustomEvent("ticketCreated"));
 
-      // Broadcast order to KDS and Queue displays via WebSocket
-      // Note: KDS devices will receive this broadcast and save to their local database
+      /* Broadcast to KDS */
       try {
         await websocketService.broadcastOrder({
           ticket_id: result.ticketId || `offline-${Date.now()}`,
@@ -173,45 +161,42 @@ useEffect(() => {
             name: item.name,
             quantity: item.quantity,
             price: item.price,
-            notes: item.notes || '',
+            notes: item.notes || "",
             modifiers: item.modifiers || [],
             completed: false,
           })),
           created_at: new Date().toISOString(),
         });
-        console.log("📡 Order broadcasted to KDS and Queue displays");
-      } catch (error) {
-        showNotification.warning(`Failed to broadcast order:${error}`)
+      } catch (err) {
+        showNotification.warning("Failed to broadcast order");
       }
 
-      // Check if payment method is cash (handle variations)
-      const paymentMethodName = selectedPaymentMethod.name.toLowerCase().trim();
-      const isCashPayment = paymentMethodName === "cash" || paymentMethodName.includes("cash");
+      const isCash = selectedPaymentMethod.name
+        .toLowerCase()
+        .includes("cash");
 
-      if (isCashPayment) {
+      if (isCash) {
         setShowDrawer(true);
       } else {
-      
         setFinal({ total, balance });
         await clear();
         setShowSuccess(true);
       }
-    } catch (error) {
-      showNotification.error(`Failed to create ticket: ${error instanceof Error ? error.message : "Unknown error"}`);
+    } catch (error: any) {
+      showNotification.error(error.message || "Payment failed");
     } finally {
       setLoading(false);
     }
   };
 
   const onComplete = async () => {
-    setLoading(true);
     setFinal({ total, balance });
     setShowDrawer(false);
     setShowSuccess(true);
     await clear();
-    setLoading(false);
   };
 
+  /* 🖨️ PRINT RECEIPT */
   const handlePrintReceipt = async () => {
     try {
       const receiptData: ReceiptData = {
@@ -237,10 +222,9 @@ useEffect(() => {
       };
 
       await printerService.printReceiptToAllActive(receiptData);
-      alert("Receipt printed successfully!");
+      showNotification.success("Receipt printed successfully");
     } catch (error) {
-      console.error("Failed to print receipt:", error);
-      alert(`Failed to print receipt: ${error}`);
+      showNotification.error("Failed to print receipt");
     }
   };
 
@@ -254,19 +238,17 @@ useEffect(() => {
         isOpen
         onClose={() => {}}
         onBackToMenu={() => navigate("/pos")}
-        tenderedAmount={tendered}
+        tenderedAmount={tendered || 0}
       />
 
-      <div className="flex-1 p-6 overflow-hidden ">
+      <div className="flex-1 p-6 overflow-hidden">
         <CenterPaymentContent
           total={total}
           balance={balance}
           inputValue={inputValue}
           setInputValue={setInputValue}
-          onPay={onPay}
           onQuick={(n) => setInputValue(n.toFixed(2))}
           onKey={onKey}
-          onPaymentReady={() => setIsPaymentReady(true)}
         />
       </div>
 

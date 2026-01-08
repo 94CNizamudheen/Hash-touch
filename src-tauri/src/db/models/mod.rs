@@ -33,3 +33,5 @@ pub mod printer;
 pub mod printer_repo;
 pub mod queue_token;
 pub mod queue_token_repo;
+pub mod setup;
+pub mod setup_repo;

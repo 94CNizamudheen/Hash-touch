@@ -53,6 +53,7 @@ const MenuSelectionSidebarMobile = () => {
   const { showNotification } = useNotification();
   const [isSyncing, setIsSyncing] = useState(false);
   const [syncStatus, setSyncStatus] = useState<"syncing" | "synced">("syncing");
+  // const [logoutAfterShift, setLogoutAfterShift] = useState(false);
 
   // Load pending tickets count
   useEffect(() => {
@@ -210,13 +211,17 @@ const MenuSelectionSidebarMobile = () => {
 
       {showEndShift && (
         <EndShiftConfirmModal
-          onClose={() => setShowEndShift(false)}
-          onConfirm={() => {
+          onClose={() => {
             setShowEndShift(false);
-            showNotification.success(t("Work shift ended successfully"), 3000);
+          }}
+          onConfirm={async () => {
+            setShowEndShift(false);
+            showNotification.info(t("Logging out..."), 1000);
+            await handleConfirmLogout();
           }}
         />
       )}
+
 
       {showLogoutConfirm && (
         <LogoutConfirmModal
@@ -313,10 +318,10 @@ const MenuSelectionSidebarMobile = () => {
                     : t(item.title)}
                 </p>
                 {item.title === "Activities" && pendingTicketsCount > 0 && (
-                      <span className="-right-1 bg-destructive text-background text-xs rounded-full w-4 h-4 flex items-center justify-center">
-                        {pendingTicketsCount > 9 ? "9+" : pendingTicketsCount}
-                      </span>
-                    )}
+                  <span className="-right-1 bg-destructive text-background text-xs rounded-full w-4 h-4 flex items-center justify-center">
+                    {pendingTicketsCount > 9 ? "9+" : pendingTicketsCount}
+                  </span>
+                )}
               </div>
             ))}
           </div>

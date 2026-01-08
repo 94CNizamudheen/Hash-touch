@@ -39,7 +39,7 @@ export default function PaymentMobile() {
     const [final, setFinal] = useState({ total: 0, balance: 0 });
     const [showActions, setShowActions] = useState(false);
     const [loading, setLoading] = useState(false);
-    const [isPaymentReady, setIsPaymentReady] = useState(false);
+    const [isPaymentReady, _setIsPaymentReady] = useState(false);
     const {showNotification}= useNotification()
     // Set default payment method when payment methods are loaded
     useEffect(() => {
@@ -191,10 +191,9 @@ export default function PaymentMobile() {
                     balance={balance}
                     inputValue={inputValue}
                     setInputValue={setInputValue}
-                    onPay={onPay}
                     onQuick={(n) => setInputValue(n.toFixed(2))}
                     onKey={onKey}
-                    onPaymentReady={() => setIsPaymentReady(true)}
+                   
                 />
             </div>
 

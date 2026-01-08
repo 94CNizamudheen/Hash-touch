@@ -1,6 +1,6 @@
 import { Card, CardContent } from "@/ui/shadcn/components/ui/card";
 import { cn } from "@/lib/utils";
-
+import { useSetup } from "@/ui/context/SetupContext";
 interface ProductGroupTagProps {
   title: string;
   price: number;
@@ -38,6 +38,7 @@ export default function ProductGroupTag({
       onQuantityChange(-1);
     }
   };
+      const { currencyCode } = useSetup();
 
   return (
     <Card
@@ -66,7 +67,7 @@ export default function ProductGroupTag({
             {title}
           </p>
           <p className="text-primary font-semibold text-base">
-            ${price.toFixed(2)}
+            {currencyCode} {price.toFixed(2)}
           </p>
         </div>
 

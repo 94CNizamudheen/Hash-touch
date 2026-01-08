@@ -1,4 +1,3 @@
-
 import { invoke } from "@tauri-apps/api/core";
 import type { AppState, DeviceRole } from "@/types/app-state";
 
@@ -12,16 +11,18 @@ export const appStateApi = {
     return invoke("set_tenant", { domain, token });
   },
 
-  setLocation(locationId: string, brandId: string,locationName:string): Promise<void> {
-    return invoke("set_location", { locationId, brandId ,locationName});
+  setLocation(locationId: string, brandId: string, locationName: string): Promise<void> {
+    return invoke("set_location", { locationId, brandId, locationName });
   },
 
   setDeviceRole(role: DeviceRole): Promise<void> {
     return invoke("set_device_role", { role });
   },
-  setOrderMode(orderModeIds: string[],orderModeNames:string[],defaultModeId:string,defaultModeName:string): Promise<void> {
-    return invoke("set_order_modes", { orderModeIds ,orderModeNames,defaultModeId,defaultModeName});
+  
+  setOrderMode(orderModeIds: string[], orderModeNames: string[], defaultModeId: string, defaultModeName: string): Promise<void> {
+    return invoke("set_order_modes", { orderModeIds, orderModeNames, defaultModeId, defaultModeName });
   },
+  
   setTheme(theme: string): Promise<void> {
     return invoke("set_theme", { theme });
   },
@@ -34,11 +35,11 @@ export const appStateApi = {
     return invoke("set_direction", { direction });
   },
 
-  clear():Promise<void>{
+  clear(): Promise<void> {
     return invoke("clear_app_state");
   },
 
-  clearAllData():Promise<void>{
+  clearAllData(): Promise<void> {
     return invoke("clear_all_data");
   },
 
@@ -54,7 +55,21 @@ export const appStateApi = {
   setWsServerUrl(url: string): Promise<void> {
     return invoke("set_ws_server_url", { url });
   },
-  getIpAddress():Promise<string>{
-    return invoke('get_local_ip')
-  }
+  
+  getIpAddress(): Promise<string> {
+    return invoke('get_local_ip');
+  },
+  
+  setSetupCode(setupCode: string): Promise<void> {
+    return invoke("set_setup_code", { setupCode });
+  },
+
+  // Multi-role window support
+  openRoleWindow(role: DeviceRole): Promise<void> {
+    return invoke("open_role_window", { role });
+  },
+
+  getConfiguredRoles(): Promise<DeviceRole[]> {
+    return invoke("get_configured_roles");
+  },
 };

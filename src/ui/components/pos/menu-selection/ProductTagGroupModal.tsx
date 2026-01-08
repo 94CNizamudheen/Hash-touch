@@ -49,6 +49,7 @@ export default function ProductTagGroupModal({
   const [loading, setLoading] = useState(false);
   const [validationErrors, setValidationErrors] = useState<ValidationError[]>([]);
 
+
   const loadProductData = useCallback(async () => {
     setLoading(true);
     try {

@@ -1,4 +1,3 @@
-
 use rusqlite::Connection;
 use crate::db::models::{
     product::Product,
@@ -19,9 +18,15 @@ pub fn get_product_with_combinations(
     let product: Product = conn.query_row(
         r#"
         SELECT
-          id, name, description, price, media, overrides
-        FROM products, is_product_tag
-        WHERE id = ? AND deleted_at IS NULL
+          id,
+          name,
+          description,
+          price,
+          media,
+          overrides
+        FROM products
+        WHERE id = ?
+          AND deleted_at IS NULL
         "#,
         [product_id],
         |row| {
@@ -31,13 +36,16 @@ pub fn get_product_with_combinations(
                 description: row.get(2)?,
                 price: row.get(3)?,
                 media: row.get(4)?,
-                overrides:row.get(5)?,
-                is_product_tag:row.get(6)?,
+                overrides: row.get(5)?,
+
+                // ignored for combos
+                is_product_tag: false,
+
                 code: None,
                 category_id: None,
                 active: true,
                 sort_order: 0,
-                is_sold_out:None,
+                is_sold_out: None,
                 created_at: None,
                 updated_at: None,
                 deleted_at: None,
@@ -49,7 +57,10 @@ pub fn get_product_with_combinations(
     let mut stmt_groups = conn.prepare(
         r#"
         SELECT
-          id, name, min_items, max_items
+          id,
+          name,
+          min_items,
+          max_items
         FROM product_tag_groups
         WHERE product_id = ?
           AND active = 1
@@ -78,11 +89,13 @@ pub fn get_product_with_combinations(
     for g in groups_iter {
         let g = g?;
 
-        // ---------------- TAGS ----------------
         let mut stmt_tags = conn.prepare(
             r#"
             SELECT
-              id, product_id, name, price
+              id,
+              product_id,
+              name,
+              price
             FROM product_tags
             WHERE tag_group_id = ?
               AND active = 1
@@ -100,15 +113,19 @@ pub fn get_product_with_combinations(
             })
         })?;
 
-        let options = tags_iter.filter_map(Result::ok).collect();
+        let options: Vec<ProductTagOption> =
+            tags_iter.filter_map(Result::ok).collect();
 
-        groups_with_tags.push(TagGroupWithTags {
-            id: g.id,
-            name: g.name,
-            min_items: g.min_items,
-            max_items: g.max_items,
-            options,
-        });
+        // only push real groups
+        if !options.is_empty() {
+            groups_with_tags.push(TagGroupWithTags {
+                id: g.id,
+                name: g.name,
+                min_items: g.min_items,
+                max_items: g.max_items,
+                options,
+            });
+        }
     }
 
     Ok(ProductWithCombinations {
@@ -117,7 +134,7 @@ pub fn get_product_with_combinations(
         price: product.price,
         description: product.description,
         media: product.media,
-        overrides:product.overrides,
+        overrides: product.overrides,
         combinations: groups_with_tags,
     })
 }

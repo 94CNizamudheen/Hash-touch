@@ -18,7 +18,8 @@ CREATE TABLE `app_state` (
 	`ws_server_mode` integer DEFAULT 0,
 	`ws_server_url` text DEFAULT 'ws://localhost:9001',
 	`created_at` integer DEFAULT CURRENT_TIMESTAMP,
-	`updated_at` integer DEFAULT CURRENT_TIMESTAMP
+	`updated_at` integer DEFAULT CURRENT_TIMESTAMP,
+	`setup_code` text
 );
 --> statement-breakpoint
 CREATE TABLE `cart_draft` (
@@ -222,6 +223,22 @@ CREATE TABLE `queue_tokens` (
 	`created_at` text DEFAULT CURRENT_TIMESTAMP NOT NULL,
 	`called_at` text,
 	`served_at` text
+);
+--> statement-breakpoint
+CREATE TABLE `setups` (
+	`id` text PRIMARY KEY NOT NULL,
+	`code` text NOT NULL,
+	`name` text,
+	`setup_type` text,
+	`channel` text,
+	`settings` text DEFAULT '{}',
+	`active` integer DEFAULT 1,
+	`sort_order` integer DEFAULT 0,
+	`country_code` text,
+	`currency_code` text,
+	`currency_symbol` text,
+	`created_at` text,
+	`updated_at` text
 );
 --> statement-breakpoint
 CREATE TABLE `tickets` (

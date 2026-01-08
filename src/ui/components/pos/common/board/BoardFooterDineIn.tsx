@@ -6,7 +6,7 @@ import { useTranslation } from "react-i18next";
 import { useCharges } from "@/ui/hooks/useCharges";
 import { useState } from "react";
 import ClearCartConfirmModal from "../../modal/ClearCartConfirmModal";
-
+import { useSetup } from "@/ui/context/SetupContext";
 
 
 const BoardFooterDineIn = () => {
@@ -14,7 +14,7 @@ const BoardFooterDineIn = () => {
   const { items, clearCart } = useCart();
   const { t } = useTranslation();
   const [showClearConfirm, setShowClearConfirm] = useState(false);
-
+  const { currencyCode } = useSetup();
   const handleSettle = () => {
     const total = items.reduce(
       (sum, item) => sum + item.price * (item as any).quantity,
@@ -32,7 +32,7 @@ const BoardFooterDineIn = () => {
   };
 
   const total = items.reduce((sum, item) => sum + item.price * item.quantity, 0);
-  const { charges, totalCharges, totalTax } = useCharges(items, total);
+  const { charges, totalCharges } = useCharges(items, total);
 
   const subtotal = total;
   const grandTotal = subtotal + totalCharges;
@@ -47,7 +47,7 @@ const BoardFooterDineIn = () => {
           <div className="px-4 py-3 space-y-1 text-xs">
             <div className="flex justify-between">
               <span>{t("Sub Total")}</span>
-              <span>${subtotal.toFixed(2)}</span>
+              <span>{currencyCode} {subtotal.toFixed(2)}</span>
             </div>
 
             {charges.filter(charge => charge.applied).map((charge) => (
@@ -55,21 +55,16 @@ const BoardFooterDineIn = () => {
                 <span>
                   {charge.name} ({charge.percentage}%)
                 </span>
-                <span>${charge.amount.toFixed(2)}</span>
+                <span>{currencyCode} {charge.amount.toFixed(2)}</span>
               </div>
             ))}
 
    
-            {totalTax > 0 && (
-              <div className="flex justify-between font-medium">
-                <span>{t("Total Tax")}</span>
-                <span>${totalTax.toFixed(2)}</span>
-              </div>
-            )}
+          
 
             <div className="flex justify-between font-semibold text-sm pt-1 border-t border-border">
               <span>{t("Grand Total")}</span>
-              <span>${grandTotal.toFixed(2)}</span>
+              <span>{currencyCode} {grandTotal.toFixed(2)}</span>
             </div>
 
           </div>

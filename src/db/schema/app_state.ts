@@ -41,4 +41,6 @@ export const appStateSqlite = sqliteTable("app_state", {
 
   updatedAt: integer("updated_at", { mode: "timestamp" })
     .default(sql`CURRENT_TIMESTAMP`),
+    
+  setupCode: text("setup_code"),
 });

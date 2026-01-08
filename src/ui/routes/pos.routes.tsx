@@ -16,10 +16,16 @@ import PrinterSettingsPage from "../components/pos/printer/PrinterSettingsPage";
 import DeviceCommunicationPage from "../components/pos/settings/DeviceCommunicationPage";
 import SoldOutPage from "../components/pos/sold-out/SoldOutPage";
 import { PosWebSocketProvider } from "../context/web-socket/PosWebSocketContext";
+import { SetupProvider } from "../context/SetupContext";
+import { useAppState } from "../context/AppStateContext";
 
 
 export default function PosRoutes() {
+
+  const {state}= useAppState()
+
   return (
+   <SetupProvider setupCode={state.setup_code}  >
     <PosWebSocketProvider>
       <LogoutProvider>
         <CartProvider>
@@ -49,5 +55,6 @@ export default function PosRoutes() {
         </CartProvider>
       </LogoutProvider>
     </PosWebSocketProvider>
+    </SetupProvider>
   );
 }

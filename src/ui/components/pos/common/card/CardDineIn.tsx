@@ -28,6 +28,7 @@ const CardDineIn = ({
   const cardRef = useRef<HTMLDivElement>(null);
   const DELETE_THRESHOLD = -100; // Swipe 100px left to delete
 
+
   const totalPrice = quantity * price;
 
   const handleStart = (clientX: number) => {
@@ -106,7 +107,7 @@ const CardDineIn = ({
           <h3 className="font-semibold text-lg text-foreground flex-1">
             {menu}
           </h3>
-          <span className="font-bold text-xl text-foreground">$ {totalPrice.toFixed(2)}</span>
+          <span className="font-bold text-xl text-foreground"> {totalPrice.toFixed(2)}</span>
         </div>
 
         {/* Modifiers List */}

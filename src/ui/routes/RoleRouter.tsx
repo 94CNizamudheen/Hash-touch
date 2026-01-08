@@ -1,38 +1,35 @@
+import { useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import { useAppState } from "@/ui/hooks/useAppState";
+import type { DeviceRole } from "@/types/app-state";
 
-import { useEffect, useState } from "react";
-import { Navigate } from "react-router-dom";
-import { deviceService, type DeviceRole } from "@services/local/device.local.service";
+interface RoleRouterProps {
+  overrideRole?: DeviceRole | null;
+}
 
-const RoleRouter = () => {
-  const [role, setRole] = useState<DeviceRole | null>(null);
-  const [loading, setLoading] = useState(true);
+export default function RoleRouter({ overrideRole }: RoleRouterProps) {
+  const navigate = useNavigate();
+  const { state } = useAppState();
+  
+  // Use override role if provided, otherwise use app state role
+  const role = overrideRole || state.device_role;
 
   useEffect(() => {
-    deviceService
-      .getDevice()
-      .then((device) => {
-        if (device) {
-          setRole(device.role);
-          (window as any).screenType = device.role;
-        }
-      })
-      .finally(() => setLoading(false));
-  }, []);
+    if (!role) {
+      console.warn("[RoleRouter] No role found");
+      return;
+    }
 
-  if (loading) return <div>Loading device…</div>;
+    console.log(`[RoleRouter] Routing to: /${role.toLowerCase()}`);
+    navigate(`/${role.toLowerCase()}`, { replace: true });
+  }, [role, navigate]);
 
-  switch (role) {
-    case "POS":
-      return <Navigate to="/pos" replace />;
-    case "KIOSK":
-      return <Navigate to="/kiosk" replace />;
-    case "KDS":
-      return <Navigate to="/kds" replace />;
-    case "QUEUE":
-      return <Navigate to="/queue" replace />;
-    default:
-      return <div>No device configured</div>;
-  }
-};
-
-export default RoleRouter;
+  return (
+    <div className="flex items-center justify-center min-h-screen">
+      <div className="text-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+        <p className="mt-4 text-gray-600">Loading {role}...</p>
+      </div>
+    </div>
+  );
+}

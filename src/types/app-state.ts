@@ -22,4 +22,5 @@ export interface AppState {
 
   ws_server_mode?: number | null;
   ws_server_url?: string | null;
+  setup_code?:string|null
 }

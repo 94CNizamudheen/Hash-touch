@@ -247,7 +247,7 @@ const MenuSelectionSidebar = ({
         )}
       >
         {/* ===== Top Navigation ===== */}
-        <div className="flex flex-col gap-1 mt-2 mx-1">
+        <div className="flex flex-col gap-1 mt-2 mx-2">
           {MENUSELECTIONNAVIGATION.map(
             (item) =>
               item.position === "Top" && (

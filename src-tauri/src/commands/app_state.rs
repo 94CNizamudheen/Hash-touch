@@ -1,5 +1,4 @@
-
-use tauri::{AppHandle, Manager};
+use tauri::{AppHandle, Manager, WebviewUrl, WebviewWindowBuilder};
 use crate::db::migrate;
 use crate::db::models::app_state_repo;
 use crate::WsState;
@@ -33,7 +32,7 @@ pub fn set_location(
     app: AppHandle,
     location_id: String,
     brand_id: String,
-    location_name:String
+    location_name: String
 ) -> Result<(), String> {
     let conn = migrate::connection(&app);
 
@@ -43,9 +42,8 @@ pub fn set_location(
     app_state_repo::update_app_state(&conn, "brand_id", &brand_id)
         .map_err(|e| e.to_string())?;
 
-     app_state_repo::update_app_state(&conn, "selected_location_name", &location_name)
+    app_state_repo::update_app_state(&conn, "selected_location_name", &location_name)
         .map_err(|e| e.to_string())?;
-
 
     Ok(())
 }
@@ -73,14 +71,26 @@ pub fn set_device_role(app: AppHandle, role: String) -> Result<(), String> {
     Ok(())
 }
 
+#[tauri::command]
+pub fn set_setup_code(
+    app: AppHandle,
+    setup_code: String,
+) -> Result<(), String> {
+    let conn = migrate::connection(&app);
+
+    app_state_repo::update_app_state(&conn, "setup_code", &setup_code)
+        .map_err(|e| e.to_string())?;
+
+    Ok(())
+}
 
 #[tauri::command]
 pub fn set_order_modes(
     app: AppHandle,
     order_mode_ids: Vec<String>,
     order_mode_names: Vec<String>,
-    default_mode_id:String,
-    default_mode_name:String,
+    default_mode_id: String,
+    default_mode_name: String,
 ) -> Result<(), String> {
     let conn = migrate::connection(&app);
 
@@ -96,11 +106,11 @@ pub fn set_order_modes(
     app_state_repo::update_app_state(&conn, "order_mode_names", &names_json)
         .map_err(|e| e.to_string())?;
 
-     app_state_repo::update_app_state( &conn, "selected_order_mode_id",&default_mode_id,)
-    .map_err(|e| e.to_string())?;
+    app_state_repo::update_app_state(&conn, "selected_order_mode_id", &default_mode_id)
+        .map_err(|e| e.to_string())?;
 
-    app_state_repo::update_app_state( &conn, "selected_order_mode_name", &default_mode_name,)
-    .map_err(|e| e.to_string())?;
+    app_state_repo::update_app_state(&conn, "selected_order_mode_name", &default_mode_name)
+        .map_err(|e| e.to_string())?;
 
     Ok(())
 }
@@ -236,7 +246,7 @@ pub fn clear_all_data(app: AppHandle) -> Result<(), String> {
         "transaction_types",
         "printers",
         "locations",
-        "devices",
+        "device_profiles",
         "cart_draft",
         "work_shift_draft",
         "queue_tokens"
@@ -276,4 +286,107 @@ pub fn clear_all_data(app: AppHandle) -> Result<(), String> {
 
     log::info!("✅ All data cleared successfully");
     Ok(())
+}
+
+
+#[tauri::command]
+pub async fn open_role_window(
+    app: AppHandle,
+    role: String,
+) -> Result<(), String> {
+    let timestamp = chrono::Utc::now().timestamp();
+    let window_label = format!("{}-{}", role.to_lowercase(), timestamp);
+    
+    let title = match role.as_str() {
+        "POS" => "Point of Sale",
+        "KDS" => "Kitchen Display System",
+        "KIOSK" => "Self-Ordering Kiosk",
+        "QUEUE" => "Queue Display",
+        _ => "HashOne Touch",
+    };
+
+    log::info!("🪟 Attempting to open {} window", role);
+
+    // Check if a window with this role already exists
+    let existing_labels: Vec<String> = app.webview_windows()
+        .keys()
+        .filter(|label| label.starts_with(&format!("{}-", role.to_lowercase())))
+        .cloned()
+        .collect();
+
+    if !existing_labels.is_empty() {
+        log::info!("🔍 Found existing {} window: {}", role, existing_labels[0]);
+        // Focus existing window instead of creating a new one
+        if let Some(window) = app.get_webview_window(&existing_labels[0]) {
+            match window.set_focus() {
+                Ok(_) => {
+                    log::info!("✅ Focused existing {} window", role);
+                    return Ok(());
+                }
+                Err(e) => {
+                    log::warn!("⚠️  Failed to focus window: {}", e);
+                    // Continue to create new window if focus fails
+                }
+            }
+        }
+    }
+
+    // Create new window with role parameter in URL
+    let url = format!("/?role={}", role);
+    
+    log::info!("🚀 Creating new window: {} with URL: {}", window_label, url);
+
+    match WebviewWindowBuilder::new(
+        &app,
+        window_label.clone(),
+        WebviewUrl::App(url.into())
+    )
+    .title(title)
+    .inner_size(1024.0, 768.0)
+    .resizable(true)
+    .center()
+    .build() {
+        Ok(_) => {
+            log::info!("✅ Successfully opened {} window: {}", role, window_label);
+            Ok(())
+        }
+        Err(e) => {
+            log::error!("❌ Failed to create window: {}", e);
+            Err(format!("Failed to create window: {}", e))
+        }
+    }
+}
+
+/// Get all configured device roles from the database
+/// Returns a list of roles that have been set up
+#[tauri::command]
+pub fn get_configured_roles(app: AppHandle) -> Result<Vec<String>, String> {
+    let conn = migrate::connection(&app);
+    
+    log::info!("📋 Fetching configured roles from device_profiles table");
+    
+    // Get all configured roles from device_profiles table
+    let mut stmt = conn.prepare(
+        "SELECT DISTINCT role FROM device_profiles WHERE role IS NOT NULL"
+    ).map_err(|e| {
+        log::error!("❌ Failed to prepare SQL statement: {}", e);
+        e.to_string()
+    })?;
+    
+    let roles = stmt.query_map([], |row| {
+        let role: String = row.get(0)?;
+        Ok(role)
+    })
+    .map_err(|e| {
+        log::error!("❌ Failed to query roles: {}", e);
+        e.to_string()
+    })?
+    .collect::<Result<Vec<String>, _>>()
+    .map_err(|e| {
+        log::error!("❌ Failed to collect roles: {}", e);
+        e.to_string()
+    })?;
+    
+    log::info!("✅ Found {} configured roles: {:?}", roles.len(), roles);
+    Ok(roles)
 }

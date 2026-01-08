@@ -12,11 +12,13 @@
   "app": {
     "windows": [
       {
-        "title": "hash-touch",
-        "width": 800,
-        "height": 600,
+        "label": "main",
+        "title": "HashOne Touch",
+        "width": 1024,
+        "height": 768,
         "resizable": true,
-        "fullscreen": false
+        "fullscreen": false,
+        "url": "index.html"
       }
     ],
     "security": {

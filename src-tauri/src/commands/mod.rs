@@ -20,3 +20,4 @@ pub mod kds_ticket;
 pub mod printer;
 pub mod websocket;
 pub mod queue_token;
+pub mod setup;
