@@ -52,7 +52,7 @@ export default function EndShiftConfirmModal({
 
   return (
     <div className="fixed inset-0 z-[9999] bg-black/50 flex items-center justify-center p-4">
-      <div className="bg-white rounded-2xl w-full max-w-[400px] p-8 shadow-2xl">
+      <div className="bg-white rounded-2xl w-full max-w-[550px] p-8 shadow-2xl">
         {/* Icon */}
         <div className="w-16 h-16 mx-auto mb-6 rounded-full bg-red-100 flex items-center justify-center">
           {isLoading ? (

@@ -1,4 +1,4 @@
-import { Tabs, TabsList, TabsTrigger } from "@/ui/shadcn/components/ui/tabs";
+// import { Tabs, TabsList, TabsTrigger } from "@/ui/shadcn/components/ui/tabs";
 import { useProducts } from "@/ui/context/ProductContext";
 import { useMemo } from "react";
 import templateImage from '@assets/template.png'
@@ -45,51 +45,46 @@ export default function CategoryTabs({
   const isVertical = direction === "vertical";
 
   return (
-    <Tabs
-      value={selectedCategory}
-      onValueChange={(val: string) => setSelectedCategory(val)}
-      className="w-full min-h-0 "
-    >
+    <>
       {isVertical ? (
         // Vertical layout
-        <TabsList
-          className="grid grid-cols-12 gap-3 h-full overflow-y-auto no-scrollbar "
-        >
-          {categoriesList.map((cat) => {
-            const isActive = selectedCategory === cat.value;
+        <div className="w-full h-full overflow-y-auto no-scrollbar bg-background">
+          <div className="flex flex-col gap-3 p-3">
+            {categoriesList.map((cat) => {
+              const isActive = selectedCategory === cat.value;
 
-            return (
-              <TabsTrigger
-                key={cat.value}
-                value={cat.value}
-                className={`
-                    rounded-xl p-2 cursor-pointer  flex flex-row gap-2 items-center w-full min-w-[200px] border transition-colors col-span-12 
-                     ${isActive
-                    ? "bg-primary border-primary text-primary-foreground"
-                    : "bg-white border-gray-300 text-foreground hover:bg-gray-50"
-                  }
-                 `}
-              >
-                {/* Left Image */}
-                <div className="w-10 h-10 rounded-lg overflow-hidden flex-shrink-0 bg-muted">
-                  <img
-                    src={cat.image}
-                    alt={cat.label}
-                    className="w-full h-full object-cover"
-                  />
-                </div>
+              return (
+                <button
+                  key={cat.value}
+                  onClick={() => setSelectedCategory(cat.value)}
+                  className={`
+                    rounded-xl p-1.5 cursor-pointer flex flex-row gap-2 items-center w-full min-w-[200px] border transition-colors h-12
+                    ${isActive
+                      ? "bg-primary text-primary-foreground border-primary shadow-md"
+                      : "bg-white text-foreground border-gray-300 hover:bg-gray-50"
+                    }
+                  `}
+                >
+                  {/* Left Image */}
+                  <div className="w-8 h-8 rounded-lg overflow-hidden flex-shrink-0 bg-muted">
+                    <img
+                      src={cat.image}
+                      alt={cat.label}
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
 
-                {/* Center Text */}
-                <p className="flex-1 text-center font-semibold text-sm whitespace-nowrap">
-                  {cat.label}
-                </p>
-              </TabsTrigger>
-            );
-          })}
-        </TabsList>
-
+                  {/* Center Text */}
+                  <span className="flex-1 text-center text-sm whitespace-nowrap">
+                    {cat.label}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
       ) : (
-        // Horizontal layout - using the same pattern as ProductGroupTabs
+        // Horizontal layout
         <div className="w-full h-[4.5rem] overflow-x-auto no-scrollbar bg-background shadow-sm">
           <div className="flex gap-3 p-3 min-w-max h-full">
             {categoriesList.map((cat) => {
@@ -99,13 +94,14 @@ export default function CategoryTabs({
                 <button
                   key={cat.value}
                   onClick={() => setSelectedCategory(cat.value)}
-                  className={` rounded-xl p-2 cursor-pointer w-full flex flex-row gap-2 items-center min-w-[200px] border transition-colors col-span-3 
-                                  ${isActive
-                                            ? "bg-primary text-primary-foreground border-primary shadow-md"
-                                            : "bg-white text-foreground border-gray-300 hover:bg-gray-50"
-                                          }
-                                `}
-                  >
+                  className={`
+                    rounded-xl p-2 cursor-pointer w-full flex flex-row gap-2 items-center min-w-[200px] border transition-colors
+                    ${isActive
+                      ? "bg-primary text-primary-foreground border-primary shadow-md"
+                      : "bg-white text-foreground border-gray-300 hover:bg-gray-50"
+                    }
+                  `}
+                >
                   {/* Image */}
                   <div className="w-10 h-10 rounded-lg overflow-hidden flex-shrink-0 bg-muted">
                     <img
@@ -116,7 +112,7 @@ export default function CategoryTabs({
                   </div>
 
                   {/* Centered text */}
-                  <span className="flex-1 text-center font-semibold text-sm">
+                  <span className="flex-1 text-center text-sm">
                     {cat.label}
                   </span>
                 </button>
@@ -124,8 +120,7 @@ export default function CategoryTabs({
             })}
           </div>
         </div>
-
       )}
-    </Tabs>
+    </>
   );
 }

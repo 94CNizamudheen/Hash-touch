@@ -40,10 +40,10 @@ const BoardFooterDineIn = () => {
 
   return (
     <>
-      <footer className="w-full shrink-0 border-t border-border bg-background px-4 py-4 flex flex-col gap-3 ">
+      <footer className="w-full shrink-0 border-t border-border  px-4 py-4 flex flex-col gap-3 ">
       {/* Totals Section */}
       {items.length > 0 && (
-        <div className="shrink-0 bg-background  border-border">
+        <div className="shrink-0   border-border">
           <div className="px-4 py-3 space-y-1 text-xs">
             <div className="flex justify-between">
               <span>{t("Sub Total")}</span>
@@ -81,7 +81,7 @@ const BoardFooterDineIn = () => {
         </Button>
         <Button
           onClick={() => setShowClearConfirm(true)}
-          className="flex-1 h-10 bg-secondary text-foreground text-sm font-medium rounded-lg"
+          className="flex-1 h-10 bg-background text-foreground text-sm font-medium rounded-lg"
         >
           {t("Clear")}
         </Button>

@@ -1,57 +1,67 @@
 // StartShiftModal.tsx
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useWorkShift } from "@/ui/context/WorkShiftContext";
+import { useMediaQuery } from "usehooks-ts";
+import Keyboard from "@/ui/components/common/keyboard";
+import { cn } from "@/lib/utils";
 
 export default function StartShiftModal({
   onClose,
   onSuccess,
 }: {
   onClose: () => void;
-  onSuccess:()=>void;
+  onSuccess: () => void;
 }) {
   const { startShift } = useWorkShift();
 
   const [user] = useState("Admin");
   const [amount, setAmount] = useState<string>("");
   const [isLoading, setIsLoading] = useState(false);
+  const [showKeyboard, setShowKeyboard] = useState(false);
+  
+  const inputRef = useRef<HTMLInputElement>(null);
+  const keyboardRef = useRef<HTMLDivElement>(null);
+  const matches = useMediaQuery("(min-width: 1000px)");
 
-   return (
-    <div className="fixed inset-0 z-[9999] bg-black/50 flex items-center justify-center p-4">
-      <div className="bg-secondary rounded-2xl w-full max-w-[500px] p-8 shadow-2xl">
-        {/* Icon */}
-        <div className="w-16 h-16 mx-auto mb-6 rounded-full bg-blue-600 flex items-center justify-center">
-          {isLoading ? (
-            <svg className="w-8 h-8 text-white animate-spin" fill="none" viewBox="0 0 24 24">
-              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-            </svg>
-          ) : (
-            <svg className="w-8 h-8 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-            </svg>
-          )}
-        </div>
+  // Close keyboard when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (
+        inputRef.current &&
+        !inputRef.current.contains(e.target as Node) &&
+        keyboardRef.current &&
+        !keyboardRef.current.contains(e.target as Node)
+      ) {
+        setShowKeyboard(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
-        <h2 className="text-xl font-bold text-center mb-6 text-gray-900">
-          Start Work Shift
+  return (
+    <div className={cn("fixed inset-0 z-[9999] bg-black/50 flex items-center justify-center p-4",showKeyboard && "pb-[320px]")}>
+      <div className="bg-secondary rounded-2xl w-full max-w-[550px] p-8 shadow-2xl">
+       
+
+        <h2 className="text-xl font-bold pb-2 text-gray-900">
+          Start Shift
         </h2>
 
         {/* Form Fields */}
         <div className="space-y-4 mb-6">
-
-
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Open Till Amount:
-            </label>
+            
             <input
+              ref={inputRef}
               type="number"
               min="0"
-              step="0.01"
+              step="1"
               className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               value={amount}
               onChange={(e) => setAmount(e.target.value)}
-              placeholder="0.00"
+              onFocus={() => setShowKeyboard(true)}
+              placeholder="0"
               disabled={isLoading}
             />
           </div>
@@ -59,12 +69,6 @@ export default function StartShiftModal({
 
         {/* Actions */}
         <div className="flex gap-3">
-          {/* <button
-            onClick={onClose}
-            className="flex-1 border-2 border-gray-300 text-gray-700 font-medium rounded-lg py-3 hover:bg-gray-50 transition-colors"
-          >
-            Cancel
-          </button> */}
           <button
             onClick={async () => {
               setIsLoading(true);
@@ -86,6 +90,20 @@ export default function StartShiftModal({
           </button>
         </div>
       </div>
+
+      {/* Keyboard */}
+      {matches && showKeyboard && (
+        <div
+          ref={keyboardRef}
+          className="fixed bottom-0 left-0 w-full min-h-[300px] px-44 py-4 bg-background z-[10000]"
+        >
+          <Keyboard
+            initKeyboard={4}
+            defaultValue={amount}
+            onChange={(value) => setAmount(value)}
+          />
+        </div>
+      )}
     </div>
   );
 }

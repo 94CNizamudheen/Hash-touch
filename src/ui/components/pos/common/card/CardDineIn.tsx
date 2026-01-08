@@ -101,13 +101,13 @@ const CardDineIn = ({
           transform: `translateX(${translateX}px)`,
           transition: isDragging ? "none" : "transform 0.3s ease-out",
         }}
-        className="bg-background border border-border rounded-xl p-4 shadow-sm cursor-pointer touch-none"
+        className="bg-secondary border border-border rounded-xl p-4 shadow-sm cursor-pointer touch-none"
       >
         <div className="flex justify-between items-start mb-3">
-          <h3 className="font-semibold text-lg text-foreground flex-1">
+          <h3 className=" text-foreground flex-1">
             {menu}
           </h3>
-          <span className="font-bold text-xl text-foreground"> {totalPrice.toFixed(2)}</span>
+          <span className="font-bold text-lg text-foreground"> {totalPrice.toFixed(2)}</span>
         </div>
 
         {/* Modifiers List */}
@@ -138,7 +138,7 @@ const CardDineIn = ({
             <Minus size={20} strokeWidth={2.5} />
           </button>
 
-          <span className="text-lg font-semibold min-w-[32px] text-center text-foreground">
+          <span className="text-lg font-semibold min-w-[20px] text-center text-foreground">
             {quantity}
           </span>
 

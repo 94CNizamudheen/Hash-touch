@@ -20,7 +20,7 @@ export default function WorkShiftSuccessModal({
         second: "2-digit",
         hour12: true
     });
-    const businessDate = shift.startTime.split("T")[0];
+    // const businessDate = shift.startTime.split("T")[0];
 
     return (
         <div className="fixed inset-0 z-[9999] bg-black/50 flex items-center justify-center p-4">
@@ -31,7 +31,7 @@ export default function WorkShiftSuccessModal({
                 </div>
 
                 <h2 className="text-xl font-bold text-center mb-6 text-gray-900">
-                    Hello, Your Work Day Started
+                    Hello, Your Shift Started
                 </h2>
 
                 {/* Info Grid */}
@@ -50,10 +50,10 @@ export default function WorkShiftSuccessModal({
                         <p className="text-blue-600 font-semibold">{startTime}</p>
                     </div>
 
-                    <div>
+                    {/* <div>
                         <p className="text-sm text-gray-600 mb-1">Business Date:</p>
                         <p className="text-blue-600 font-semibold">{businessDate}</p>
-                    </div>
+                    </div> */}
                 </div>
 
                 <button

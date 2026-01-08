@@ -1,3 +1,4 @@
+import { useSetup } from "@/ui/context/SetupContext";
 interface CartCardProps {
   name: string;
   quantity: number;
@@ -15,6 +16,7 @@ export default function CartCard({
   const modifiersTotal = modifiers?.reduce((sum, mod) => sum + (mod.price * mod.qty), 0) || 0;
   const itemTotal = price + modifiersTotal;
   const total = quantity * itemTotal;
+  const {currencyCode}=useSetup()
 
   return (
     <div className="rounded-xl border border-border bg-secondary p-4 shadow-sm">
@@ -28,11 +30,11 @@ export default function CartCard({
         <div className="flex-1 flex flex-col gap-2">
           {/* Header: Item name and total price */}
           <div className="flex justify-between items-start gap-4">
-            <h3 className="font-semibold text-base text-foreground">
+            <h3 className=" text-base text-foreground">
               {name}
             </h3>
             <span className="font-bold text-lg text-foreground whitespace-nowrap">
-              $ {total.toFixed(2)}
+              {currencyCode} {total.toFixed(2)}
             </span>
           </div>
 

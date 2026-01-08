@@ -8,7 +8,7 @@ const BoardDineIn = () => {
   const { items } = useCart();
 
   return (
-    <section className="w-full h-full flex flex-col bg-background overflow-hidden">
+    <section className="w-full h-full flex flex-col bg-secondary overflow-hidden">
       {/* Header */}
       {/* <div className="shrink-0">
         <BoardHeaderDineIn />
@@ -23,7 +23,7 @@ const BoardDineIn = () => {
 
         {/* Footer */}
         {items.length > 0 && (
-          <div className="shrink-0 border-t border-border bg-background">
+          <div className="shrink-0 border-t border-border bg-secondary">
             <BoardFooterDineIn />
           </div>
         )}

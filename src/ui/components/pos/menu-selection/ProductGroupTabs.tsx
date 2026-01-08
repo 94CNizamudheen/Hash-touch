@@ -18,7 +18,7 @@ export default function ProductGroupTabs() {
             key={group.id}
             onClick={() => setSelectedGroup(group.id)}
             className={cn(
-              "px-10 py-4 rounded-lg border border-border text-sm font-semibold whitespace-nowrap transition-all",
+              "px-10 py-4 rounded-lg border border-border text-sm  whitespace-nowrap transition-all",
               selectedGroup === group.id
                 ? "bg-primary text-primary-foreground shadow"
                 : "bg-secondary text-foreground hover:bg-primary-hover"

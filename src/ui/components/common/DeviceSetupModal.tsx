@@ -66,8 +66,8 @@ export default function DeviceSetupModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center">
-      <div className="bg-white w-full max-w-md rounded-xl shadow-lg p-6">
+    <div className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center">
+      <div className="bg-background w-full max-w-md rounded-xl shadow-lg p-6">
         <h2 className="text-lg font-semibold mb-2">
           Configure {role} Device
         </h2>

@@ -86,7 +86,7 @@ const InputFilter = ({
     <form
       onSubmit={onSubmit}
       className={cn(
-        "flex items-center bg-background min-h-[50px] gap-2 px-2 border rounded-lg md:min-w-96",
+        "flex items-center bg-secondary min-h-[50px] gap-2 px-2 border border-border rounded-lg md:min-w-96",
         className
       )}
       ref={inputRef}

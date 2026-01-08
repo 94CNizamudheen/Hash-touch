@@ -39,7 +39,7 @@ export default function ProductCard({ name, price, image, isSoldOut = false, onC
               {isSoldOut && (
                 <div className="absolute inset-0 z-10 flex items-center justify-center">
                   <div className="bg-background/95 backdrop-blur-sm px-3 py-1 rounded-md shadow-md border border-border transform -rotate-12">
-                    <span className="text-xs font-bold text-destructive uppercase tracking-wide">Unavailable</span>
+                    <span className="text-xs font-semibold text-destructive uppercase tracking-wide">Unavailable</span>
                   </div>
                 </div>
               )}
@@ -47,7 +47,7 @@ export default function ProductCard({ name, price, image, isSoldOut = false, onC
 
             <div className="px-3 w-full flex flex-col h-full py-2">
               <p
-                className={`font-bold line-clamp-2 flex-1 text-sm text-start ${
+                className={` font-semibold line-clamp-2 flex-1 text-sm text-start ${
                   isSoldOut ? "text-muted-foreground line-through" : ""
                 }`}
                 style={!isSoldOut ? { color: "rgb(17, 24, 39)" } : {}}
@@ -56,7 +56,7 @@ export default function ProductCard({ name, price, image, isSoldOut = false, onC
               </p>
 
               <div className="w-full flex justify-end pt-2">
-                <p className={`font-bold text-sm ${isSoldOut ? "text-muted-foreground" : "text-primary"}`}>
+                <p className={`font-semibold text-sm ${isSoldOut ? "text-muted-foreground" : "text-primary"}`}>
                    {currencyCode} {displayPrice.toFixed(2)}
                 </p>
               </div>
@@ -71,12 +71,12 @@ export default function ProductCard({ name, price, image, isSoldOut = false, onC
             {isSoldOut && (
               <div className="absolute inset-0 z-10 flex items-center justify-center">
                 <div className="bg-background/95 backdrop-blur-sm px-3 py-1 rounded-md shadow-md border border-border transform -rotate-12">
-                  <span className="text-xs font-bold text-destructive uppercase tracking-wide">Unavailable</span>
+                  <span className="text-xs font-semibold text-destructive uppercase tracking-wide">Unavailable</span>
                 </div>
               </div>
             )}
             <p
-              className={`font-bold line-clamp-2 flex-1 text-sm text-start ${
+              className={`font-semibold line-clamp-2 flex-1 text-sm text-start ${
                 isSoldOut ? "text-muted-foreground line-through" : ""
               }`}
               style={!isSoldOut ? { color: "rgb(17, 24, 39)" } : {}}

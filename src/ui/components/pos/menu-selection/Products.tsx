@@ -84,7 +84,7 @@ export default function Products({
   return (
     <section className="w-full h-full flex flex-col bg-background overflow-hidden transition-all duration-300">
 
-      <div className="p-4 border-b border-border bg-background sticky top-0 z-10 space-y-3">
+      <div className="px-4 pb-2 sticky top-2 z-10 space-y-3">
         <InputFilter
           className="w-full"
           placeholder={t("Search product...")}
@@ -105,14 +105,14 @@ export default function Products({
 
           <div
             ref={productGridRef}
-            className="flex-1 overflow-y-auto no-scrollbar p-5 bg-background"
+            className="flex-1 overflow-y-auto no-scrollbar py-2 bg-background"
           >
             {loading ? (
               <div className="text-center py-10 text-muted-foreground">
                 {t("Loading products...")}
               </div>
             ) : displayProducts.length > 0 ? (
-              <div className="grid gap-4 grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 content-start">
+              <div className="grid gap-4 grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 content-start pr-1">
                 {displayProducts.map((item) => (
                   <ProductCard
                     key={item.id}

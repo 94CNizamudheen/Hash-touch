@@ -121,7 +121,7 @@ export default function TenantInput({
             defaultValue={form.getValues(name)}
             onChange={(value) =>
               form.setValue(name, value, {
-                shouldValidate: true,
+                shouldValidate: false, // Changed from true to false
                 shouldDirty: true,
                 shouldTouch: true,
               })

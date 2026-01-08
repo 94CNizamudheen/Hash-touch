@@ -62,7 +62,7 @@ export default function TenantLogin({
         password: data.password,
       });
 
-
+      
       // PASS domain + token UPWARD (do not store here)
       await onTenantSelected(data.domain, result.access_token);
 
