@@ -6,6 +6,7 @@ pub mod app_state;
 pub mod product_group;
 pub mod product_group_category;
 pub mod product_tag_group;
+pub mod product_tag_group_mapping;
 pub mod product_tag;
 pub mod prouct_combo;
 pub mod category;

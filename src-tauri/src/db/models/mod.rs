@@ -35,3 +35,5 @@ pub mod queue_token;
 pub mod queue_token_repo;
 pub mod setup;
 pub mod setup_repo;
+pub mod product_tag_group_mapping;
+pub mod product_tag_group_mapping_repo;

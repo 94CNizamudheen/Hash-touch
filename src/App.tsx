@@ -260,7 +260,7 @@ export default function App() {
 
       // If configuring POS, it will start the WebSocket server
       if (role === "POS") {
-        setTimeout(() => window.location.reload(), 500);
+        // setTimeout(() => window.location.reload(), 500);
         return;
       }
     } catch (err) {

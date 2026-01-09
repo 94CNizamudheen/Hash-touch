@@ -54,6 +54,12 @@ export default function ProductTagGroupModal({
     setLoading(true);
     try {
       const data = await getProductWithCombinations(productId);
+      console.log("🔍 Product combo data loaded:", {
+        productId,
+        productName,
+        combinationsCount: data.combinations?.length ?? 0,
+        combinations: data.combinations,
+      });
       setProductData(data);
 
       // Pre-populate selected tags from initial modifiers

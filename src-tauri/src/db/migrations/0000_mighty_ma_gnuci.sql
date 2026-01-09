@@ -16,7 +16,7 @@ CREATE TABLE `app_state` (
 	`kds_view_mode` text DEFAULT 'grid',
 	`kds_settings` text DEFAULT '{}',
 	`ws_server_mode` integer DEFAULT 0,
-	`ws_server_url` text DEFAULT 'ws://localhost:9001',
+	`ws_server_url` text DEFAULT '',
 	`created_at` integer DEFAULT CURRENT_TIMESTAMP,
 	`updated_at` integer DEFAULT CURRENT_TIMESTAMP,
 	`setup_code` text
@@ -191,6 +191,14 @@ CREATE TABLE `product_tags` (
 	`created_at` text,
 	`updated_at` text,
 	`deleted_at` text
+);
+--> statement-breakpoint
+CREATE TABLE `product_tag_group_mappings` (
+	`product_id` text NOT NULL,
+	`tag_group_id` text NOT NULL,
+	PRIMARY KEY(`product_id`, `tag_group_id`),
+	FOREIGN KEY (`product_id`) REFERENCES `products`(`id`) ON UPDATE no action ON DELETE no action,
+	FOREIGN KEY (`tag_group_id`) REFERENCES `product_tag_groups`(`id`) ON UPDATE no action ON DELETE no action
 );
 --> statement-breakpoint
 CREATE TABLE `products` (

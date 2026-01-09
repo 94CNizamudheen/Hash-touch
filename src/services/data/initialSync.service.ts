@@ -2,6 +2,7 @@ import { commonDataService } from "./common.data.service";
 
 import { productLocal } from "../local/product.local.service";
 import { productTagGroupLocal } from "../local/product-tag-group.local.service";
+import { productTagGroupMappingLocal } from "../local/product-tag-group-mapping.local.service";
 import { productTagLocal } from "../local/product-tag.local.service";
 import { productGroupLocal } from "../local/product-group.local.service";
 import { productGroupCategoryLocal } from "../local/product-group-category.local.service";
@@ -12,7 +13,7 @@ import { transactionTypeLocal } from "../local/transaction-type.local.service";
 export async function initialSync(
   domain: string,
   token: string,
-  context: { channel: string; locationId: string; brandId: string;orderModeIds: string[] | null; }) {
+  context: { channel: string; locationId: string; brandId: string; orderModeIds: string[] | null; }) {
   console.log("🚀 Initial sync started (from combinations)");
   console.log("📡 Sync context:", context);
 
@@ -23,7 +24,7 @@ export async function initialSync(
       channel: context.channel,
       location_id: context.locationId,
       brand_id: context.brandId,
-      order_mode_id: context.orderModeIds ?? [], 
+      order_mode_id: context.orderModeIds ?? [],
     }
   );
 
@@ -86,7 +87,7 @@ export async function initialSync(
     (g.categories ?? []).map((c: any) => ({
       id: c.id,
 
-      product_group_id: g.id, 
+      product_group_id: g.id,
 
       name: c.name,
       code: c.code ?? null,
@@ -112,38 +113,37 @@ export async function initialSync(
   );
 
   const dbProducts = combinationsResponse.flatMap((g: any) =>
-  (g.categories ?? []).flatMap((c: any) =>
-    (c.products ?? []).map((p: any) => {
-      const overridesStr = JSON.stringify(p.overrides ?? []);
+    (g.categories ?? []).flatMap((c: any) =>
+      (c.products ?? []).map((p: any) => {
+        const overridesStr = JSON.stringify(p.overrides ?? []);
 
-      // Debug logging for products with overrides
-      if (p.overrides && p.overrides.length > 0) {
-        console.log(`💾 Saving product "${p.name}" with overrides:`, p.overrides);
-        console.log(`   Stringified:`, overridesStr);
-      }
+        if (p.overrides && p.overrides.length > 0) {
+          console.log(`💾 Saving product "${p.name}" with overrides:`, p.overrides);
+          console.log(`   Stringified:`, overridesStr);
+        }
 
-      return {
-        id: p.id,
-        name: p.name,
-        code: p.code ?? null,
-        description: p.description ?? null,
+        return {
+          id: p.id,
+          name: p.name,
+          code: p.code ?? null,
+          description: p.description ?? null,
 
-        category_id: c.id,
+          category_id: c.id,
 
-        price: Number(p.price ?? 0),
-        active: Boolean(p.active),
-        sort_order: Number(p.sort_order ?? 0),
-        created_at: p.created_at ?? null,
-        updated_at: p.updated_at ?? null,
-        deleted_at: p.deleted_at ?? null,
-        
-        media: JSON.stringify(p.media ?? []),
-        overrides: overridesStr,
-        is_product_tag:p.is_product_tag,
-      };
-    })
-  )
-);
+          price: Number(p.price ?? 0),
+          active: Boolean(p.active),
+          sort_order: Number(p.sort_order ?? 0),
+          created_at: p.created_at ?? null,
+          updated_at: p.updated_at ?? null,
+          deleted_at: p.deleted_at ?? null,
+
+          media: JSON.stringify(p.media ?? []),
+          overrides: overridesStr,
+          is_product_tag: p.is_product_tag,
+        };
+      })
+    )
+  );
 
 
   console.log(`💾 About to save ${dbProducts.length} products to database`);
@@ -172,36 +172,57 @@ export async function initialSync(
   console.log(`✅ Products synced: ${dbProducts.length}`);
 
 
-  const dbTagGroups = combinationsResponse.flatMap((g: any) =>
+  // Extract all tag groups with their product mappings
+  const allTagGroupsWithProducts = combinationsResponse.flatMap((g: any) =>
     (g.categories ?? []).flatMap((c: any) =>
       (c.products ?? []).flatMap((p: any) =>
         (p.tag_groups ?? []).map((tg: any) => ({
-          id: tg.id,
-
-          product_id: p.id,
-          name: tg.name,
-          min_items: tg.min_items ?? 0,
-          max_items: tg.max_items ?? 0,
-
-          active:  tg.active ? 1 : 0,
-          sort_order: tg.sort_order ?? 0,
-
-          created_at: tg.created_at ?? null,
-          updated_at: tg.updated_at ?? null,
-          deleted_at: tg.deleted_at ?? null,
+          tagGroup: {
+            id: tg.id,
+            product_id: p.id, // Keep for backwards compatibility
+            name: tg.name,
+            min_items: tg.min_items ?? 0,
+            max_items: tg.max_items ?? 0,
+            active: tg.active === false ? 0 : 1,
+            sort_order: tg.sort_order ?? 0,
+            created_at: tg.created_at ?? null,
+            updated_at: tg.updated_at ?? null,
+            deleted_at: tg.deleted_at ?? null,
+          },
+          productId: p.id,
+          tagGroupId: tg.id,
         }))
       )
     )
   );
 
+  // Deduplicate tag groups by ID (same tag group can be shared by multiple products)
+  const tagGroupMap = new Map();
+  allTagGroupsWithProducts.forEach(item => {
+    if (!tagGroupMap.has(item.tagGroupId)) {
+      tagGroupMap.set(item.tagGroupId, item.tagGroup);
+    }
+  });
+  const dbTagGroups = Array.from(tagGroupMap.values());
+
+  // Create product -> tag_group mappings
+  const dbTagGroupMappings = allTagGroupsWithProducts.map(item => ({
+    product_id: item.productId,
+    tag_group_id: item.tagGroupId,
+  }));
+
   console.log("🏷️ Product Tag Groups Structure:", {
     totalTagGroups: dbTagGroups.length,
+    totalMappings: dbTagGroupMappings.length,
     sampleData: dbTagGroups.slice(0, 3),
-    productsWithTagGroups: [...new Set(dbTagGroups.map(tg => tg.product_id))].length,
+    productsWithTagGroups: [...new Set(dbTagGroupMappings.map(m => m.product_id))].length,
   });
 
   await productTagGroupLocal.save(dbTagGroups);
   console.log(`✅ Product tag groups synced: ${dbTagGroups.length}`);
+
+  await productTagGroupMappingLocal.save(dbTagGroupMappings);
+  console.log(`✅ Product tag group mappings synced: ${dbTagGroupMappings.length}`);
 
 
   const dbProductTags = combinationsResponse.flatMap((g: any) =>
@@ -210,15 +231,13 @@ export async function initialSync(
         (p.tag_groups ?? []).flatMap((tg: any) =>
           (tg.product_tags ?? []).map((t: any) => ({
             id: t.id,
-
             tag_group_id: tg.id,
-            product_id: p.id,
+            product_id: t.product_id, 
             name: t.name,
             price: Number(t.price ?? 0),
-
+            max_items: t.max_items ?? 1,
             active: t.active ? 1 : 0,
             sort_order: t.sort_order ?? 0,
-
             created_at: t.created_at ?? null,
             updated_at: t.updated_at ?? null,
             deleted_at: t.deleted_at ?? null,

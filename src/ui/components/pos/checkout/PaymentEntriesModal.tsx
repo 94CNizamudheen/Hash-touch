@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { AlertTriangle } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/ui/shadcn/components/ui/button";
@@ -27,6 +27,13 @@ export default function PaymentEntriesModal({
   const { t } = useTranslation();
   const { currencyCode } = useSetup();
   const [showConfirmClear, setShowConfirmClear] = useState(false);
+
+  // Close modal when all payments are removed
+  useEffect(() => {
+    if (isOpen && payments.length === 0) {
+      onClose();
+    }
+  }, [isOpen, payments.length, onClose]);
 
   if (!isOpen) return null;
 

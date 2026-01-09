@@ -13,6 +13,7 @@ pub fn get_product_with_combinations(
     conn: &Connection,
     product_id: &str,
 ) -> anyhow::Result<ProductWithCombinations> {
+    println!("🦀 get_product_with_combinations called for product_id: {}", product_id);
 
     // ---------------- PRODUCT ----------------
     let product: Product = conn.query_row(
@@ -53,19 +54,20 @@ pub fn get_product_with_combinations(
         },
     )?;
 
-    // ---------------- TAG GROUPS ----------------
+    // ---------------- TAG GROUPS (via mapping table) ----------------
     let mut stmt_groups = conn.prepare(
         r#"
         SELECT
-          id,
-          name,
-          min_items,
-          max_items
-        FROM product_tag_groups
-        WHERE product_id = ?
-          AND active = 1
-          AND deleted_at IS NULL
-        ORDER BY sort_order
+          tg.id,
+          tg.name,
+          tg.min_items,
+          tg.max_items
+        FROM product_tag_groups tg
+        INNER JOIN product_tag_group_mappings m ON m.tag_group_id = tg.id
+        WHERE m.product_id = ?
+          AND tg.active = 1
+          AND tg.deleted_at IS NULL
+        ORDER BY tg.sort_order
         "#
     )?;
 
@@ -85,9 +87,12 @@ pub fn get_product_with_combinations(
     })?;
 
     let mut groups_with_tags = Vec::new();
+    let mut total_groups_found = 0;
 
     for g in groups_iter {
         let g = g?;
+        total_groups_found += 1;
+        println!("🦀 Found tag group: {} (id: {})", g.name, g.id);
 
         let mut stmt_tags = conn.prepare(
             r#"
@@ -116,6 +121,8 @@ pub fn get_product_with_combinations(
         let options: Vec<ProductTagOption> =
             tags_iter.filter_map(Result::ok).collect();
 
+        println!("🦀   -> Tag group {} has {} options", g.name, options.len());
+
         // only push real groups
         if !options.is_empty() {
             groups_with_tags.push(TagGroupWithTags {
@@ -127,6 +134,8 @@ pub fn get_product_with_combinations(
             });
         }
     }
+
+    println!("🦀 Total tag groups found: {}, with options: {}", total_groups_found, groups_with_tags.len());
 
     Ok(ProductWithCombinations {
         id: product.id,

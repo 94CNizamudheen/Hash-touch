@@ -181,6 +181,9 @@ pub fn run() {
             commands::product_tag::save_product_tags,
             commands::product_tag::get_product_tags_by_group,
 
+            // Tag Group Mappings
+            commands::product_tag_group_mapping::save_product_tag_group_mappings,
+
             // Combos
             commands::prouct_combo::get_product_with_combos,
 

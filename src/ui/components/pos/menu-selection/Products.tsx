@@ -47,7 +47,15 @@ export default function Products({
 
   const handleProductClick = async (item: Product) => {
     try {
+      console.log("🛒 Product clicked:", { id: item.id, name: item.name });
       const productData = await getProductWithCombinations(item.id);
+      console.log("🔍 Product combinations result:", {
+        productId: item.id,
+        productName: item.name,
+        hasCombinations: productData.combinations && productData.combinations.length > 0,
+        combinationsCount: productData.combinations?.length ?? 0,
+        combinations: productData.combinations,
+      });
 
       // If product has tag groups, open modal
       if (productData.combinations && productData.combinations.length > 0) {

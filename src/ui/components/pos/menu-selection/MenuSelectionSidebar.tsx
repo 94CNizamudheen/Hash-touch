@@ -227,18 +227,18 @@ const MenuSelectionSidebar = ({
         />
       )}
 
-     {showEndShift && (
-          <EndShiftConfirmModal
-            onClose={() => {
-              setShowEndShift(false);
-            }}
-            onConfirm={async () => {
-              setShowEndShift(false);
-              showNotification.info(t("Logging out..."), 1000);
-              await handleConfirmLogout();
-            }}
-          />
-        )}
+      {showEndShift && (
+        <EndShiftConfirmModal
+          onClose={() => {
+            setShowEndShift(false);
+          }}
+          onConfirm={async () => {
+            setShowEndShift(false);
+            showNotification.info(t("Logging out..."), 1000);
+            await handleConfirmLogout();
+          }}
+        />
+      )}
 
       {showLogoutConfirm && (
         <LogoutConfirmModal
