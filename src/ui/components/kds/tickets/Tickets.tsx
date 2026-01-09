@@ -23,6 +23,7 @@ function transformKdsTicketToTicket(kdsTicket: KDSTicketData): Ticket {
       quantity: item.quantity,
       status: (item.completed ? 'completed' : 'pending') as 'pending' | 'completed',
       notes: item.notes || '',
+      modifiers: item.modifiers || [],
     }));
   } catch (error) {
     console.error('[Tickets] Failed to parse items:', error);

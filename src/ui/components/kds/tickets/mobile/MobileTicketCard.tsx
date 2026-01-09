@@ -144,7 +144,17 @@ const MobileTicketCard = ({ ticket, theme, onToggleItem, onMarkAsDone }: Props) 
                     >
                       {item.quantity}- {item.name}
                     </p>
-                    <p className="text-sm opacity-90">Normal</p>
+                    {item.modifiers && item.modifiers.length > 0 ? (
+                      <div className="mt-1 space-y-0.5">
+                        {item.modifiers.map((modifier, idx) => (
+                          <p key={idx} className="text-sm opacity-90 pl-2">
+                            + {modifier.qty}x {modifier.name}
+                          </p>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="text-sm opacity-90">Normal</p>
+                    )}
                     {item.notes && (
                       <p className="text-sm opacity-90 font-semibold">
                         (Notes: {item.notes})

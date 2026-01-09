@@ -22,6 +22,7 @@ function transformKdsTicketToTicket(kdsTicket: KDSTicketData): Ticket {
       quantity: item.quantity,
       status: 'completed' as const, // All items in completed tickets are completed
       notes: item.notes || '',
+      modifiers: item.modifiers || [],
     }));
   } catch (error) {
     console.error('[CompletedTickets] Failed to parse items:', error);

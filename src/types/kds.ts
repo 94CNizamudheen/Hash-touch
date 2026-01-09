@@ -19,7 +19,7 @@ export interface KDSTicketItem {
   name: string;
   quantity: number;
   price: number;
-  modifiers?: Array<{ name: string; price: number }>;
+  modifiers?: Array<{ name: string; qty: number; price: number }>;
   completed?: boolean;
   notes?: string;
 }

@@ -12,12 +12,19 @@ export interface Ticket {
   queueNumber:number;
 }
 
+export interface TicketItemModifier {
+  name: string;
+  qty: number;
+  price: number;
+}
+
 export interface TicketItem {
   id: string;
   name: string;
   quantity: number;
   status: 'pending' | 'completed';
   notes: string;
+  modifiers?: TicketItemModifier[];
 }
 
 export interface ThemeSettings {
