@@ -3,6 +3,7 @@ import type { CalculatedCharge } from "@/ui/hooks/useCharges";
 import type { TicketRequest, Order, Payment, Transaction } from "@/types/ticket";
 import type { DbTransactionType } from "@/types/transaction-type";
 
+
 interface BuildTicketParams {
   items: CartItem[];
   charges: CalculatedCharge[];
@@ -20,6 +21,7 @@ interface BuildTicketParams {
   paymentTransactionTypeId: string;
   transactionTypes: DbTransactionType[];
   queueNumber: number;
+  currencyCode: string;
 }
 
 function getCurrentDateTime() {
@@ -71,6 +73,7 @@ export function buildTicketRequest(params: BuildTicketParams): TicketRequest {
     paymentTransactionTypeId,
     transactionTypes,
     queueNumber,
+    currencyCode,
   } = params;
 
   const { date, timestamp } = getCurrentDateTime();
@@ -87,26 +90,20 @@ export function buildTicketRequest(params: BuildTicketParams): TicketRequest {
     .filter((c) => !c.is_tax)
     .reduce((sum, c) => sum + c.amount, 0);
 
-  // Build tax detail object
-  const taxDetail: Record<string, any> = {};
+  // Build tax detail object - Backend expects: {"VAT": 7} (percentage as value)
+  const taxDetail: Record<string, number> = {};
   charges
     .filter((c) => c.is_tax)
     .forEach((charge) => {
-      taxDetail[charge.name] = {
-        percentage: charge.percentage,
-        amount: charge.amount.toFixed(2),
-      };
+      taxDetail[charge.name] = charge.percentage;
     });
 
-  // Build charge details object
-  const chargeDetails: Record<string, any> = {};
+  // Build charge details object - Backend expects: {"service_charge": 1.5} (amount as value)
+  const chargeDetails: Record<string, number> = {};
   charges
     .filter((c) => !c.is_tax)
     .forEach((charge) => {
-      chargeDetails[charge.name] = {
-        percentage: charge.percentage,
-        amount: charge.amount.toFixed(2),
-      };
+      chargeDetails[charge.name] = charge.amount;
     });
 
   // Build orders array from cart items
@@ -153,7 +150,7 @@ export function buildTicketRequest(params: BuildTicketParams): TicketRequest {
       tip_amount: "0.00",
       tendered_amount: tenderedAmount.toFixed(2),
       net_amount: total.toFixed(2),
-      currency: "USD",
+      currency: currencyCode|| "USD",
       currency_exchange_rate: "1.00",
       tags: {},
       terminal: "POS",

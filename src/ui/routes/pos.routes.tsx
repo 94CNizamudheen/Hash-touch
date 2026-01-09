@@ -18,6 +18,7 @@ import SoldOutPage from "../components/pos/sold-out/SoldOutPage";
 import { PosWebSocketProvider } from "../context/web-socket/PosWebSocketContext";
 import { SetupProvider } from "../context/SetupContext";
 import { useAppState } from "../context/AppStateContext";
+import RoleGuard from "../components/common/RoleGuard";
 
 
 export default function PosRoutes() {
@@ -25,36 +26,35 @@ export default function PosRoutes() {
   const {state}= useAppState()
 
   return (
-   <SetupProvider setupCode={state.setup_code}  >
-    <PosWebSocketProvider>
-      <LogoutProvider>
-        <CartProvider>
-          <ProductProvider>
-            <AnimationProvider>
-              <WorkShiftProvider>
-                <TempStyleProvider>
-                  <Routes>
-                    <Route element={<MenuLayout />}>
-                      <Route index element={<MenuSelectionPage />} />
-                      <Route path="activity" element={<ActivityPage />} />
-                      <Route path="sold-out" element={<SoldOutPage />} />
-                      <Route path="settings" element={<SettingsPage />} />
-                      <Route path="settings/printers" element={<PrinterSettingsPage />} />
-                      <Route path="settings/devices" element={<DeviceCommunicationPage />} />
-
-                    </Route>
-                    <Route path="payment-panel" element={<PaymentPanel />} />
-
-                    <Route path="*" element={<Navigate to="" replace />} />
-                  </Routes>
-                </TempStyleProvider>
-              </WorkShiftProvider>
-
-            </AnimationProvider>
-          </ProductProvider>
-        </CartProvider>
-      </LogoutProvider>
-    </PosWebSocketProvider>
-    </SetupProvider>
+    <RoleGuard allowedRole="POS">
+      <SetupProvider setupCode={state.setup_code}>
+        <PosWebSocketProvider>
+          <LogoutProvider>
+            <CartProvider>
+              <ProductProvider>
+                <AnimationProvider>
+                  <WorkShiftProvider>
+                    <TempStyleProvider>
+                      <Routes>
+                        <Route element={<MenuLayout />}>
+                          <Route index element={<MenuSelectionPage />} />
+                          <Route path="activity" element={<ActivityPage />} />
+                          <Route path="sold-out" element={<SoldOutPage />} />
+                          <Route path="settings" element={<SettingsPage />} />
+                          <Route path="settings/printers" element={<PrinterSettingsPage />} />
+                          <Route path="settings/devices" element={<DeviceCommunicationPage />} />
+                        </Route>
+                        <Route path="payment-panel" element={<PaymentPanel />} />
+                        <Route path="*" element={<Navigate to="" replace />} />
+                      </Routes>
+                    </TempStyleProvider>
+                  </WorkShiftProvider>
+                </AnimationProvider>
+              </ProductProvider>
+            </CartProvider>
+          </LogoutProvider>
+        </PosWebSocketProvider>
+      </SetupProvider>
+    </RoleGuard>
   );
 }

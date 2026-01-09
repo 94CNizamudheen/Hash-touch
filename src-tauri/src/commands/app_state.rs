@@ -167,7 +167,7 @@ pub fn get_ws_settings(app: AppHandle) -> Result<(bool, String), String> {
     let state = app_state_repo::get_app_state(&conn).map_err(|e| e.to_string())?;
 
     let server_mode = state.ws_server_mode.unwrap_or(0) == 1;
-    let server_url = state.ws_server_url.unwrap_or_else(|| "ws://localhost:9001".to_string());
+    let server_url = state.ws_server_url.unwrap_or_else(|| "".to_string());
 
     Ok((server_mode, server_url))
 }
@@ -289,6 +289,9 @@ pub fn clear_all_data(app: AppHandle) -> Result<(), String> {
 }
 
 
+/// Desktop-only: Open a new window for a specific role
+/// On Android/iOS, multi-window is not supported
+#[cfg(not(any(target_os = "android", target_os = "ios")))]
 #[tauri::command]
 pub async fn open_role_window(
     app: AppHandle,
@@ -296,7 +299,7 @@ pub async fn open_role_window(
 ) -> Result<(), String> {
     let timestamp = chrono::Utc::now().timestamp();
     let window_label = format!("{}-{}", role.to_lowercase(), timestamp);
-    
+
     let title = match role.as_str() {
         "POS" => "Point of Sale",
         "KDS" => "Kitchen Display System",
@@ -333,7 +336,7 @@ pub async fn open_role_window(
 
     // Create new window with role parameter in URL
     let url = format!("/?role={}", role);
-    
+
     log::info!("🚀 Creating new window: {} with URL: {}", window_label, url);
 
     match WebviewWindowBuilder::new(
@@ -355,6 +358,17 @@ pub async fn open_role_window(
             Err(format!("Failed to create window: {}", e))
         }
     }
+}
+
+/// Mobile stub: Multi-window not supported on Android/iOS
+#[cfg(any(target_os = "android", target_os = "ios"))]
+#[tauri::command]
+pub async fn open_role_window(
+    _app: AppHandle,
+    role: String,
+) -> Result<(), String> {
+    log::warn!("🚫 open_role_window called on mobile - multi-window not supported for role: {}", role);
+    Err("Multi-window is not supported on mobile devices".to_string())
 }
 
 /// Get all configured device roles from the database

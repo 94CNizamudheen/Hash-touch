@@ -6,22 +6,25 @@ import KdsSettingsPage from "@/ui/components/kds/settings/KdsSettingsPage";
 import KdsConnectionPage from "@/ui/components/kds/settings/KdsConnectionPage";
 import { KdsSettingsProvider } from "../context/KdsSettingsContext";
 import { KdsWebSocketProvider } from "../context/web-socket/KdsWebSocketContext";
+import RoleGuard from "../components/common/RoleGuard";
 
 
 export default function KdsRoutes() {
   return (
-    <KdsWebSocketProvider>
-      <KdsSettingsProvider>
-        <Routes>
-          <Route element={<KDSTicketsWrapper />}>
-            <Route index element={<Tickets />} />
-            <Route path="completed" element={<CompletedTickets />} />
-            <Route path="settings" element={<KdsSettingsPage />} />
-          </Route>
-          <Route path="settings/connection" element={<KdsConnectionPage />} />
-          <Route path="*" element={<Navigate to="" replace />} />
-        </Routes>
-      </KdsSettingsProvider>
-    </KdsWebSocketProvider>
+    <RoleGuard allowedRole="KDS">
+      <KdsWebSocketProvider>
+        <KdsSettingsProvider>
+          <Routes>
+            <Route element={<KDSTicketsWrapper />}>
+              <Route index element={<Tickets />} />
+              <Route path="completed" element={<CompletedTickets />} />
+              <Route path="settings" element={<KdsSettingsPage />} />
+            </Route>
+            <Route path="settings/connection" element={<KdsConnectionPage />} />
+            <Route path="*" element={<Navigate to="" replace />} />
+          </Routes>
+        </KdsSettingsProvider>
+      </KdsWebSocketProvider>
+    </RoleGuard>
   );
 }

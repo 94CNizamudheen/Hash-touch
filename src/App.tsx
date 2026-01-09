@@ -1,6 +1,6 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { Routes, Route, useSearchParams } from "react-router-dom";
+import { Routes, Route, useSearchParams, useNavigate } from "react-router-dom";
 
 import TenantLogin from "@/ui/components/auth/TenantLogin";
 import SelectLocationPage from "@/ui/components/auth/SelectLocationPage";
@@ -25,6 +25,7 @@ import QueueRoutes from "./ui/routes/queue.routes";
 import { useAppState } from "@/ui/hooks/useAppState";
 import { deviceService } from "./services/local/device.local.service";
 import { setupLocal } from "@/services/local/setup.local.service";
+import { localEventBus, LocalEventTypes } from "@/services/eventbus/LocalEventBus";
 
 interface Location {
   id: string;
@@ -38,7 +39,8 @@ export default function App() {
   const appState = useSelector((state: RootState) => state.appState);
   const { refresh: refreshAppStateContext } = useAppState();
   const [searchParams] = useSearchParams();
-  
+  const navigate = useNavigate();
+
   const [booting, setBooting] = useState(true);
   const [loadingTenant, setLoadingTenant] = useState(false);
   const [loadingLocation, setLoadingLocation] = useState(false);
@@ -46,6 +48,7 @@ export default function App() {
   const [, setDeviceId] = useState<string>("");
   const [windowRole, setWindowRole] = useState<DeviceRole | null>(null);
   const [isSecondaryWindow, setIsSecondaryWindow] = useState(false);
+  const [isSwitchingDevice, setIsSwitchingDevice] = useState(false);
 
   // Sync state
   const [isSyncing, setIsSyncing] = useState(false);
@@ -67,9 +70,9 @@ export default function App() {
       const state: AppState = await appStateApi.get();
       dispatch(hydrateAppState(state));
       await refreshAppStateContext();
-      
+
       let device = await deviceService.getDevice();
-      
+
       // If this is a role-specific window, create device for that role if needed
       if (windowRole && !device) {
         console.log(`[App] Creating device for ${windowRole} window`);
@@ -94,6 +97,54 @@ export default function App() {
     }
     bootstrap();
   }, [dispatch, refreshAppStateContext, windowRole]);
+
+  // Handle device role switching (without losing data)
+  const handleSwitchRole = useCallback(async (newRole: DeviceRole) => {
+    console.log("[App] Switching device role to:", newRole);
+    setIsSwitchingDevice(true);
+
+    try {
+      // Update device role in backend (this preserves all other data)
+      await appStateApi.setDeviceRole(newRole);
+
+      // Update Redux state
+      dispatch(setDeviceRole(newRole));
+
+      // Refresh context
+      await refreshAppStateContext();
+
+      // Navigate to the new role's route (replace history to prevent back button going to previous role)
+      const routeMap: Record<DeviceRole, string> = {
+        POS: "/pos",
+        KDS: "/kds",
+        KIOSK: "/kiosk",
+        QUEUE: "/queue",
+      };
+
+      navigate(routeMap[newRole] || "/", { replace: true });
+
+      console.log("[App] Successfully switched to", newRole);
+    } catch (error) {
+      console.error("[App] Failed to switch role:", error);
+    } finally {
+      setIsSwitchingDevice(false);
+    }
+  }, [dispatch, navigate, refreshAppStateContext]);
+
+  // Listen for device switch events from sidebar
+  useEffect(() => {
+    const unsubscribe = localEventBus.subscribe(
+      LocalEventTypes.DEVICE_SWITCH_ROLE,
+      (event) => {
+        const { role } = event.payload as { role: DeviceRole };
+        if (role) {
+          handleSwitchRole(role);
+        }
+      }
+    );
+
+    return () => unsubscribe();
+  }, [handleSwitchRole]);
 
   const handleTenantSelected = async (domain: string, token: string) => {
     setLoadingTenant(true);
@@ -219,7 +270,7 @@ export default function App() {
     }
   };
 
-  if (booting) {
+  if (booting || isSwitchingDevice) {
     return <SplashScreen type={1} />;
   }
 

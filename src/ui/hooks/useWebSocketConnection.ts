@@ -68,8 +68,9 @@ export function useWebSocketConnection({
         clientRef.current = null;
       }
 
-      // Create WebSocket client
-      const client = new WebSocketClient(wsUrl, device.id, deviceRole);
+      // Create WebSocket client with unique ID (device.id + role) to support multiple apps on same device
+      const uniqueDeviceId = `${device.id}_${deviceRole}`;
+      const client = new WebSocketClient(wsUrl, uniqueDeviceId, deviceRole);
 
       // Connect
       await client.connect();

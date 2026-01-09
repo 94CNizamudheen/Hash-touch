@@ -10,11 +10,14 @@ import { useTransactionTypes } from "@/ui/hooks/useTransactionTypes";
 import { buildTicketRequest } from "@/ui/utils/ticketBuilder";
 import { ticketService } from "@/services/data/ticket.service";
 import { ticketLocal } from "@/services/local/ticket.local.service";
+import { kdsTicketLocal } from "@/services/local/kds-ticket.local.service";
+import { queueTokenLocal } from "@/services/local/queue-token.local.service";
 import { printerService, type ReceiptData } from "@/services/local/printer.local.service";
 import { websocketService } from "@services/websocket/websocket.service";
+import { useSetup } from "@/ui/context/SetupContext";
 
 import LeftActionRail from "./LeftActionRail";
-import OrderSidebar from "./OrderSidebar";
+import OrderSidebar, { type PaymentEntry } from "./OrderSidebar";
 import CenterPaymentContent from "./CenterPaymentContent";
 import PaymentMethodsSidebar from "./PaymentMethodSidebar";
 import PaymentSuccessModal from "./PaymentSuccessModal";
@@ -40,6 +43,10 @@ export default function PaymentDesktop() {
   const [showSuccess, setShowSuccess] = useState(false);
   const [loading, setLoading] = useState(false);
   const [final, setFinal] = useState({ total: 0, balance: 0 });
+  const { currencyCode } = useSetup();
+  
+  // NEW: Multi-payment state
+  const [payments, setPayments] = useState<PaymentEntry[]>([]);
 
   /* Load transaction types */
   useEffect(() => {
@@ -55,14 +62,14 @@ export default function PaymentDesktop() {
 
   if (!isHydrated) return null;
 
-  /* 🔑 DERIVED PAYMENT STATE */
-  const tendered = parseFloat(inputValue);
-  const isPaymentReady =
-    !isNaN(tendered) &&
-    tendered > 0 &&
-    tendered >= total;
+  /* 🔢 CALCULATE REMAINING BALANCE */
+  const totalPaid = payments.reduce((sum, p) => sum + p.amount, 0);
+  const remainingBalance = total - totalPaid;
+  const tendered = parseFloat(inputValue) || 0;
+  const changeAmount = tendered > 0 ? tendered - remainingBalance : 0;
 
-  const balance = isNaN(tendered) ? 0 : tendered - total;
+  /* 🔒 PAYMENT READY CHECK - Allow any positive amount */
+  const isPaymentReady = !isNaN(tendered) && tendered > 0;
 
   /* Keypad handler */
   const onKey = (k: string) => {
@@ -72,14 +79,87 @@ export default function PaymentDesktop() {
     setInputValue((p) => (p === "" || p === "0" ? k : p + k));
   };
 
-  /* Payment handler */
-  const onPay = async (paymentMethodName?: string) => {
-    if (!isPaymentReady) {
-      showNotification.error("Insufficient payment");
+  /* 🆕 ADD PAYMENT AND AUTO-COMPLETE IF FULLY PAID */
+  const onAddPayment = async (paymentMethodName?: string) => {
+    // Allow payment if amount is valid and > 0
+    if (!tendered || tendered <= 0) {
+      showNotification.error("Please enter a valid payment amount");
       return;
     }
 
     const methodToUse = paymentMethodName || selectedMethod;
+    const selectedPaymentMethod = paymentMethods.find(
+      (pm) => pm.name === methodToUse
+    );
+
+    if (!selectedPaymentMethod) {
+      showNotification.error(`Payment method "${methodToUse}" not found`);
+      return;
+    }
+
+    // Check if payment method already exists - merge amounts instead of duplicating
+    const existingPaymentIndex = payments.findIndex(
+      (p) => p.paymentMethodId === selectedPaymentMethod.id
+    );
+
+    let updatedPayments: PaymentEntry[];
+
+    if (existingPaymentIndex >= 0) {
+      // Update existing payment - add amount to it
+      updatedPayments = payments.map((p, index) =>
+        index === existingPaymentIndex
+          ? {
+              ...p,
+              amount: p.amount + tendered,
+              timestamp: new Date().toISOString(), // Update timestamp
+            }
+          : p
+      );
+    } else {
+      // Add new payment entry
+      const newPayment: PaymentEntry = {
+        id: crypto.randomUUID(),
+        paymentMethodId: selectedPaymentMethod.id,
+        paymentMethodName: selectedPaymentMethod.name,
+        amount: tendered,
+        timestamp: new Date().toISOString(),
+      };
+      updatedPayments = [...payments, newPayment];
+    }
+
+    setPayments(updatedPayments);
+    setInputValue(""); // Clear input after adding payment
+
+    // Calculate new remaining balance after this payment
+    const newTotalPaid = updatedPayments.reduce((sum, p) => sum + p.amount, 0);
+    const newRemainingBalance = total - newTotalPaid;
+
+    // If fully paid or overpaid, auto-complete the order
+    if (newRemainingBalance <= 0) {
+      showNotification.success(`${methodToUse}: ${tendered.toFixed(2)} added - Completing order...`);
+      // Auto-complete with the updated payments
+      await processOrderCompletion(updatedPayments, newRemainingBalance);
+    } else {
+      const action = existingPaymentIndex >= 0 ? "updated" : "added";
+      showNotification.success(`${methodToUse}: ${tendered.toFixed(2)} ${action}`);
+    }
+  };
+
+  /* 🗑️ REMOVE PAYMENT */
+  const onRemovePayment = (paymentId: string) => {
+    setPayments((prev) => prev.filter((p) => p.id !== paymentId));
+    showNotification.info("Payment removed");
+  };
+
+  /* 🗑️ CLEAR ALL PAYMENTS */
+  const onClearAllPayments = () => {
+    setPayments([]);
+    setInputValue("");
+    showNotification.info("All payments cleared");
+  };
+
+  /* ✅ PROCESS ORDER COMPLETION (Internal helper) */
+  const processOrderCompletion = async (paymentsToProcess: PaymentEntry[], finalRemainingBalance: number) => {
     setLoading(true);
 
     try {
@@ -91,13 +171,6 @@ export default function PaymentDesktop() {
         !appState?.selected_order_mode_name
       ) {
         throw new Error("Missing required application state");
-      }
-
-      const selectedPaymentMethod = paymentMethods.find(
-        (pm) => pm.name === methodToUse
-      );
-      if (!selectedPaymentMethod) {
-        throw new Error(`Payment method "${methodToUse}" not found`);
       }
 
       const saleTransactionType = transactionTypes.find(tt => tt.name === "SALE");
@@ -113,14 +186,23 @@ export default function PaymentDesktop() {
         businessDate
       );
 
+      // Calculate totals from all payment entries
+      const totalTendered = paymentsToProcess.reduce((sum, p) => sum + p.amount, 0);
+
+      // Use first payment method or "SPLIT" if multiple methods
+      const uniqueMethods = [...new Set(paymentsToProcess.map(p => p.paymentMethodName))];
+      const paymentMethodName = uniqueMethods.length === 1 ? uniqueMethods[0] : "SPLIT";
+      const paymentMethodId = paymentsToProcess[0]?.paymentMethodId || "";
+
+      // Build ticket request
       const ticketRequest = buildTicketRequest({
         items,
         charges,
         subtotal,
         total,
-        paymentMethod: selectedPaymentMethod.name,
-        paymentMethodId: selectedPaymentMethod.id,
-        tenderedAmount: tendered,
+        paymentMethod: paymentMethodName,
+        paymentMethodId: paymentMethodId,
+        tenderedAmount: totalTendered,
         locationId: appState.selected_location_id,
         locationName: appState.selected_location_name,
         orderModeName: appState.selected_order_mode_name,
@@ -130,6 +212,7 @@ export default function PaymentDesktop() {
         paymentTransactionTypeId: paymentTransactionType.id,
         transactionTypes,
         queueNumber,
+        currencyCode,
       });
 
       const result = await ticketService.createTicket(
@@ -146,11 +229,60 @@ export default function PaymentDesktop() {
 
       window.dispatchEvent(new CustomEvent("ticketCreated"));
 
-      /* Broadcast to KDS */
+      const ticketId = result.ticketId || `offline-${Date.now()}`;
+      const createdAt = new Date().toISOString();
+
+      /* Save to local KDS tickets */
+      try {
+        await kdsTicketLocal.saveTicket({
+          id: ticketId,
+          ticketNumber: String(ticketRequest.ticket.ticket_number),
+          orderId: ticketId,
+          locationId: appState.selected_location_id,
+          orderModeName: appState.selected_order_mode_name,
+          status: "IN_PROGRESS",
+          items: JSON.stringify(items.map(item => ({
+            id: item.id,
+            name: item.name,
+            quantity: item.quantity,
+            price: item.price,
+            notes: item.notes || "",
+            modifiers: item.modifiers || [],
+            completed: false,
+          }))),
+          totalAmount: Math.round(total * 100),
+          tokenNumber: queueNumber,
+          createdAt,
+          updatedAt: createdAt,
+        });
+        console.log("✅ KDS ticket saved locally");
+      } catch (err) {
+        console.error("Failed to save KDS ticket locally:", err);
+      }
+
+      /* Save to local Queue tokens */
+      try {
+        await queueTokenLocal.saveToken({
+          id: crypto.randomUUID(),
+          ticket_id: ticketId,
+          ticket_number: String(ticketRequest.ticket.ticket_number),
+          token_number: queueNumber,
+          status: "WAITING",
+          source: "POS",
+          location_id: appState.selected_location_id,
+          order_mode: appState.selected_order_mode_name,
+          created_at: createdAt,
+        });
+        console.log("✅ Queue token saved locally");
+      } catch (err) {
+        console.error("Failed to save queue token locally:", err);
+      }
+
+      /* Broadcast via WebSocket */
       try {
         await websocketService.broadcastOrder({
-          ticket_id: result.ticketId || `offline-${Date.now()}`,
-          ticket_number: ticketRequest.ticket.ticket_number,
+          ticket_id: ticketId,
+          ticket_number: String(ticketRequest.ticket.ticket_number),
           order_mode: appState.selected_order_mode_name,
           location_id: appState.selected_location_id,
           location: appState.selected_location_name,
@@ -165,21 +297,25 @@ export default function PaymentDesktop() {
             modifiers: item.modifiers || [],
             completed: false,
           })),
-          created_at: new Date().toISOString(),
+          created_at: createdAt,
         });
+        console.log("✅ Order broadcast via WebSocket");
       } catch (err) {
-        showNotification.warning("Failed to broadcast order");
+        console.warn("WebSocket broadcast skipped (no connected devices)");
       }
 
-      const isCash = selectedPaymentMethod.name
-        .toLowerCase()
-        .includes("cash");
+      // Check if any payment is cash
+      const hasCashPayment = paymentsToProcess.some(p =>
+        p.paymentMethodName.toLowerCase().includes("cash")
+      );
 
-      if (isCash) {
+      if (hasCashPayment) {
         setShowDrawer(true);
       } else {
-        setFinal({ total, balance });
+        const changeAmount = Math.abs(finalRemainingBalance);
+        setFinal({ total, balance: changeAmount });
         await clear();
+        setPayments([]); // Clear payments
         setShowSuccess(true);
       }
     } catch (error: any) {
@@ -190,10 +326,12 @@ export default function PaymentDesktop() {
   };
 
   const onComplete = async () => {
-    setFinal({ total, balance });
+    const finalBalance = Math.abs(remainingBalance);
+    setFinal({ total, balance: finalBalance });
     setShowDrawer(false);
     setShowSuccess(true);
     await clear();
+    setPayments([]); // Clear payments
   };
 
   /* 🖨️ PRINT RECEIPT */
@@ -215,7 +353,7 @@ export default function PaymentDesktop() {
           amount: charge.amount,
         })),
         total: final.total,
-        payment_method: selectedMethod,
+        payment_method: payments.map(p => p.paymentMethodName).join(", "),
         tendered: final.total + final.balance,
         change: final.balance,
         timestamp: new Date().toLocaleString(),
@@ -238,17 +376,20 @@ export default function PaymentDesktop() {
         isOpen
         onClose={() => {}}
         onBackToMenu={() => navigate("/pos")}
-        tenderedAmount={tendered || 0}
+        payments={payments}
+        onRemovePayment={onRemovePayment}
+        onClearAllPayments={onClearAllPayments}
       />
 
       <div className="flex-1 p-6 overflow-hidden">
         <CenterPaymentContent
           total={total}
-          balance={balance}
+          balance={changeAmount}
           inputValue={inputValue}
           setInputValue={setInputValue}
           onQuick={(n) => setInputValue(n.toFixed(2))}
           onKey={onKey}
+          remainingAmount={remainingBalance}
         />
       </div>
 
@@ -259,8 +400,9 @@ export default function PaymentDesktop() {
         onMethodSelect={setSelectedMethod}
         onCancel={() => navigate("/pos")}
         isPaymentReady={isPaymentReady}
-        onPay={onPay}
+        onPay={onAddPayment}
         isProcessing={loading}
+        remainingBalance={remainingBalance}
       />
 
       {showDrawer && (

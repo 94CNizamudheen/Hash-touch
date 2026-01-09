@@ -10,6 +10,7 @@ import {
   ChartBarBigIcon,
   Globe,
   Flag,
+  Monitor,
   // BriefcaseBusiness,
   // MousePointer2Icon,
 } from "lucide-react";
@@ -97,6 +98,13 @@ export const MENUSELECTIONNAVIGATION = [
   ========================= */
   {
     id: 11,
+    title: "Switch Device",
+    icon: <Monitor className="lg:w-4 lg:h-4 w-4 h-4" strokeWidth={2.5} />,
+    position: "Bottom",
+    action: (openModal: (c: string) => void) => openModal("switchDevice"),
+  },
+  {
+    id: 12,
     title: "Location",
     icon: <MapPin className="lg:w-4 lg:h-4 w-4 h-4" strokeWidth={2.5} />,
     position: "Bottom",
@@ -105,14 +113,14 @@ export const MENUSELECTIONNAVIGATION = [
   },
 
   {
-    id: 12,
+    id: 13,
     title: "Dine In",
     icon: <Table className="lg:w-4 lg:h-4 w-4 h-4" strokeWidth={2.5} />,
     position: "Bottom",
     action: (openModal: (c: string) => void) => openModal("dineIn"),
   },
   {
-    id: 13,
+    id: 14,
     title: "Home",
     icon: <Home className="lg:w-4 lg:h-4 w-4 h-4" strokeWidth={2.5} />,
     position: "Bottom",

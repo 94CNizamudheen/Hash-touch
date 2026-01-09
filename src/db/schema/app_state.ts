@@ -34,7 +34,7 @@ export const appStateSqlite = sqliteTable("app_state", {
 
   // WebSocket Settings
   wsServerMode: integer("ws_server_mode").default(0),
-  wsServerUrl: text("ws_server_url").default("ws://localhost:9001"),
+  wsServerUrl: text("ws_server_url").default(""),
 
   createdAt: integer("created_at", { mode: "timestamp" })
     .default(sql`CURRENT_TIMESTAMP`),

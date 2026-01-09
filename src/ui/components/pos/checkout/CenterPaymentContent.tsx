@@ -10,6 +10,7 @@ interface Props {
   setInputValue: (v: string) => void;
   onQuick: (n: number) => void;
   onKey: (k: string) => void;
+  remainingAmount?: number; // NEW: Remaining amount after payments
 }
 
 export default function CenterPaymentContent({
@@ -19,18 +20,22 @@ export default function CenterPaymentContent({
   setInputValue,
   onQuick,
   onKey,
+  remainingAmount,
 }: Props) {
   const { t, i18n } = useTranslation();
   const { currencySymbol } = useSetup();
 
-  // Generate dynamic quick amounts
-  const generateQuickAmounts = (total: number): number[] => {
-    const roundedTotal = Math.ceil(total);
-    const base = Math.ceil(roundedTotal / 5) * 5;
+  // Use remaining amount if provided, otherwise use total
+  const displayTotal = remainingAmount !== undefined ? remainingAmount : total;
+
+  // Generate dynamic quick amounts based on remaining amount
+  const generateQuickAmounts = (amount: number): number[] => {
+    const roundedAmount = Math.ceil(amount);
+    const base = Math.ceil(roundedAmount / 5) * 5;
     return [base, base + 5, base + 10];
   };
 
-  const quickAmounts = generateQuickAmounts(total);
+  const quickAmounts = generateQuickAmounts(displayTotal);
 
   // Arabic numerals mapping
   const arabicNumerals: Record<string, string> = {
@@ -61,10 +66,10 @@ export default function CenterPaymentContent({
       <div className="mb-3">
         <div className="flex justify-between items-baseline p-3 border-b pb-1">
           <span className="text-lg text-muted-foreground">
-            {t("Total")}:
+            {remainingAmount !== undefined ? t("Remaining") : t("Total")}:
           </span>
           <span className="text-3xl font-bold">
-            {currencySymbol} {total.toFixed(2)}
+            {currencySymbol} {displayTotal.toFixed(2)}
           </span>
         </div>
 
@@ -113,10 +118,12 @@ export default function CenterPaymentContent({
       {/* Actions */}
       <div className="grid grid-cols-3 gap-2 mb-3">
         <Button
-          onClick={() => setInputValue(total.toFixed(2))}
+          onClick={() => setInputValue(displayTotal.toFixed(2))}
           className="bg-blue-600 hover:bg-blue-700 text-white h-12"
         >
-          {t("All")}
+          {remainingAmount !== undefined 
+            ? `${t("All")} (${currencySymbol}${displayTotal.toFixed(2)})` 
+            : t("All")}
         </Button>
 
         <Button variant="outline" className="h-12">
@@ -150,7 +157,7 @@ export default function CenterPaymentContent({
               <button
                 key={k}
                 onClick={() => onKey(k)}
-                className="h-20 rounded-lg text-2xl font-semibold border bg-white hover:bg-gray-50 transition active:scale-95"
+                className="h-20 rounded-lg text-2xl font-semibold border bg-socondary hover:bg-gray-50 hover:text-black transition active:scale-95"
               >
                 {getKeypadDisplay(k)}
               </button>

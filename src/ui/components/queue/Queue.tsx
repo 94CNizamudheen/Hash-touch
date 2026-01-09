@@ -53,7 +53,8 @@ export default function QueueDisplay() {
   }, [fetchTokens])
 
   const waitingTokens = tokens.filter((t) => t.status === "WAITING")
-  const calledTokens = tokens.filter((t) => t.status === "CALLED")
+  // Show both READY and CALLED tokens in "Ready for pick up" section
+  const readyTokens = tokens.filter((t) => t.status === "CALLED");
 
   if (loading) {
     return <SplashScreen />
@@ -79,12 +80,12 @@ export default function QueueDisplay() {
         <div
           className="flex-1 flex flex-wrap content-start gap-4 p-6 overflow-y-auto  "
         >
-          {calledTokens.length === 0 ? (
+          {readyTokens.length === 0 ? (
             <p style={{ color: "var(--muted-foreground)" }} className="w-full text-center">
               No tokens ready for pick up
             </p>
           ) : (
-            calledTokens.map((token) => (
+            readyTokens.map((token) => (
               <div
                 key={token.id}
                 className="flex items-center justify-center font-bold text-4xl rounded-lg w-32 h-28"

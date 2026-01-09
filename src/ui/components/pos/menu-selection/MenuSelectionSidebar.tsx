@@ -1,5 +1,6 @@
 import ModalDepartment from "../modal/menu-selection/ModalDepartment";
 import ModalReasonVoid from "../modal/menu-selection/ModalReasonVoid";
+import SwitchDeviceModal from "../modal/menu-selection/SwitchDeviceModal";
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 
@@ -22,6 +23,8 @@ import { useNotification } from "@/ui/context/NotificationContext";
 import { logoutService } from "@/services/auth/logout.service";
 import DirectionToggle from "@/ui/components/common/DirectionToggle";
 import { initialSync } from "@/services/data/initialSync.service";
+import { localEventBus } from "@/services/eventbus/LocalEventBus";
+import type { DeviceRole } from "@/types/app-state";
 
 
 
@@ -46,6 +49,7 @@ const MenuSelectionSidebar = ({
   const [showEndShift, setShowEndShift] = useState(false);
   const [showLanguageModal, setShowLanguageModal] = useState(false);
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
+  const [showSwitchDevice, setShowSwitchDevice] = useState(false);
   const [pendingTicketsCount, setPendingTicketsCount] = useState(0);
   const { isLoggingOut, setIsLoggingOut } = useLogout();
   const { showNotification } = useNotification();
@@ -128,6 +132,9 @@ const MenuSelectionSidebar = ({
       case "dineIn":
         setShowDineInBoard(true);
         break;
+      case "switchDevice":
+        setShowSwitchDevice(true);
+        break;
       case "shift":
         if (isShiftOpen) {
           setShowEndShift(true);
@@ -138,6 +145,12 @@ const MenuSelectionSidebar = ({
         setIsModalOpen(true);
         break;
     }
+  };
+
+  // Handle device switch - emits event for App.tsx to handle
+  const handleDeviceSwitch = (role: DeviceRole) => {
+    console.log("[MenuSelectionSidebar] Switching to role:", role);
+    localEventBus.emit("device:switch_role", { role });
   };
 
 
@@ -241,6 +254,12 @@ const MenuSelectionSidebar = ({
       <LanguageModal
         isOpen={showLanguageModal}
         onClose={() => setShowLanguageModal(false)}
+      />
+
+      <SwitchDeviceModal
+        isOpen={showSwitchDevice}
+        onClose={() => setShowSwitchDevice(false)}
+        onSwitch={handleDeviceSwitch}
       />
 
       <div
@@ -366,7 +385,9 @@ const MenuSelectionSidebar = ({
                         ? selectedLocationName
                         : item.title === "Dine In"
                           ? selectedOrderModeName || t("Select Mode")
-                          : t(item.title)
+                          : item.title === "Switch Device"
+                            ? appState?.device_role || t("Switch Device")
+                            : t(item.title)
                     }
                   >
                     <div className="flex-shrink-0">{item.icon}</div>
@@ -385,7 +406,9 @@ const MenuSelectionSidebar = ({
                         ? selectedLocationName
                         : item.title === "Dine In"
                           ? selectedOrderModeName || t("Select Mode")
-                          : t(item.title)}
+                          : item.title === "Switch Device"
+                            ? appState?.device_role || t("Switch Device")
+                            : t(item.title)}
                     </p>
 
                   </div>

@@ -59,7 +59,9 @@ export const QueueWebSocketProvider = ({ children }: { children: ReactNode }) =>
     try {
       clientRef.current?.disconnect();
 
-      const wsClient = new WebSocketClient(wsUrl, device.id, "QUEUE");
+      // Use unique ID (device.id + role) to support multiple apps on same device
+      const uniqueDeviceId = `${device.id}_QUEUE`;
+      const wsClient = new WebSocketClient(wsUrl, uniqueDeviceId, "QUEUE");
 
       await wsClient.connect();
       await wsClient.waitForRegisterAck();

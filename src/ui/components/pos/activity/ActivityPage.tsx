@@ -85,7 +85,7 @@ export default function ActivityPage() {
   }
 
   return (
-    <div className="flex flex-col h-full bg-white">
+    <div className="flex flex-col h-full bg-background">
       {/* ================= HEADER ================= */}
       <div className="flex items-center justify-center relative py-4 border-b">
         <Button

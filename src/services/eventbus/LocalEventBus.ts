@@ -69,6 +69,7 @@ export const LocalEventTypes = {
   RECEIPT_PRINTED: "receipt:printed",
   DEVICE_CONNECTED: "device:connected",
   DEVICE_DISCONNECTED: "device:disconnected",
+  DEVICE_SWITCH_ROLE: "device:switch_role",
   // KDS Events
   KDS_TICKET_REMOVED: "kds:ticket_removed",
   KDS_STATUS_CHANGED: "kds:status_changed",
@@ -77,5 +78,5 @@ export const LocalEventTypes = {
   QUEUE_UPDATED: "queue:updated",
   QUEUE_TOKEN_CALLED: "queue:token_called",
   QUEUE_TOKEN_SERVED: "queue:token_served",
-  
+
 } as const;

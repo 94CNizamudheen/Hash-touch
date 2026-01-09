@@ -12,6 +12,7 @@ interface PaymentMethodsSidebarProps {
   isPaymentReady: boolean;
   onPay: (paymentMethodName?: string) => void;
   isProcessing?: boolean;
+  remainingBalance?: number; // Optional - for display purposes
 }
 
 export default function PaymentMethodsSidebar({
@@ -38,8 +39,6 @@ export default function PaymentMethodsSidebar({
       }}
     >
       <div className="w-[300px] h-full bg-background flex flex-col border-l border-border shadow-lg relative">
-
-
         {/* Close button for mobile */}
         {isMobileOverlay && (
           <div className="p-3 border-b">
@@ -49,7 +48,7 @@ export default function PaymentMethodsSidebar({
           </div>
         )}
 
-        {/* Methods - Equal height distribution */}
+        {/* Payment Methods - Equal height distribution */}
         <div className="flex-1 flex flex-col p-3 gap-3">
           {loading && (
             <div className="flex-1 flex items-center justify-center text-muted-foreground">

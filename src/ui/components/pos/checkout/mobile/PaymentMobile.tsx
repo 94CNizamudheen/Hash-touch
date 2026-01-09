@@ -16,8 +16,11 @@ import { buildTicketRequest } from "@/ui/utils/ticketBuilder";
 import { ticketService } from "@/services/data/ticket.service";
 import LeftActionRail from "../LeftActionRail";
 import { ticketLocal } from "@/services/local/ticket.local.service";
+import { kdsTicketLocal } from "@/services/local/kds-ticket.local.service";
+import { queueTokenLocal } from "@/services/local/queue-token.local.service";
+import { websocketService } from "@/services/websocket/websocket.service";
 import { useNotification } from "@/ui/context/NotificationContext";
-
+import { useSetup } from "@/ui/context/SetupContext";
 
 export default function PaymentMobile() {
     const navigate = useNavigate();
@@ -39,8 +42,13 @@ export default function PaymentMobile() {
     const [final, setFinal] = useState({ total: 0, balance: 0 });
     const [showActions, setShowActions] = useState(false);
     const [loading, setLoading] = useState(false);
-    const [isPaymentReady, _setIsPaymentReady] = useState(false);
     const {showNotification}= useNotification()
+    const { currencyCode } = useSetup();
+
+    // Calculate isPaymentReady based on tendered amount > 0
+    const tendered = parseFloat(inputValue) || 0;
+    const isPaymentReady = !isNaN(tendered) && tendered > 0;
+
     // Set default payment method when payment methods are loaded
     useEffect(() => {
         if (paymentMethods.length > 0 && !selectedMethod) {
@@ -50,7 +58,6 @@ export default function PaymentMobile() {
 
     if (!isHydrated) return null;
 
-    const tendered = parseFloat(inputValue) || 0;
     const balance = tendered - total;
 
     const onKey = (k: string) => {
@@ -122,7 +129,8 @@ export default function PaymentMobile() {
                 saleTransactionTypeId: saleTransactionType.id,
                 paymentTransactionTypeId: paymentTransactionType.id,
                 transactionTypes,
-                queueNumber
+                queueNumber,
+                currencyCode,
             });
 
             console.log("📝 Creating ticket:", ticketRequest);
@@ -137,11 +145,86 @@ export default function PaymentMobile() {
             if (result.offline) {
                 showNotification.info("Ticket saved offline and will sync when internet is available");
             } else {
-               showNotification.info("✅ Ticket created successfully online");
+                showNotification.info("Ticket created successfully");
             }
 
             // Dispatch custom event to notify Activity page
             window.dispatchEvent(new CustomEvent("ticketCreated"));
+
+            const ticketId = result.ticketId || `offline-${Date.now()}`;
+            const createdAt = new Date().toISOString();
+
+            /* Save to local KDS tickets (for single device switching) */
+            try {
+                await kdsTicketLocal.saveTicket({
+                    id: ticketId,
+                    ticketNumber: String(ticketRequest.ticket.ticket_number),
+                    orderId: ticketId,
+                    locationId: appState.selected_location_id,
+                    orderModeName: appState.selected_order_mode_name,
+                    status: "IN_PROGRESS",
+                    items: JSON.stringify(items.map(item => ({
+                        id: item.id,
+                        name: item.name,
+                        quantity: item.quantity,
+                        price: item.price,
+                        notes: item.notes || "",
+                        modifiers: item.modifiers || [],
+                        completed: false,
+                    }))),
+                    totalAmount: Math.round(total * 100),
+                    tokenNumber: queueNumber,
+                    createdAt,
+                    updatedAt: createdAt,
+                });
+                console.log("✅ KDS ticket saved locally");
+            } catch (err) {
+                console.error("Failed to save KDS ticket locally:", err);
+            }
+
+            /* Save to local Queue tokens (for single device switching) */
+            try {
+                await queueTokenLocal.saveToken({
+                    id: crypto.randomUUID(),
+                    ticket_id: ticketId,
+                    ticket_number: String(ticketRequest.ticket.ticket_number),
+                    token_number: queueNumber,
+                    status: "WAITING",
+                    source: "POS",
+                    location_id: appState.selected_location_id,
+                    order_mode: appState.selected_order_mode_name,
+                    created_at: createdAt,
+                });
+                console.log("✅ Queue token saved locally");
+            } catch (err) {
+                console.error("Failed to save queue token locally:", err);
+            }
+
+            /* Broadcast to KDS/Queue via WebSocket (for multi-device) */
+            try {
+                await websocketService.broadcastOrder({
+                    ticket_id: ticketId,
+                    ticket_number: ticketRequest.ticket.ticket_number,
+                    order_mode: appState.selected_order_mode_name,
+                    location_id: appState.selected_location_id,
+                    location: appState.selected_location_name,
+                    total_amount: Math.round(total * 100),
+                    token_number: queueNumber,
+                    items: items.map(item => ({
+                        id: item.id,
+                        name: item.name,
+                        quantity: item.quantity,
+                        price: item.price,
+                        notes: item.notes || "",
+                        modifiers: item.modifiers || [],
+                        completed: false,
+                    })),
+                    created_at: createdAt,
+                });
+                console.log("✅ Order broadcast via WebSocket");
+            } catch (err) {
+                console.warn("WebSocket broadcast skipped (no connected devices)");
+            }
 
             // Check if payment method is cash (handle variations)
             const paymentMethodName = selectedPaymentMethod.name.toLowerCase().trim();
@@ -204,7 +287,6 @@ export default function PaymentMobile() {
                     isOpen
                     onClose={() => setShowOrder(false)}
                     onBackToMenu={() => navigate("/pos")}
-                    tenderedAmount={tendered}
                 />
             )}
 
@@ -221,6 +303,7 @@ export default function PaymentMobile() {
                     isPaymentReady={isPaymentReady}
                     onPay={onPay}
                     isProcessing={loading}
+                    remainingBalance={total}
                 />
             )}
 

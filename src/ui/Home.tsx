@@ -8,10 +8,10 @@ const ROLES: { key: DeviceRole; label: string; }[] = [
     key: "POS", 
     label: "Point of Sale",
   },
-  { 
-    key: "KIOSK", 
-    label: "Self-Ordering Kiosk",
-  },
+  // { 
+  //   key: "KIOSK", 
+  //   label: "Self-Ordering Kiosk",
+  // },
   { 
     key: "KDS", 
     label: "Kitchen Display System",

@@ -55,7 +55,9 @@ export const PosWebSocketProvider = ({ children }: { children: ReactNode }) => {
         try {
             clientRef.current?.disconnect();
 
-            const wsClient = new WebSocketClient(wsUrl, device.id, "POS");
+            // Use unique ID (device.id + role) to support multiple apps on same device
+            const uniqueDeviceId = `${device.id}_POS`;
+            const wsClient = new WebSocketClient(wsUrl, uniqueDeviceId, "POS");
 
             await wsClient.connect();
             await wsClient.waitForRegisterAck();

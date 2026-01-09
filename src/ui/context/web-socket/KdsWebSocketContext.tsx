@@ -61,8 +61,9 @@ export const KdsWebSocketProvider = ({ children }: { children: ReactNode }) => {
         clientRef.current = null;
       }
 
-      // Create WebSocket client
-      const newClient = new WebSocketClient(wsUrl, device.id, deviceRole);
+      // Create WebSocket client with unique ID (device.id + role) to support multiple apps on same device
+      const uniqueDeviceId = `${device.id}_${deviceRole}`;
+      const newClient = new WebSocketClient(wsUrl, uniqueDeviceId, deviceRole);
 
       // Connect
       await newClient.connect();

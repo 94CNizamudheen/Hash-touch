@@ -61,7 +61,7 @@ export default function CategoryTabs({
                     rounded-xl p-1.5 cursor-pointer flex flex-row gap-2 items-center w-full min-w-[200px] border transition-colors h-12
                     ${isActive
                       ? "bg-primary text-primary-foreground border-primary shadow-md"
-                      : "bg-white text-foreground border-gray-300 hover:bg-gray-50"
+                      : "bg-secondary text-foreground border-border hover:bg-gray-50 hover:text-black "
                     }
                   `}
                 >

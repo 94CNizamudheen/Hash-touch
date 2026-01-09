@@ -1,22 +1,29 @@
-import { Settings, Power, ListOrdered } from "lucide-react";
+import { Settings, Power, ListOrdered, Monitor } from "lucide-react";
 import logo from '@/assets/logo_2.png';
-// import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/ui/shadcn/components/ui/select";
 import { useState, useEffect } from "react";
 import MobileLeftSidebar from "./mobile/MobileLeftSidebar";
-// import { kdsSettingsLocal } from "@/services/local/kds-settings.local.service";
 import { logoutService } from "@/services/auth/logout.service";
 import { kdsTicketLocal } from "@/services/local/kds-ticket.local.service";
 import type { Ticket, TicketItem } from "../tickets/ticket.types";
 import { Button } from "@/ui/shadcn/components/ui/button";
 import { useNavigate } from "react-router-dom";
+import SwitchDeviceModal from "@/ui/components/pos/modal/menu-selection/SwitchDeviceModal";
+import { localEventBus } from "@/services/eventbus/LocalEventBus";
+import type { DeviceRole } from "@/types/app-state";
 
 
 const KDSTicketHeader = () => {
-    // const [viewMode, setViewMode] = useState("Classic");
     const [orderMenuOPen, setIsOrderMenuOPen] = useState(false);
     const [isLoggingOut, setIsLoggingOut] = useState(false);
     const [tickets, setTickets] = useState<Ticket[]>([]);
-    const navigate=useNavigate()
+    const [showSwitchDevice, setShowSwitchDevice] = useState(false);
+    const navigate = useNavigate();
+
+    // Handle device switch
+    const handleDeviceSwitch = (role: DeviceRole) => {
+        console.log("[KDSTicketHeader] Switching to role:", role);
+        localEventBus.emit("device:switch_role", { role });
+    };
 
     useEffect(() => {
         const loadTickets = async () => {
@@ -97,16 +104,25 @@ const KDSTicketHeader = () => {
                 
 
                     <div className="flex items-center gap-1 ml-2">
-                        {/* shadcn Select Dropdown */}
-                        <Button onClick={() => setIsOrderMenuOPen(true)} className=" rounded hover:bg-primary-hover">
-                            <ListOrdered className="stroke-amber-50" size={20} />
-                            List of items
+                        {/* Switch Device Button */}
+                        <Button
+                            onClick={() => setShowSwitchDevice(true)}
+                            variant="outline"
+                            className="rounded hover:bg-gray-100"
+                        >
+                            <Monitor size={18} />
+                            <span className="ml-1 hidden sm:inline">Switch</span>
+                        </Button>
 
-                        </Button>                  
+                        {/* List of Items Button */}
+                        <Button onClick={() => setIsOrderMenuOPen(true)} className="rounded hover:bg-primary-hover">
+                            <ListOrdered className="stroke-amber-50" size={20} />
+                            <span className="hidden sm:inline ml-1">List of items</span>
+                        </Button>
 
                         {/* Settings Button */}
                         <button
-                        onClick={()=>navigate('/kds/settings')}
+                            onClick={() => navigate('/kds/settings')}
                             className="w-9 h-9 flex items-center justify-center rounded-full hover:bg-gray-100 text-gray-700 transition-colors"
                         >
                             <Settings size={20} />
@@ -126,6 +142,13 @@ const KDSTicketHeader = () => {
 
                 <MobileLeftSidebar open={orderMenuOPen} onClose={() => setIsOrderMenuOPen(false)} tickets={tickets} />
             </header>
+
+            {/* Switch Device Modal */}
+            <SwitchDeviceModal
+                isOpen={showSwitchDevice}
+                onClose={() => setShowSwitchDevice(false)}
+                onSwitch={handleDeviceSwitch}
+            />
         </>
     );
 };
