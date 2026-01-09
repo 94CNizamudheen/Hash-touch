@@ -1,5 +1,5 @@
 
-import CartSidebar from "../CartSidebar";
+import CartSidebar from "./CartSidebar";
 import { useState, type ReactNode } from "react";
 import { ShoppingCart, TextAlignJustifyIcon } from "lucide-react";
 import { useCart } from "@/ui/context/CartContext";

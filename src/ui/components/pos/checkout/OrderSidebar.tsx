@@ -43,11 +43,11 @@ export default function OrderSidebar({
   const { charges, totalCharges } = useCharges(items, total);
 
   const subtotal = total;
-  const grandTotal = subtotal + totalCharges;
+  const grandTotal = Math.round((subtotal + totalCharges) * 100) / 100;
 
-  // Calculate total paid from all payment entries
-  const totalPaid = payments.reduce((sum, p) => sum + p.amount, 0);
-  const remainingBalance = grandTotal - totalPaid;
+  // Calculate total paid from all payment entries (round to avoid floating point issues)
+  const totalPaid = Math.round(payments.reduce((sum, p) => sum + p.amount, 0) * 100) / 100;
+  const remainingBalance = Math.round((grandTotal - totalPaid) * 100) / 100;
 
   // 🔒 Prevent background scroll on mobile overlay
   useEffect(() => {

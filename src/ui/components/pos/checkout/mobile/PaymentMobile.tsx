@@ -29,9 +29,9 @@ export default function PaymentMobile() {
     const { paymentMethods } = usePaymentMethods();
     const { transactionTypes } = useTransactionTypes();
 
-    const subtotal = items.reduce((s, i) => s + i.price * i.quantity, 0);
+    const subtotal = Math.round(items.reduce((s, i) => s + i.price * i.quantity, 0) * 100) / 100;
     const { charges, totalCharges } = useCharges(items, subtotal);
-    const total = subtotal + totalCharges;
+    const total = Math.round((subtotal + totalCharges) * 100) / 100;
 
     const [inputValue, setInputValue] = useState("0.00");
     const [selectedMethod, setSelectedMethod] = useState("");
@@ -58,7 +58,7 @@ export default function PaymentMobile() {
 
     if (!isHydrated) return null;
 
-    const balance = tendered - total;
+    const balance = Math.round((tendered - total) * 100) / 100;
 
     const onKey = (k: string) => {
         if (k === "C") return setInputValue("0.00");
@@ -74,7 +74,8 @@ export default function PaymentMobile() {
         const tenderedRounded = Math.round(tendered * 100) / 100;
         const totalRounded = Math.round(total * 100) / 100;
 
-        if (tenderedRounded < totalRounded) {
+        // Use small epsilon (0.01) for floating point safety
+        if (tenderedRounded < totalRounded - 0.01) {
             alert("Insufficient payment");
             return;
         }
@@ -276,7 +277,7 @@ export default function PaymentMobile() {
                     setInputValue={setInputValue}
                     onQuick={(n) => setInputValue(n.toFixed(2))}
                     onKey={onKey}
-                   
+                    remainingAmount={total}
                 />
             </div>
 

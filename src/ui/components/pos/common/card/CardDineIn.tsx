@@ -81,10 +81,10 @@ const CardDineIn = ({
   }, [isDragging, handleMove, handleEnd]);
   
   return (
-    <div className="relative overflow-hidden rounded-xl">
+    <div className="relative overflow-hidden rounded-lg md:rounded-xl">
       {/* Delete Background */}
-      <div className="absolute inset-0 bg-destructive flex items-center justify-end pr-6 rounded-xl">
-        <Trash2 size={24} className="text-destructive-foreground" />
+      <div className="absolute inset-0 bg-destructive flex items-center justify-end pr-4 md:pr-6 rounded-lg md:rounded-xl">
+        <Trash2 className="w-5 h-5 md:w-6 md:h-6 text-destructive-foreground" />
       </div>
 
       {/* Card Content */}
@@ -101,25 +101,27 @@ const CardDineIn = ({
           transform: `translateX(${translateX}px)`,
           transition: isDragging ? "none" : "transform 0.3s ease-out",
         }}
-        className="bg-secondary border border-border rounded-xl p-4 shadow-sm cursor-pointer touch-none"
+        className="bg-secondary border border-border rounded-lg md:rounded-xl p-2.5 md:p-4 shadow-sm cursor-pointer touch-none"
       >
-        <div className="flex justify-between items-start mb-3">
-          <h3 className=" text-foreground flex-1">
+        <div className="flex justify-between items-start mb-2 md:mb-3 gap-2">
+          <h3 className="text-sm md:text-base text-foreground flex-1 line-clamp-2 leading-tight">
             {menu}
           </h3>
-          <span className="font-bold text-lg text-foreground"> {totalPrice.toFixed(2)}</span>
+          <span className="font-bold text-sm md:text-lg text-foreground flex-shrink-0">
+            {totalPrice.toFixed(2)}
+          </span>
         </div>
 
         {/* Modifiers List */}
         {modifiers && modifiers.length > 0 && (
-          <div className="space-y-1 mb-4">
+          <div className="space-y-0.5 md:space-y-1 mb-2 md:mb-4">
             {modifiers.map((modifier, idx) => (
-              <div key={idx} className="flex justify-between items-center text-sm">
-                <span className="text-foreground">
+              <div key={idx} className="flex justify-between items-center text-xs md:text-sm gap-2">
+                <span className="text-muted-foreground truncate">
                   {modifier.name} x {modifier.qty} @ {modifier.price.toFixed(2)}
                 </span>
-                <span className="text-foreground font-medium">
-                 $ {(modifier.price * modifier.qty).toFixed(2)}
+                <span className="text-foreground font-medium flex-shrink-0">
+                  {(modifier.price * modifier.qty).toFixed(2)}
                 </span>
               </div>
             ))}
@@ -133,12 +135,12 @@ const CardDineIn = ({
               e.stopPropagation();
               onDecrement();
             }}
-            className="w-8 h-8 rounded rounded-l-xl bg-primary hover:bg-primary-hover text-primary-foreground flex items-center justify-center transition-colors"
+            className="w-7 h-7 md:w-8 md:h-8 rounded rounded-l-lg md:rounded-l-xl bg-primary hover:bg-primary-hover active:bg-primary-hover text-primary-foreground flex items-center justify-center transition-colors"
           >
-            <Minus size={20} strokeWidth={2.5} />
+            <Minus className="w-4 h-4 md:w-5 md:h-5" strokeWidth={2.5} />
           </button>
 
-          <span className="text-lg font-semibold min-w-[20px] text-center text-foreground">
+          <span className="text-sm md:text-lg font-semibold min-w-[20px] text-center text-foreground">
             {quantity}
           </span>
 
@@ -147,9 +149,9 @@ const CardDineIn = ({
               e.stopPropagation();
               onIncrement();
             }}
-            className="w-8 h-8 rounded rounded-r-xl bg-primary hover:bg-primary-hover text-primary-foreground flex items-center justify-center transition-colors"
+            className="w-7 h-7 md:w-8 md:h-8 rounded rounded-r-lg md:rounded-r-xl bg-primary hover:bg-primary-hover active:bg-primary-hover text-primary-foreground flex items-center justify-center transition-colors"
           >
-            <Plus size={20} strokeWidth={2.5} />
+            <Plus className="w-4 h-4 md:w-5 md:h-5" strokeWidth={2.5} />
           </button>
         </div>
       </div>

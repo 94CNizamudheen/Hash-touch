@@ -1,15 +1,18 @@
 import { motion, AnimatePresence } from "framer-motion";
-import { X } from "lucide-react";
+
 import { Button } from "@/ui/shadcn/components/ui/button";
-import PaymentOptions from "../common/payment/PaymentOptions";
+
 import { useNavigate } from "react-router-dom";
 import { useCart } from "@/ui/context/CartContext";
 import EmptyCart from "@/assets/empty-cart.png";
-import CardDineIn from "../common/card/CardDineIn";
-import ProductTagGroupModal from "./ProductTagGroupModal";
+import CardDineIn from "../../common/card/CardDineIn";
+import ProductTagGroupModal from "../ProductTagGroupModal";
+import ClearCartConfirmModal from "../../modal/ClearCartConfirmModal";
 import { useState } from "react";
 import type { CartItem } from "@/types/cart";
 import { useTranslation } from "react-i18next";
+import { useCharges } from "@/ui/hooks/useCharges";
+import { useSetup } from "@/ui/context/SetupContext";
 
 type CartSidebarProps = {
   open: boolean;
@@ -19,32 +22,45 @@ type CartSidebarProps = {
 const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
   const navigate = useNavigate();
   const { t } = useTranslation();
+  const { currencyCode } = useSetup();
 
   const {
     items,
     increment,
     decrement,
     remove,
-    clear,
+    clearCart,
     isHydrated,
     updateModifiers,
   } = useCart();
 
   const [modalOpen, setModalOpen] = useState(false);
   const [selectedCartItem, setSelectedCartItem] = useState<CartItem | null>(null);
+  const [showClearConfirm, setShowClearConfirm] = useState(false);
 
-  // Avoid flicker before SQLite hydration
-  if (!isHydrated) return null;
-
+  // Calculate total and charges before early returns to keep hooks order stable
   const total = items.reduce(
     (sum, item) => sum + item.price * item.quantity,
     0
   );
+  
+  // Calculate charges (hook called unconditionally)
+  const { charges, totalCharges } = useCharges(items, total);
+  const subtotal = total;
+  const grandTotal = subtotal + totalCharges;
+  
+  // Avoid flicker before SQLite hydration
+  if (!isHydrated) return null;
 
   const handleSettle = () => {
     navigate("/pos/payment-panel", {
-      state: { items, total },
+      state: { items, total: grandTotal },
     });
+  };
+
+  const handleClearCart = () => {
+    clearCart();
+    setShowClearConfirm(false);
   };
 
   const handleCardClick = (item: CartItem) => {
@@ -91,18 +107,6 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
                        bg-background z-50 shadow-2xl flex flex-col 
                        pointer-events-auto border-r border-border rounded-r-2xl"
           >
-            {/* Header */}
-            <div className="flex-shrink-0 flex items-center justify-between p-4 border-b border-border bg-secondary">
-              <h3 className="text-lg font-semibold text-foreground">
-                {t("Your Cart")}
-              </h3>
-              <button
-                onClick={onClose}
-                className="p-2 rounded-full bg-secondary hover:bg-primary-hover transition-colors"
-              >
-                <X className="w-5 h-5 text-foreground" />
-              </button>
-            </div>
 
             {/* Cart Items */}
             <div className="flex-1 overflow-y-auto p-3 flex flex-col gap-3 min-h-0">
@@ -135,46 +139,47 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
             </div>
 
             {/* Footer */}
-            <footer className="flex-shrink-0 border-t border-border p-3 flex flex-col gap-3 bg-background">
-              {/* Total */}
-              <div className="flex justify-between text-sm font-medium text-foreground border-b border-border pb-2">
-                <span>{t("Total")}</span>
-                <span>${total.toFixed(2)}</span>
-              </div>
+            <footer className="flex-shrink-0 border-t border-border p-3 flex flex-col gap-2 bg-background">
+              {/* Totals Section */}
+              {items.length > 0 && (
+                <div className="space-y-1 text-xs pb-2">
+                  <div className="flex justify-between text-foreground">
+                    <span>{t("Sub Total")}</span>
+                    <span>{currencyCode} {subtotal.toFixed(2)}</span>
+                  </div>
 
-              {/* Payment Options */}
-              <PaymentOptions />
+                  {charges.filter(charge => charge.applied).map((charge) => (
+                    <div key={charge.id} className="flex justify-between text-muted-foreground">
+                      <span>
+                        {charge.name} ({charge.percentage}%)
+                      </span>
+                      <span>{currencyCode} {charge.amount.toFixed(2)}</span>
+                    </div>
+                  ))}
+
+                  <div className="flex justify-between font-semibold text-sm pt-1 border-t border-border text-foreground">
+                    <span>{t("Grand Total")}</span>
+                    <span>{currencyCode} {grandTotal.toFixed(2)}</span>
+                  </div>
+                </div>
+              )}
 
               {/* Action Buttons */}
               <div className="flex gap-2">
                 <Button
                   onClick={handleSettle}
-                  className="flex-1 h-10 bg-primary text-primary-foreground text-sm font-medium rounded-[var(--radius)] hover:bg-primary-hover"
+                  className="flex-1 h-10 bg-primary text-primary-foreground text-sm font-medium rounded-lg hover:bg-primary-hover active:bg-primary-hover"
                   disabled={!items.length}
                 >
                   {t("Settle")}
                 </Button>
-                <Button
-                  onClick={onClose}
-                  className="flex-1 h-10 bg-secondary text-foreground text-sm font-medium rounded-[var(--radius)] hover:bg-secondary"
-                >
-                  {t("Close")}
-                </Button>
-              </div>
 
-              <div className="flex gap-2">
                 <Button
-                  onClick={clear}
-                  className="flex-1 h-10 bg-secondary text-foreground text-sm font-medium rounded-[var(--radius)] hover:bg-secondary"
+                  onClick={() => setShowClearConfirm(true)}
+                  className="flex-1 h-10 bg-secondary text-foreground text-sm font-medium rounded-lg hover:bg-muted active:bg-muted"
                   disabled={!items.length}
                 >
-                  {t("Clear Cart")}
-                </Button>
-                <Button
-                  className="flex-1 h-10 bg-secondary text-foreground text-sm font-medium rounded-[var(--radius)] hover:bg-secondary"
-                  disabled={!items.length}
-                >
-                  {t("Print Ticket")}
+                  {t("Clear")}
                 </Button>
               </div>
             </footer>
@@ -191,6 +196,14 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
               onConfirm={handleModalConfirm}
               initialModifiers={selectedCartItem.modifiers}
               isEditMode={true}
+            />
+          )}
+
+          {/* Clear Cart Confirm Modal */}
+          {showClearConfirm && (
+            <ClearCartConfirmModal
+              onClose={() => setShowClearConfirm(false)}
+              onConfirm={handleClearCart}
             />
           )}
         </>

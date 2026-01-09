@@ -49,7 +49,7 @@ export default function CategoryTabs({
       {isVertical ? (
         // Vertical layout
         <div className="w-full h-full overflow-y-auto no-scrollbar bg-background">
-          <div className="flex flex-col gap-3 p-3">
+          <div className="flex flex-col gap-1.5 md:gap-2 p-2 md:p-3">
             {categoriesList.map((cat) => {
               const isActive = selectedCategory === cat.value;
 
@@ -58,15 +58,16 @@ export default function CategoryTabs({
                   key={cat.value}
                   onClick={() => setSelectedCategory(cat.value)}
                   className={`
-                    rounded-xl p-1.5 cursor-pointer flex flex-row gap-2 items-center w-full min-w-[200px] border transition-colors h-12
+                    rounded-lg md:rounded-xl p-1.5 md:p-2 cursor-pointer flex flex-row gap-2 items-center w- max-w-[200px] border transition-colors
+                    h-10 md:h-11 lg:h-12
                     ${isActive
                       ? "bg-primary text-primary-foreground border-primary shadow-md"
-                      : "bg-secondary text-foreground border-border hover:bg-gray-50 hover:text-black "
+                      : "bg-secondary text-foreground border-border hover:bg-muted active:bg-muted"
                     }
                   `}
                 >
                   {/* Left Image */}
-                  <div className="w-8 h-8 rounded-lg overflow-hidden flex-shrink-0 bg-muted">
+                  <div className="w-7 h-7 md:w-8 md:h-8 rounded-md md:rounded-lg overflow-hidden flex-shrink-0 bg-muted">
                     <img
                       src={cat.image}
                       alt={cat.label}
@@ -75,7 +76,7 @@ export default function CategoryTabs({
                   </div>
 
                   {/* Center Text */}
-                  <span className="flex-1 text-center text-sm whitespace-nowrap">
+                  <span className="flex-1 text-center text-xs md:text-sm px-1 line-clamp-2 leading-tight">
                     {cat.label}
                   </span>
                 </button>

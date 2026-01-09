@@ -12,10 +12,8 @@ export default function CartCard({
   price,
   modifiers,
 }: CartCardProps) {
-  // Calculate total including modifiers
-  const modifiersTotal = modifiers?.reduce((sum, mod) => sum + (mod.price * mod.qty), 0) || 0;
-  const itemTotal = price + modifiersTotal;
-  const total = quantity * itemTotal;
+
+  const total = quantity * price;
   const {currencyCode}=useSetup()
 
   return (
@@ -44,10 +42,10 @@ export default function CartCard({
               {modifiers.map((modifier, idx) => (
                 <div key={idx} className="flex justify-between items-center text-sm">
                   <span className="text-foreground/80">
-                    {modifier.name} x {modifier.qty} @ S$ {modifier.price.toFixed(2)}
+                    {modifier.name} x {modifier.qty} @ {currencyCode} {modifier.price.toFixed(2)}
                   </span>
                   <span className="text-foreground/80 font-medium whitespace-nowrap ml-4">
-                    $ {(modifier.price * modifier.qty).toFixed(2)}
+                    {currencyCode} {(modifier.price * modifier.qty).toFixed(2)}
                   </span>
                 </div>
               ))}

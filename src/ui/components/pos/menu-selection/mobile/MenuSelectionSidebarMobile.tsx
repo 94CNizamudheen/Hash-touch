@@ -1,5 +1,6 @@
 import ModalDepartment from "../../modal/menu-selection/ModalDepartment";
 import ModalReasonVoid from "../../modal/menu-selection/ModalReasonVoid";
+import SwitchDeviceModal from "../../modal/menu-selection/SwitchDeviceModal";
 import EndShiftConfirmModal from "../../modal/work-shift/EndShiftConfirmModal";
 import LogoutConfirmModal from "../../modal/LogoutConfirmModal";
 import LanguageModal from "../../modal/LanguageModal";
@@ -15,15 +16,15 @@ import { Moon, Sun } from "lucide-react";
 import DirectionToggle from "@/ui/components/common/DirectionToggle";
 import { useWorkShift } from "@/ui/context/WorkShiftContext";
 import { useAppState } from "@/ui/hooks/useAppState";
-import { productLocal } from "@/services/local/product.local.service";
-import { appStateApi } from "@/services/tauri/appState";
 import { ticketLocal } from "@/services/local/ticket.local.service";
 import { useLogoutGuard } from "@/ui/hooks/useLogoutGuard";
 import SplashScreen from "@/ui/components/common/SplashScreen";
 import { useLogout } from "@/ui/context/LogoutContext";
-import { deviceService } from "@/services/device/device.service";
 import { useNotification } from "@/ui/context/NotificationContext";
+import { logoutService } from "@/services/auth/logout.service";
 import { initialSync } from "@/services/data/initialSync.service";
+import { localEventBus } from "@/services/eventbus/LocalEventBus";
+import type { DeviceRole } from "@/types/app-state";
 
 const MenuSelectionSidebarMobile = () => {
   const { t } = useTranslation();
@@ -37,7 +38,7 @@ const MenuSelectionSidebarMobile = () => {
     selectedLocationName,
     selectedOrderModeName
   } = useAppState();
-  const { shift, clear: clearShift } = useWorkShift();
+  const { shift } = useWorkShift();
   const { checkBlocks } = useLogoutGuard();
 
   const isShiftOpen = !!shift?.isOpen;
@@ -48,6 +49,7 @@ const MenuSelectionSidebarMobile = () => {
   const [showEndShift, setShowEndShift] = useState(false);
   const [showLanguageModal, setShowLanguageModal] = useState(false);
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
+  const [showSwitchDevice, setShowSwitchDevice] = useState(false);
   const [pendingTicketsCount, setPendingTicketsCount] = useState(0);
   const { isLoggingOut, setIsLoggingOut } = useLogout();
   const { showNotification } = useNotification();
@@ -121,6 +123,9 @@ const MenuSelectionSidebarMobile = () => {
       case "dineIn":
         setShowDineInBoard(true);
         break;
+      case "switchDevice":
+        setShowSwitchDevice(true);
+        break;
       case "shift":
         if (isShiftOpen) {
           setShowEndShift(true);
@@ -131,6 +136,12 @@ const MenuSelectionSidebarMobile = () => {
         setIsModalOpen(true);
         break;
     }
+  };
+
+  // Handle device switch - emits event for App.tsx to handle
+  const handleDeviceSwitch = (role: DeviceRole) => {
+    console.log("[MenuSelectionSidebarMobile] Switching to role:", role);
+    localEventBus.emit("device:switch_role", { role });
   };
 
   const handleOrderModeSelect = async (mode: {
@@ -176,14 +187,8 @@ const MenuSelectionSidebarMobile = () => {
   const handleConfirmLogout = async () => {
     setIsLoggingOut(true);
     try {
-      // Clear all data
-      await productLocal.clearCache();
-      await ticketLocal.clearAll();
-      await appStateApi.clear();
-      await clearShift();
-      await deviceService.clearDeviceData();
-      await new Promise(resolve => setTimeout(resolve, 300));
-      window.location.assign("/");
+      // Use centralized logout service to clear all data
+      await logoutService.logout();
     } catch (e) {
       console.error("Logout failed:", e);
       setIsLoggingOut(false);
@@ -247,6 +252,12 @@ const MenuSelectionSidebarMobile = () => {
         onClose={() => setShowLanguageModal(false)}
       />
 
+      <SwitchDeviceModal
+        isOpen={showSwitchDevice}
+        onClose={() => setShowSwitchDevice(false)}
+        onSwitch={handleDeviceSwitch}
+      />
+
       {/* Drawer – keep safe area unchanged */}
       <div
         className="safe-area fixed right-0 top-0 bottom-0 w-60  
@@ -278,6 +289,9 @@ const MenuSelectionSidebarMobile = () => {
               <div
                 key={item.id}
                 onClick={() => {
+                  // Direction handled only by switch
+                  if (item.title === "Direction") return;
+
                   if (item.title === "Dark Mode") {
                     toggleTheme();
                     return;
@@ -300,7 +314,6 @@ const MenuSelectionSidebarMobile = () => {
 
                   item.action?.(openModal);
                   if (item.link) router(item.link);
-
                 }}
                 className="flex items-center gap-3 p-3 bg-navigation rounded-lg cursor-pointer active:scale-[0.98]"
               >
@@ -352,7 +365,9 @@ const MenuSelectionSidebarMobile = () => {
                     ? selectedLocationName
                     : item.title === "Dine In"
                       ? selectedOrderModeName || t("Select Mode")
-                      : t(item.title)}
+                      : item.title === "Switch Device"
+                        ? appState?.device_role || t("Switch Device")
+                        : t(item.title)}
                 </p>
               </div>
             ))}

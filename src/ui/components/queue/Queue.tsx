@@ -52,9 +52,13 @@ export default function QueueDisplay() {
     }
   }, [fetchTokens])
 
-  const waitingTokens = tokens.filter((t) => t.status === "WAITING")
+  // Sort by created_at descending (newest first)
+  const sortByNewest = (a: QueueTokenData, b: QueueTokenData) =>
+    new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+
+  const waitingTokens = tokens.filter((t) => t.status === "WAITING").sort(sortByNewest);
   // Show both READY and CALLED tokens in "Ready for pick up" section
-  const readyTokens = tokens.filter((t) => t.status === "CALLED");
+  const readyTokens = tokens.filter((t) => t.status === "CALLED").sort(sortByNewest);
 
   if (loading) {
     return <SplashScreen />

@@ -1,13 +1,14 @@
-
-import { Settings, CheckCircle, Power } from "lucide-react";
+import { Settings, CheckCircle, Power, Monitor } from "lucide-react";
 import { Button } from "@/ui/shadcn/components/ui/button";
-// import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/ui/shadcn/components/ui/select";
-import {  useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { X } from "lucide-react";
 import logo from "@/assets/logo_2.png";
 import { kdsSettingsLocal } from "@/services/local/kds-settings.local.service";
 import { logoutService } from "@/services/auth/logout.service";
+import SwitchDeviceModal from "@/ui/components/pos/modal/menu-selection/SwitchDeviceModal";
+import { localEventBus } from "@/services/eventbus/LocalEventBus";
+import type { DeviceRole } from "@/types/app-state";
 
 interface Props {
     open: boolean;
@@ -18,6 +19,13 @@ const MobileRightSidebar = ({ open, onClose }: Props) => {
     const navigate = useNavigate();
     const [_, setViewMode] = useState("Classic");
     const [isLoggingOut, setIsLoggingOut] = useState(false);
+    const [showSwitchDevice, setShowSwitchDevice] = useState(false);
+
+    // Handle device switch
+    const handleDeviceSwitch = (role: DeviceRole) => {
+        console.log("[MobileRightSidebar] Switching to role:", role);
+        localEventBus.emit("device:switch_role", { role });
+    };
 
     // Load view mode from SQLite on mount
     useEffect(() => {
@@ -27,7 +35,6 @@ const MobileRightSidebar = ({ open, onClose }: Props) => {
                 const oldMode = localStorage.getItem("kds_view_mode");
                 if (oldMode) {
                     await kdsSettingsLocal.saveViewMode(oldMode);
-                    localStorage.removeItem("kds_view_mode");
                     setViewMode(oldMode);
                 } else {
                     const mode = await kdsSettingsLocal.getViewMode();
@@ -40,14 +47,7 @@ const MobileRightSidebar = ({ open, onClose }: Props) => {
         loadViewMode();
     }, []);
 
-    // const handleChange = async (value: string) => {
-    //     setViewMode(value);
-    //     try {
-    //         await kdsSettingsLocal.saveViewMode(value);
-    //     } catch (error) {
-    //         console.error("Failed to save view mode:", error);
-    //     }
-    // };
+
 
     const handleLogout = async () => {
         if (!confirm("Are you sure you want to logout? All data will be cleared.")) {
@@ -98,16 +98,24 @@ const MobileRightSidebar = ({ open, onClose }: Props) => {
                 </div>
 
                 {/* Action buttons */}
-                <div className="space-y-3 fixed bottom-5 w-full">
+                <div className="space-y-3 fixed bottom-5 w-full pr-8">
                     {/* Check Button */}
-                    <Button className="w-full flex items-center justify-start gap-3 py-5 bg-gray-100 shadow-none">
+                    <Button className="w-full flex items-center justify-start gap-3 py-5 bg-background shadow-none">
                         <CheckCircle size={20} className="stroke-primary" />
                         <span className="text-sm text-primary">Synced</span>
                     </Button>
 
+                    {/* Switch Device */}
+                    <Button
+                        className="w-full flex items-center justify-start gap-3 py-5 shadow-none "
+                        onClick={() => setShowSwitchDevice(true)}
+                    >
+                        <Monitor size={20} />
+                        <span className="text-sm">Switch Device</span>
+                    </Button>
+
                     {/* Settings */}
                     <Button
-                        variant="secondary"
                         className="w-full flex items-center justify-start gap-3 py-5 shadow-none"
                         onClick={handleSetiingsClick}
                     >
@@ -127,6 +135,13 @@ const MobileRightSidebar = ({ open, onClose }: Props) => {
                     </Button>
                 </div>
             </div>
+
+            {/* Switch Device Modal */}
+            <SwitchDeviceModal
+                isOpen={showSwitchDevice}
+                onClose={() => setShowSwitchDevice(false)}
+                onSwitch={handleDeviceSwitch}
+            />
         </>
     );
 };

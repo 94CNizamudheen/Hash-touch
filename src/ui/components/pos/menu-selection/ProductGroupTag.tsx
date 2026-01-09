@@ -46,12 +46,13 @@ export default function ProductGroupTag({
       aria-disabled={disabled}
       onClick={!disabled && !isSelected ? onClick : undefined}
       className={cn(
-        "cursor-pointer border-2 transition-all duration-200 w-48",
-        "min-h-[140px]",
+        "cursor-pointer border-2 transition-all duration-200",
+        "w-full md:w-48",
+        "min-h-[100px] md:min-h-[140px]",
         "bg-secondary",
 
         // Default state
-        !isSelected && "border-border hover:border-tag-hover",
+        !isSelected && "border-border hover:border-tag-hover active:border-tag-hover",
 
         // Selected state
         isSelected && "border-tag-hover bg-tag-selected",
@@ -73,23 +74,23 @@ export default function ProductGroupTag({
 
         {/* BOTTOM - Quantity Controls */}
         {isSelected && quantity > 0 && (
-          <div className="flex items-center justify-center gap-3 mt-3">
+          <div className="flex items-center justify-center gap-4 mt-3">
             <button
               onClick={handleDecrement}
               disabled={quantity <= 0}
-              className="w-9 h-9 rounded-full bg-destructive hover:brightness-110 disabled:opacity-50 disabled:cursor-not-allowed text-destructive-foreground font-bold text-lg flex items-center justify-center transition-colors"
+              className="w-10 h-10 md:w-9 md:h-9 rounded-full bg-destructive hover:brightness-110 active:brightness-90 disabled:opacity-50 disabled:cursor-not-allowed text-destructive-foreground font-bold text-xl md:text-lg flex items-center justify-center transition-colors"
             >
               −
             </button>
 
-            <span className="text-lg font-semibold text-foreground min-w-[2rem] text-center">
+            <span className="text-xl md:text-lg font-semibold text-foreground min-w-[2rem] text-center">
               {quantity}
             </span>
 
             <button
               onClick={handleIncrement}
               disabled={selectedCount >= max}
-              className="w-9 h-9 rounded-full bg-success hover:bg-success-hover disabled:opacity-50 disabled:cursor-not-allowed text-success-foreground font-bold text-lg flex items-center justify-center transition-colors"
+              className="w-10 h-10 md:w-9 md:h-9 rounded-full bg-success hover:bg-success-hover active:brightness-90 disabled:opacity-50 disabled:cursor-not-allowed text-success-foreground font-bold text-xl md:text-lg flex items-center justify-center transition-colors"
             >
               +
             </button>

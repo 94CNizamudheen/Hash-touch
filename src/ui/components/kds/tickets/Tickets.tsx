@@ -64,7 +64,11 @@ const Tickets = () => {
 
       const transformedTickets = kdsTickets.map(transformKdsTicketToTicket);
       const inProgressTickets = transformedTickets.filter((t) => t.status === "IN_PROGRESS");
-      setTickets(inProgressTickets);
+      // Sort by receivedTime descending (newest first)
+      const sortedTickets = inProgressTickets.sort((a, b) =>
+        new Date(b.receivedTime).getTime() - new Date(a.receivedTime).getTime()
+      );
+      setTickets(sortedTickets);
     } catch (error) {
       console.error('[Tickets] Failed to load tickets:', error);
       setTickets([]);
@@ -206,13 +210,13 @@ const Tickets = () => {
       {/* DESKTOP */}
       {isDesktop && (
         <div
-          className="flex overflow-x-auto no-scrollbar pb-4 my-7 "
+          className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 overflow-y-auto no-scrollbar pb-4 my-7"
           style={{
             gap: settings.pageGap,
           }}
         >
           {tickets.map((t) => (
-            <div key={t.id} className="flex-shrink-0 w-96">
+            <div key={t.id}>
               <TicketCard
                 ticket={t}
                 theme={settings}

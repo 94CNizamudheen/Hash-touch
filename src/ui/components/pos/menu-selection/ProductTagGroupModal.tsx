@@ -255,36 +255,47 @@ export default function ProductTagGroupModal({
 
           <motion.div
             key="modal-content"
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.95 }}
-            transition={{ type: "tween", duration: 0.2 }}
-            className="fixed inset-4 md:inset-auto md:left-1/2 md:top-1/2 md:-translate-x-1/2 md:-translate-y-1/2 md:w-[90%] md:max-w-4xl md:max-h-[90vh] bg-secondary z-50 rounded-lg shadow-2xl flex flex-col"
+            initial={{ opacity: 0, y: "100%" }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: "100%" }}
+            transition={{ type: "tween", duration: 0.25 }}
+            className="fixed inset-0 md:inset-auto md:left-1/2 md:top-1/2 md:-translate-x-1/2 md:-translate-y-1/2 md:w-[90%] md:max-w-4xl md:max-h-[90vh] bg-secondary z-50 md:rounded-lg shadow-2xl flex flex-col"
           >
-            {/* Header - Hidden in images, keeping minimal */}
-
+            {/* Mobile Header */}
+            <div className="flex-shrink-0 md:hidden p-4 border-b border-border flex items-center justify-between bg-background">
+              <h2 className="text-lg font-semibold text-foreground truncate flex-1 pr-4">
+                {productName}
+              </h2>
+              <button
+                onClick={onClose}
+                className="w-10 h-10 flex items-center justify-center rounded-full bg-secondary active:bg-muted"
+              >
+                <span className="text-2xl text-muted-foreground">×</span>
+              </button>
+            </div>
 
             {/* Content */}
-            <div className="flex-1 overflow-y-auto p-6">
+            <div className="flex-1 overflow-y-auto p-4 md:p-6">
               {loading ? (
                 <div className="flex items-center justify-center py-10">
                   <p className="text-gray-500">{t("Loading options...")}</p>
                 </div>
               ) : productData && productData.combinations.length > 0 ? (
-                <div className="space-y-6">
-                  <h1 className="font-semibold text-lg text-foreground flex-1">{productName}</h1>
+                <div className="space-y-4 md:space-y-6">
+                  {/* Desktop title - hidden on mobile (shown in header) */}
+                  <h1 className="hidden md:block font-semibold text-lg text-foreground flex-1">{productName}</h1>
                   {productData.combinations.map((group) => (
                     <div key={group.id} className="space-y-3">
                       {/* Group Header */}
-                      <div className="flex items-center justify-between p-3 border-2 border-blue-300 rounded-lg">
-                        <h4 className="font-medium text-lg">{group.name}</h4>
-                        <span className="text-sm text-gray-600">
+                      <div className="flex flex-col md:flex-row md:items-center justify-between p-3 border-2 border-blue-300 rounded-lg gap-1 md:gap-0">
+                        <h4 className="font-medium text-base md:text-lg">{group.name}</h4>
+                        <span className="text-xs md:text-sm text-muted-foreground">
                           {t("Min")}: {group.min_items} | {t("Max")}: {group.max_items} | {t("Selected")}: {getSelectedCountForGroup(group.id)}
                         </span>
                       </div>
 
                       {/* Options Grid */}
-                      <div className="grid grid-cols-1 md:grid-cols-4 gap-2">
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-2 md:gap-3">
                         {group.options.map((option) => (
                           <ProductGroupTag
                             key={option.id}
@@ -311,11 +322,11 @@ export default function ProductTagGroupModal({
 
               {/* Validation Errors */}
               {validationErrors.length > 0 && (
-                <div className="mt-6 p-4 bg-red-50 border border-red-200 rounded-lg">
-                  <p className="font-medium text-red-800 mb-2">{t("Please fix the following:")}</p>
+                <div className="mt-4 md:mt-6 p-3 md:p-4 bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-800 rounded-lg">
+                  <p className="font-medium text-red-800 dark:text-red-400 mb-2 text-sm md:text-base">{t("Please fix the following:")}</p>
                   <ul className="space-y-1">
                     {validationErrors.map((error, index) => (
-                      <li key={index} className="text-sm text-red-700 flex items-start">
+                      <li key={index} className="text-xs md:text-sm text-red-700 dark:text-red-400 flex items-start">
                         <span className="mr-2">•</span>
                         <span>
                           <strong>{error.groupName}:</strong> {error.message}
@@ -328,18 +339,18 @@ export default function ProductTagGroupModal({
             </div>
 
             {/* Footer */}
-            <div className="flex-shrink-0 p-6 pt-4 border-t border-gray-200">
-              <div className="flex gap-3 justify-end">
+            <div className="flex-shrink-0 p-4 md:p-6 pt-4 border-t border-border bg-background">
+              <div className="flex flex-col-reverse md:flex-row gap-3 md:justify-end">
                 <Button
                   onClick={onClose}
-                  className="px-8 h-11 bg-red-500 text-white hover:bg-red-600 rounded-md font-medium"
+                  className="w-full md:w-auto px-8 h-12 md:h-11 bg-red-500 text-white hover:bg-red-600 active:bg-red-700 rounded-md font-medium"
                 >
                   {t("Cancel")}
                 </Button>
                 <Button
                   onClick={handleConfirm}
                   disabled={loading}
-                  className="px-8 h-11 bg-blue-600 text-white hover:bg-blue-700 rounded-md font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="w-full md:w-auto px-8 h-12 md:h-11 bg-blue-600 text-white hover:bg-blue-700 active:bg-blue-800 rounded-md font-medium disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {isEditMode ? t("Save Changes") : t("Add to Cart")}
                 </Button>

@@ -33,9 +33,9 @@ export default function PaymentDesktop() {
   const { transactionTypes } = useTransactionTypes();
   const { showNotification } = useNotification();
 
-  const subtotal = items.reduce((s, i) => s + i.price * i.quantity, 0);
+  const subtotal = Math.round(items.reduce((s, i) => s + i.price * i.quantity, 0) * 100) / 100;
   const { charges, totalCharges } = useCharges(items, subtotal);
-  const total = subtotal + totalCharges;
+  const total = Math.round((subtotal + totalCharges) * 100) / 100;
 
   const [inputValue, setInputValue] = useState("");
   const [selectedMethod, setSelectedMethod] = useState("");
@@ -62,13 +62,11 @@ export default function PaymentDesktop() {
 
   if (!isHydrated) return null;
 
-  /* 🔢 CALCULATE REMAINING BALANCE */
-  const totalPaid = payments.reduce((sum, p) => sum + p.amount, 0);
-  const remainingBalance = total - totalPaid;
+  const totalPaid = Math.round(payments.reduce((sum, p) => sum + p.amount, 0) * 100) / 100;
+  const remainingBalance = Math.round((total - totalPaid) * 100) / 100;
   const tendered = parseFloat(inputValue) || 0;
   const changeAmount = tendered > 0 ? tendered - remainingBalance : 0;
 
-  /* 🔒 PAYMENT READY CHECK - Allow any positive amount */
   const isPaymentReady = !isNaN(tendered) && tendered > 0;
 
   /* Keypad handler */
@@ -79,10 +77,12 @@ export default function PaymentDesktop() {
     setInputValue((p) => (p === "" || p === "0" ? k : p + k));
   };
 
-  /* 🆕 ADD PAYMENT AND AUTO-COMPLETE IF FULLY PAID */
-  const onAddPayment = async (paymentMethodName?: string) => {
+  const onAddPayment = async (paymentMethodName?: string, amountOverride?: number) => {
+    // Use amountOverride if provided (for direct payment), otherwise use tendered from input
+    const paymentAmount = amountOverride !== undefined ? amountOverride : tendered;
+
     // Allow payment if amount is valid and > 0
-    if (!tendered || tendered <= 0) {
+    if (!paymentAmount || paymentAmount <= 0) {
       showNotification.error("Please enter a valid payment amount");
       return;
     }
@@ -110,7 +110,7 @@ export default function PaymentDesktop() {
         index === existingPaymentIndex
           ? {
               ...p,
-              amount: p.amount + tendered,
+              amount: p.amount + paymentAmount,
               timestamp: new Date().toISOString(), // Update timestamp
             }
           : p
@@ -121,7 +121,7 @@ export default function PaymentDesktop() {
         id: crypto.randomUUID(),
         paymentMethodId: selectedPaymentMethod.id,
         paymentMethodName: selectedPaymentMethod.name,
-        amount: tendered,
+        amount: paymentAmount,
         timestamp: new Date().toISOString(),
       };
       updatedPayments = [...payments, newPayment];
@@ -130,35 +130,33 @@ export default function PaymentDesktop() {
     setPayments(updatedPayments);
     setInputValue(""); // Clear input after adding payment
 
-    // Calculate new remaining balance after this payment
-    const newTotalPaid = updatedPayments.reduce((sum, p) => sum + p.amount, 0);
-    const newRemainingBalance = total - newTotalPaid;
+    // Calculate new remaining balance after this payment (round to avoid floating point issues)
+    const newTotalPaid = Math.round(updatedPayments.reduce((sum, p) => sum + p.amount, 0) * 100) / 100;
+    const newRemainingBalance = Math.round((total - newTotalPaid) * 100) / 100;
 
-    // If fully paid or overpaid, auto-complete the order
-    if (newRemainingBalance <= 0) {
-      showNotification.success(`${methodToUse}: ${tendered.toFixed(2)} added - Completing order...`);
+    // If fully paid or overpaid, auto-complete the order (use small epsilon for floating point safety)
+    if (newRemainingBalance <= 0.01) {
+      showNotification.success(`${methodToUse}: ${paymentAmount.toFixed(2)} added - Completing order...`);
       // Auto-complete with the updated payments
       await processOrderCompletion(updatedPayments, newRemainingBalance);
     } else {
       const action = existingPaymentIndex >= 0 ? "updated" : "added";
-      showNotification.success(`${methodToUse}: ${tendered.toFixed(2)} ${action}`);
+      showNotification.success(`${methodToUse}: ${paymentAmount.toFixed(2)} ${action}`);
     }
   };
 
-  /* 🗑️ REMOVE PAYMENT */
+
   const onRemovePayment = (paymentId: string) => {
     setPayments((prev) => prev.filter((p) => p.id !== paymentId));
     showNotification.info("Payment removed");
   };
 
-  /* 🗑️ CLEAR ALL PAYMENTS */
   const onClearAllPayments = () => {
     setPayments([]);
     setInputValue("");
     showNotification.info("All payments cleared");
   };
 
-  /* ✅ PROCESS ORDER COMPLETION (Internal helper) */
   const processOrderCompletion = async (paymentsToProcess: PaymentEntry[], finalRemainingBalance: number) => {
     setLoading(true);
 
