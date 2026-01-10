@@ -8,7 +8,7 @@ const MobileProductGroupTabs = () => {
     setSelectedGroup,
   } = useProducts();
 
-  if (!productGroups?.length) return null;
+  if (!productGroups?.length || productGroups.length <= 1) return null;
 
   return (
     <div className="w-full overflow-x-auto no-scrollbar">

@@ -1,14 +1,10 @@
 import {
   Sheet,
-  SheetClose,
   SheetContent,
-  SheetFooter,
   SheetHeader,
   SheetTitle,
 } from "@/ui/shadcn/components/ui/sheet";
-import { Button } from "@/ui/shadcn/components/ui/button";
 import { cn } from "@/lib/utils";
-import { useState } from "react";
 import { useAppState } from "@/ui/hooks/useAppState";
 import { useNotification } from "@/ui/context/NotificationContext";
 import { useTranslation } from "react-i18next";
@@ -51,7 +47,6 @@ const SwitchDeviceModal = ({
   const { state: appState, loading } = useAppState();
   const { showNotification } = useNotification();
   const { t } = useTranslation();
-  const [selectedRole, setSelectedRole] = useState<DeviceRole | null>(null);
 
   if (loading) return null;
 
@@ -62,18 +57,13 @@ const SwitchDeviceModal = ({
     (r) => r.key !== currentRole
   );
 
-  const handleSwitch = () => {
-    if (!selectedRole) return;
-
-    const role = DEVICE_ROLES.find((r) => r.key === selectedRole);
-    if (!role) return;
-
+  const handleRoleSelect = (role: (typeof DEVICE_ROLES)[number]) => {
     showNotification.info(
       `${t("Switching to")} ${t(role.label)}...`,
       2000
     );
 
-    onSwitch(selectedRole);
+    onSwitch(role.key);
     onClose();
   };
 
@@ -92,28 +82,19 @@ const SwitchDeviceModal = ({
         </SheetHeader>
 
         {/* ===== Role List ===== */}
-        <div className="h-[calc(100%-140px)] sm:h-[80%] mt-6 sm:mt-10 px-4 sm:px-5 overflow-y-auto">
+        <div className="mt-6 sm:mt-10 px-4 sm:px-5 overflow-y-auto">
           <div className="grid grid-cols-1 gap-3">
             {availableRoles.map((role) => (
               <button
                 key={role.key}
-                onClick={() => setSelectedRole(role.key)}
+                onClick={() => handleRoleSelect(role)}
                 className={cn(
                   "w-full p-4 rounded-lg flex items-center gap-4 cursor-pointer transition-all",
                   "border-2 rtl:flex-row-reverse",
-                  selectedRole === role.key
-                    ? "bg-primary text-primary-foreground border-primary"
-                    : "bg-sidebar-hover hover:bg-accent/80 border-transparent"
+                  "bg-sidebar-hover hover:bg-primary hover:text-primary-foreground border-transparent"
                 )}
               >
-                <div
-                  className={cn(
-                    "p-2 rounded-lg",
-                    selectedRole === role.key
-                      ? "bg-primary-foreground/20"
-                      : "bg-background"
-                  )}
-                >
+                <div className="p-2 rounded-lg bg-background">
                   {role.icon}
                 </div>
 
@@ -121,14 +102,7 @@ const SwitchDeviceModal = ({
                   <p className="font-medium">
                     {t(role.label)}
                   </p>
-                  <p
-                    className={cn(
-                      "text-xs",
-                      selectedRole === role.key
-                        ? "text-primary-foreground/70"
-                        : "text-muted-foreground"
-                    )}
-                  >
+                  <p className="text-xs text-muted-foreground">
                     {role.key}
                   </p>
                 </div>
@@ -136,28 +110,6 @@ const SwitchDeviceModal = ({
             ))}
           </div>
         </div>
-
-        {/* ===== Footer ===== */}
-        <SheetFooter className="px-4 sm:px-5 flex-col sm:flex-row gap-2 sm:gap-0 rtl:flex-row-reverse">
-          <SheetClose asChild>
-            <Button
-              type="button"
-              variant="destructive"
-              className="w-full sm:w-auto"
-            >
-              {t("Cancel")}
-            </Button>
-          </SheetClose>
-
-          <Button
-            type="button"
-            disabled={!selectedRole}
-            onClick={handleSwitch}
-            className="w-full sm:w-auto"
-          >
-            {t("Switch")}
-          </Button>
-        </SheetFooter>
       </SheetContent>
     </Sheet>
   );
