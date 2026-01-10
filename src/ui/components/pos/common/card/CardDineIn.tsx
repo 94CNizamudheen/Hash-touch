@@ -135,7 +135,7 @@ const CardDineIn = ({
               e.stopPropagation();
               onDecrement();
             }}
-            className="w-7 h-7 md:w-8 md:h-8 rounded rounded-l-lg md:rounded-l-xl bg-primary hover:bg-primary-hover active:bg-primary-hover text-primary-foreground flex items-center justify-center transition-colors"
+            className="w-7 h-7 md:w-8 md:h-8 rounded ltr:rounded-l-lg ltr:md:rounded-l-xl rtl:rounded-r-lg rtl:md:rounded-r-xl bg-primary hover:bg-primary-hover active:bg-primary-hover text-primary-foreground flex items-center justify-center transition-colors"
           >
             <Minus className="w-4 h-4 md:w-5 md:h-5" strokeWidth={2.5} />
           </button>
@@ -149,7 +149,7 @@ const CardDineIn = ({
               e.stopPropagation();
               onIncrement();
             }}
-            className="w-7 h-7 md:w-8 md:h-8 rounded rounded-r-lg md:rounded-r-xl bg-primary hover:bg-primary-hover active:bg-primary-hover text-primary-foreground flex items-center justify-center transition-colors"
+            className="w-7 h-7 md:w-8 md:h-8 rounded ltr:rounded-r-lg ltr:md:rounded-r-xl rtl:rounded-l-lg rtl:md:rounded-l-xl bg-primary hover:bg-primary-hover active:bg-primary-hover text-primary-foreground flex items-center justify-center transition-colors"
           >
             <Plus className="w-4 h-4 md:w-5 md:h-5" strokeWidth={2.5} />
           </button>

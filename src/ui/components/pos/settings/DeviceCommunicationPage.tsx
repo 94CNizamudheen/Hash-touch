@@ -1,7 +1,7 @@
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { Card } from "@/ui/shadcn/components/ui/card";
-import {  Server, Copy, Check } from "lucide-react";
+import { Server, Copy, Check } from "lucide-react";
 import { useEffect, useState } from "react";
 import { appStateApi } from "@/services/tauri/appState";
 import { useAppState } from "@/ui/hooks/useAppState";
@@ -18,7 +18,7 @@ export default function DeviceCommunicationPage() {
   const isPOS = appState?.device_role === "POS";
 
   useEffect(() => {
-    
+
     const getLocalIP = async () => {
       try {
         if (isPOS) {
@@ -68,24 +68,28 @@ export default function DeviceCommunicationPage() {
           <Server className="w-8 h-8 text-primary" />
           <div className="flex-1">
             <h2 className="text-xl font-semibold">
-              {isPOS ? "WebSocket Server (POS)" : `WebSocket Client (${appState?.device_role})`}
+              {isPOS
+                ? t("WebSocket Server (POS)")
+                : `${t("WebSocket Client")} (${appState?.device_role})`}
             </h2>
+
             <p className="text-sm text-muted-foreground mt-1">
               {isPOS
-                ? "This POS device is running as the WebSocket server"
-                : "This device connects to a POS device as a client"}
+                ? t("This POS device is running as the WebSocket server")
+                : t("This device connects to a POS device as a client")}
             </p>
+
           </div>
           {isPOS && (
             <span className="px-3 py-1 rounded-full bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400 text-sm font-medium">
-              Server Running
+              {t("Server Running")}
             </span>
           )}
         </div>
 
         {isPOS && localIp && (
           <div className="mt-4 p-4 bg-secondary rounded-lg">
-            <p className="text-sm font-medium mb-2">Other devices should connect to:</p>
+            <p className="text-sm font-medium mb-2">{t("Other devices should connect to:")}</p>
             <div className="flex gap-2 items-center">
               <code className="flex-1 bg-background px-3 py-2 rounded text-sm font-mono">
                 ws://{localIp}:9001
@@ -97,14 +101,15 @@ export default function DeviceCommunicationPage() {
                 {copied ? (
                   <>
                     <Check className="w-4 h-4" />
-                    Copied!
+                    {t("Copied!")}
                   </>
                 ) : (
                   <>
                     <Copy className="w-4 h-4" />
-                    Copy
+                    {t("Copy")}
                   </>
                 )}
+
               </button>
             </div>
           </div>

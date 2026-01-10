@@ -53,7 +53,7 @@ export default function PaymentSuccessModal({
         {/* Actions */}
         <div className="mt-8 flex flex-col sm:flex-row items-stretch gap-3 sm:gap-4 w-full">
           <Button
-            variant="outline"
+            variant="secondary"
             onClick={onPrintReceipt}
             className="flex-1 h-12 flex items-center justify-center gap-3 border-2 border-gray-400 text-black"
           >

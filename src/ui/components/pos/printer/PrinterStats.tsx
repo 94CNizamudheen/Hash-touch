@@ -21,7 +21,7 @@ export default function PrinterStats({ printers }: Props) {
   return (
     <div className="grid grid-cols-3 gap-4">
       {stats.map((stat) => (
-        <Card key={stat.label} className="p-4 bg-card border-border">
+        <Card key={stat.label} className="p-4 bg-secondary border-border">
           <p className="text-sm text-muted-foreground">{stat.label}</p>
           <p className={`text-3xl font-bold ${stat.color}`}>{stat.value}</p>
         </Card>

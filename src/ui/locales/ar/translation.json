@@ -1,7 +1,7 @@
 {
-  "login": "تسجيل الدخول",
-  "enter_pin": "أدخل الرقم السري",
-  "logout": "تسجيل الخروج",
+  "Login": "تسجيل الدخول",
+  "Enter pin": "أدخل الرقم السري",
+  "Logout": "تسجيل الخروج",
   "Reports": "التقارير",
   "Sold Out": "تم البيع",
   "Till Transactions": "المعاملات حتى تاريخه",
@@ -130,23 +130,17 @@
   "CLOSED": "مغلق",
   "Closed By": "أغلق بواسطة",
   "Opened By": "فتح بواسطة",
-  
   "Basic Information": "المعلومات الأساسية",
-
   "Cash Summary": "ملخص النقدية",
   "Closing Balance": "الرصيد الختامي",
   "Opening Float": "الرصيد الافتتاحي",
   "Total Cash Out": "إجمالي النقد الخارج",
   "Total Cash In": "إجمالي النقد الداخل",
-
   "Sales Summary": "ملخص المبيعات",
   "Total Refunds": "إجمالي المرتجعات",
-
   "Updated At": "تم التحديث في",
   "Created At": "تم الإنشاء في",
-
   "System Metadata": "بيانات النظام",
-
   "Table": "الطاولة",
   "Status: New Order": "الحالة: طلب جديد",
   "Your Cart": "سلة التسوق",
@@ -175,18 +169,15 @@
   "No products found": "لم يتم العثور على منتجات",
   "Logging out...": "جاري تسجيل الخروج...",
   "Work shift ended successfully": "تم إنهاء وردية العمل بنجاح",
-
   "Shift": "الوردية",
   "Activities": "الأنشطة",
   "Change Style": "تغيير النمط",
   "Language": "اللغة",
   "Location": "الموقع",
-
   "Sub Total": "المجموع الفرعي",
   "Total Tax": "إجمالي الضريبة",
   "Grand Total": "المجموع الإجمالي",
   "Clear": "مسح",
-
   "Balance": "الرصيد",
   "Type tender here": "أدخل المبلغ المدفوع هنا",
   "All": "الكل",
@@ -211,11 +202,67 @@
   "Card": "بطاقة",
   "Credit Card": "بطاقة ائتمان",
   "Debit Card": "بطاقة خصم",
-
   "C": "م",
-
   "Text Direction": "اتجاه النص",
   "LTR Mode": "وضع اليسار إلى اليمين",
-  "RTL Mode": "وضع اليمين إلى اليسار"
+  "RTL Mode": "وضع اليمين إلى اليسار",
+  "Switch Device": "تبديل الجهاز",
+  "Start Sync": "بدء المزامنة",
+  "Syncing...": "جاري المزامنة...",
+  "Last Synced": "آخر مزامنة",
+  "End Work Shift?": "إنهاء وردية العمل؟",
+  "Are you sure you want to end the current shift?": "هل أنت متأكد أنك تريد إنهاء وردية العمل الحالية؟",
+  "End Shift": "إنهاء الوردية",
+  "Ending...": "جاري الإنهاء...",
+  "Failed to end shift. Please try again.": "فشل إنهاء الوردية. الرجاء المحاولة مرة أخرى",
+  "Please wait for pending syncs to complete before closing shift": "يرجى الانتظار حتى تكتمل المزامنة قبل إغلاق الوردية",
+  "Printer Settings": "إعدادات الطابعة",
+  "Device Communication": "اتصال الأجهزة",
+  "Manage receipt printers": "إدارة طابعات الإيصالات",
+  "WebSocket server for KDS & Queue displays": "خادم WebSocket لشاشات المطبخ والطوابير",
+  "Back to Settings": "العودة إلى الإعدادات",
+  "WebSocket Server (POS)": "خادم WebSocket (نقطة البيع)",
+  "WebSocket Client": "عميل WebSocket",
+  "This POS device is running as the WebSocket server": "جهاز نقطة البيع هذا يعمل كخادم WebSocket",
+  "This device connects to a POS device as a client": "هذا الجهاز يتصل بجهاز نقطة بيع كعميل",
+  "Server Running": "الخادم يعمل",
+  "Other devices should connect to:": "يجب على الأجهزة الأخرى الاتصال بـ:",
+  "Copy": "نسخ",
+  "Copied!": "تم النسخ!",
+  "Failed to copy to clipboard": "فشل نسخ العنوان",
+  "Printer Management": "إدارة الطابعات",
+  "Printers": "الطابعات",
+  "Add New": "إضافة جديد",
+  "Synced": "تمت المزامنة",
+  "Un Synced": "غير متزامن",
+  "Pending": "قيد الانتظار",
+  "Failed": "فشل",
+  "Delivery": "توصيل",
+  "Ticket No": "رقم التذكرة",
+  "Total Tickets": "إجمالي التذاكر",
+  "Sync All": "مزامنة الكل",
+  "Clear Cart?": "إفراغ السلة؟",
+"Are you sure you want to remove all items from the cart?": "هل أنت متأكد أنك تريد إزالة جميع العناصر من السلة؟",
+"Clearing...": "جاري الإفراغ...",
+"Payment Details": "تفاصيل الدفع",
+"No payments added": "لم تتم إضافة أي مدفوعات",
+"Swipe left to remove a payment": "اسحب لليسار لإزالة الدفعة",
+
+"Payments": "المدفوعات",
+"Are you sure you want to delete all partial payments?": "هل أنت متأكد أنك تريد حذف جميع المدفوعات الجزئية؟",
+
+"Ok": "موافق",
+"Switch Device Mode": "تبديل وضع الجهاز",
+"Switching to": "جاري التبديل إلى",
+"Switch": "تبديل",
+
+"Point of Sale": "نقطة البيع",
+"Kitchen Display": "شاشة المطبخ",
+"Queue Display": "شاشة الطابور",
+"Drawer Opened": "تم فتح الدرج",
+"Processing": "جاري المعالجة",
+"Complete Order": "إتمام الطلب"
+
+
 
 }

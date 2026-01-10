@@ -81,26 +81,7 @@ const CompletedTickets = () => {
     return unsubscribe;
   }, [loadCompletedTickets]);
 
-  // Handle removing completed ticket (delete from database)
-  // const handleRemoveTicket = async (ticketId: string) => {
-  //   console.log('[CompletedTickets] Removing completed ticket:', ticketId);
 
-  //   try {
-  //     // Optimistically remove from UI
-  //     setTickets((prev) => prev.filter((ticket) => ticket.id !== ticketId));
-
-  //     // Delete from database
-  //     await kdsTicketLocal.deleteTicket(ticketId);
-
-  //     console.log('[CompletedTickets] ✅ Ticket deleted from database');
-  //   } catch (error) {
-  //     console.error('[CompletedTickets] Failed to delete ticket:', error);
-  //     // Reload tickets to restore UI state on error
-  //     await loadCompletedTickets();
-  //   }
-  // };
-
-  // Dummy handler for toggle item (completed tickets don't allow toggling)
   const handleToggleItem = () => {
     // No-op for completed tickets
   };
@@ -147,22 +128,24 @@ const CompletedTickets = () => {
       {/* DESKTOP */}
       {isDesktop && (
         <div
-          className="flex overflow-x-auto pb-4"
+          className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 overflow-y-auto no-scrollbar pb-4 my-7"
           style={{
             gap: settings.pageGap,
           }}
         >
           {tickets.map((t) => (
-            <div key={t.id} className="flex-shrink-0 w-96">
+            <div key={t.id}>
               <TicketCard
                 ticket={t}
                 theme={settings}
                 onToggleItem={handleToggleItem}
+
               />
             </div>
           ))}
         </div>
       )}
+
 
       {/* Empty state */}
       {tickets.length === 0 && !loading && (

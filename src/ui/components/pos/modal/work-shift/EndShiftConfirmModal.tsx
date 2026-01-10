@@ -93,11 +93,11 @@ export default function EndShiftConfirmModal({
         </div>
 
         <h2 className="text-xl font-bold text-center mb-3 text-gray-900">
-          End Work Shift?
+           {t("End Work Shift?")}
         </h2>
 
         <p className="text-center text-gray-600 mb-8">
-          Are you sure you want to end the current shift?
+           {t("Are you sure you want to end the current shift?")}
         </p>
 
         <div className="flex gap-3">
@@ -106,7 +106,7 @@ export default function EndShiftConfirmModal({
             disabled={isLoading}
             className="flex-1 border-2 border-gray-300 text-gray-700 font-medium rounded-lg py-3 hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            Cancel
+           {t("Cancel")} 
           </button>
 
           <button
@@ -114,7 +114,8 @@ export default function EndShiftConfirmModal({
             disabled={isLoading}
             className="flex-1 bg-red-600 text-white font-medium rounded-lg py-3 hover:bg-red-700 transition-colors disabled:bg-red-400 disabled:cursor-not-allowed"
           >
-            {isLoading ? "Ending..." : "End Shift"}
+            {isLoading ? t("Ending...") : t("End Shift")}
+
           </button>
         </div>
       </div>

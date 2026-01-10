@@ -276,7 +276,6 @@ const MenuSelectionSidebar = ({
                 <div
                   key={item.id}
                   onClick={() => {
-                    // ❌ Direction handled only by switch
                     if (item.title === "Direction") return;
 
                     if (item.title === "Dark Mode") {
@@ -386,7 +385,7 @@ const MenuSelectionSidebar = ({
                         : item.title === "Dine In"
                           ? selectedOrderModeName || t("Select Mode")
                           : item.title === "Switch Device"
-                            ? appState?.device_role || t("Switch Device")
+                            ? t("Switch Device")
                             : t(item.title)
                     }
                   >
@@ -407,7 +406,7 @@ const MenuSelectionSidebar = ({
                         : item.title === "Dine In"
                           ? selectedOrderModeName || t("Select Mode")
                           : item.title === "Switch Device"
-                            ? appState?.device_role || t("Switch Device")
+                            ? t("Switch Device")
                             : t(item.title)}
                     </p>
 

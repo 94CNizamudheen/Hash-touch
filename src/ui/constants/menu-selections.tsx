@@ -11,10 +11,8 @@ import {
   Globe,
   Flag,
   Monitor,
-  // BriefcaseBusiness,
-  // MousePointer2Icon,
 } from "lucide-react";
-// import { Icons } from "../icons";
+
 
 import { MdOutlineCloudSync } from "react-icons/md";
 

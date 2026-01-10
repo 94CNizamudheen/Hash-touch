@@ -16,7 +16,6 @@ interface PaymentEntriesModalProps {
   grandTotal: number;
 }
 
-
 export default function PaymentEntriesModal({
   isOpen,
   onClose,
@@ -28,7 +27,7 @@ export default function PaymentEntriesModal({
   const { currencyCode } = useSetup();
   const [showConfirmClear, setShowConfirmClear] = useState(false);
 
-  // Close modal when all payments are removed
+  /* Close modal automatically when no payments left */
   useEffect(() => {
     if (isOpen && payments.length === 0) {
       onClose();
@@ -36,7 +35,6 @@ export default function PaymentEntriesModal({
   }, [isOpen, payments.length, onClose]);
 
   if (!isOpen) return null;
-
 
   const handleClearAll = () => {
     setShowConfirmClear(true);
@@ -56,13 +54,15 @@ export default function PaymentEntriesModal({
       }}
     >
       <div className="w-full max-w-lg bg-secondary rounded-2xl shadow-xl overflow-hidden animate-in fade-in zoom-in-95 duration-200">
-        {/* Header */}
+
+        {/* ===== Header ===== */}
         <div className="flex items-center justify-between p-4 border-b border-border">
-          <h2 className="text-lg font-semibold">{t("Payment Details")}</h2>
+          <h2 className="text-lg font-semibold">
+            {t("Payment Details")}
+          </h2>
         </div>
 
-
-        {/* Payment entries list */}
+        {/* ===== Payment List ===== */}
         <div className="p-4 max-h-[300px] overflow-y-auto">
           {payments.length === 0 ? (
             <div className="text-center text-muted-foreground py-8">
@@ -73,6 +73,7 @@ export default function PaymentEntriesModal({
               <div className="text-xs text-muted-foreground mb-3 text-center">
                 {t("Swipe left to remove a payment")}
               </div>
+
               {payments.map((payment) => (
                 <SwipeablePaymentItem
                   key={payment.id}
@@ -85,27 +86,26 @@ export default function PaymentEntriesModal({
           )}
         </div>
 
-        {/* Footer actions */}
+        {/* ===== Footer Actions ===== */}
         {payments.length > 0 && (
-          <div className="flex gap-4 p-4 border-t border-border">
-            {/* Cancel */}
+          <div className="flex gap-4 p-4 border-t border-border rtl:flex-row-reverse">
             <Button
               onClick={onClose}
-              className="flex-1 h-12 rounded-xl bg-background text-foreground hover:bg-muted/80 ">
+              className="flex-1 h-12 rounded-xl bg-background text-foreground hover:bg-muted/80"
+            >
               {t("Cancel")}
             </Button>
 
-            {/* Clear */}
             <Button
               onClick={handleClearAll}
-              className="  flex-1 h-12 rounded-xl  bg-primary text-background  hover:bg-primary-hover " >
+              className="flex-1 h-12 rounded-xl bg-primary text-background hover:bg-primary-hover"
+            >
               {t("Clear")}
             </Button>
           </div>
-
         )}
 
-        {/* Confirmation Dialog */}
+        {/* ===== Confirm Clear Modal ===== */}
         {showConfirmClear && (
           <div className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4">
             <div className="bg-background rounded-2xl w-full max-w-md shadow-2xl animate-in fade-in zoom-in-95 duration-150">
@@ -128,7 +128,7 @@ export default function PaymentEntriesModal({
               </div>
 
               {/* Actions */}
-              <div className="flex gap-4 px-6 py-6">
+              <div className="flex gap-4 px-6 py-6 rtl:flex-row-reverse">
                 <Button
                   onClick={() => setShowConfirmClear(false)}
                   className="flex-1 h-12 rounded-xl bg-destructive text-white hover:bg-red-600"
@@ -138,7 +138,7 @@ export default function PaymentEntriesModal({
 
                 <Button
                   onClick={confirmClearAll}
-                  className="flex-1 h-12 rounded-xl bg-primary text-background  hover:bg-primary-hover"
+                  className="flex-1 h-12 rounded-xl bg-primary text-background hover:bg-primary-hover"
                 >
                   {t("Ok")}
                 </Button>

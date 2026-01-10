@@ -26,7 +26,7 @@ export default function DirectionToggle({ className }: DirectionToggleProps) {
         "
       >
         {/* Track labels */}
-        <div className="absolute inset-0  flex items-center justify-between px-4 pointer-events-none font-mono">
+        <div dir="ltr" className="absolute inset-0 flex items-center justify-between px-4 pointer-events-none font-mono">
           <span
             className={cn(
               "text-xs uppercase transition-opacity",
@@ -51,7 +51,7 @@ export default function DirectionToggle({ className }: DirectionToggleProps) {
             "absolute top-0 left-0 h-[100%] w-[calc(50%-4px)] rounded-full bg-primary",
             "flex items-center justify-center text-xs font-mono uppercase",
             "text-primary-foreground shadow-md transition-transform duration-300 ease-in-out",
-            isRTL && "translate-x-full"
+            isRTL && "translate-x-[calc(100%+8px)]"
           )}
         >
           {isRTL ? "RTL" : "LTR"}

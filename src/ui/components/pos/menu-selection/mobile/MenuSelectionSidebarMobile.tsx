@@ -366,7 +366,7 @@ const MenuSelectionSidebarMobile = () => {
                     : item.title === "Dine In"
                       ? selectedOrderModeName || t("Select Mode")
                       : item.title === "Switch Device"
-                        ? appState?.device_role || t("Switch Device")
+                        ?  t("Switch Device")
                         : t(item.title)}
                 </p>
               </div>

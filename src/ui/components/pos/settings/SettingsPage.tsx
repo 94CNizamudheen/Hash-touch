@@ -27,7 +27,7 @@ export default function SettingsPage() {
             <div
               key={setting.id}
               onClick={() => navigate(setting.href)}
-              className="flex items-center justify-between p-5 rounded-lg border border-border bg-card hover:bg-sidebar-hover cursor-pointer transition-all hover:shadow-md"
+              className="bg-secondary flex items-center justify-between p-5 rounded-lg border border-border bg-card hover:bg-sidebar-hover cursor-pointer transition-all hover:shadow-md"
             >
               <div className="flex items-center gap-4">
                 <div className="text-primary">{setting.icon}</div>

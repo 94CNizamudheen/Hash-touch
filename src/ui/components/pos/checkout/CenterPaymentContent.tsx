@@ -66,7 +66,7 @@ export default function CenterPaymentContent({
       <div className="mb-3">
         <div className="flex justify-between items-baseline p-3 border-b pb-1">
           <span className="text-lg text-muted-foreground">
-            {remainingAmount !== undefined ? t("Remaining") : t("Total")}:
+            {t("Total")}:
           </span>
           <span className="text-3xl font-bold">
             {currencySymbol} {displayTotal.toFixed(2)}

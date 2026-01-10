@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/ui/shadcn/components/ui/button";
 import { Loader2, ArrowLeft } from "lucide-react";
-
+import { useTranslation } from "react-i18next";
 import { ticketLocal, type DbTicket } from "@/services/local/ticket.local.service";
 import { ticketService } from "@/services/data/ticket.service";
 import { useAppState } from "@/ui/hooks/useAppState";
@@ -18,7 +18,7 @@ export default function ActivityPage() {
   const [syncing, setSyncing] = useState(false);
   const [tab, setTab] = useState<TabType>("ALL");
   const [isConnected, setIsConnected] = useState(navigator.onLine);
-
+  const { t } = useTranslation();
   /* -------------------- LOAD DATA -------------------- */
   const loadData = async () => {
     setLoading(true);
@@ -97,24 +97,23 @@ export default function ActivityPage() {
           <ArrowLeft />
         </Button>
 
-        <h1 className="text-xl font-semibold">Activities</h1>
+        <h1 className="text-xl font-semibold">{t("Activities")}</h1>
       </div>
 
       {/* ================= TABS ================= */}
       <div className="grid grid-cols-3 border-b">
         {[
-          { key: "ALL", label: "All" },
-          { key: "SYNCED", label: "Synced" },
-          { key: "UNSYNCED", label: "Un Synced" },
+          { key: "ALL", label: t("All") },
+          { key: "SYNCED", label: t("Synced") },
+          { key: "UNSYNCED", label: t("Un Synced") }, 
         ].map((t) => (
           <button
             key={t.key}
             onClick={() => setTab(t.key as TabType)}
-            className={`py-3 text-sm font-medium ${
-              tab === t.key
-                ? "bg-blue-600 text-white"
-                : "bg-gray-200 text-black"
-            }`}
+            className={`py-3 text-sm font-medium border border-border ${tab === t.key
+                ? "bg-primary text-white"
+                : "bg-secondary text-black"
+              }`}
           >
             {t.label}
           </button>
@@ -122,7 +121,7 @@ export default function ActivityPage() {
       </div>
 
       {/* ================= LIST ================= */}
-      <div className="flex-1 overflow-y-auto p-3 space-y-3">
+      <div className="flex-1 overflow-y-auto p-3 space-y-3 ">
         {filteredTickets.map((ticket) => {
           const isSynced = ticket.sync_status === "SYNCED";
           const isFailed = ticket.sync_status === "FAILED";
@@ -130,13 +129,12 @@ export default function ActivityPage() {
           return (
             <div
               key={ticket.id}
-              className={`bg-gray-50 rounded-lg p-4 border-l-4 ${
-                isSynced
+              className={`bg-secondary rounded-lg p-4 border-l-4 ${isSynced
                   ? "border-green-500"
                   : isFailed
-                  ? "border-red-500"
-                  : "border-yellow-500"
-              }`}
+                    ? "border-red-500"
+                    : "border-yellow-500"
+                }`}
             >
               {/* Top row */}
               <div className="flex justify-between items-start">
@@ -147,40 +145,39 @@ export default function ActivityPage() {
                   </p>
 
                   <span
-                    className={`text-xs px-2 py-0.5 rounded-full ${
-                      isSynced
+                    className={`text-xs px-2 py-0.5 rounded-full ${isSynced
                         ? "bg-green-100 text-green-700"
                         : isFailed
-                        ? "bg-red-100 text-red-700"
-                        : "bg-yellow-100 text-yellow-700"
-                    }`}
+                          ? "bg-red-100 text-red-700"
+                          : "bg-yellow-100 text-yellow-700"
+                      }`}
                   >
                     {isSynced ? "Synced" : isFailed ? "Failed" : "Pending"}
                   </span>
                 </div>
 
-                <p className="text-blue-600 font-semibold">
+                <p className="text-primary font-semibold">
                   S$ {((ticket.ticket_amount ?? 0) / 100).toFixed(2)}
                 </p>
               </div>
 
               {/* Details */}
               <div className="mt-3 grid grid-cols-[90px_1fr] gap-y-1 text-sm">
-                <span className="text-gray-500">Ticket No</span>
+                <span className="text-primary">Ticket No</span>
                 <span>{ticket.ticket_number ?? ticket.id}</span>
 
-                <span className="text-gray-500">Date</span>
+                <span className="text-primary">Date</span>
                 <span>
                   {ticket.created_at
                     ? new Date(ticket.created_at).toLocaleDateString("en-US", {
-                        month: "long",
-                        day: "2-digit",
-                        year: "numeric",
-                      })
+                      month: "long",
+                      day: "2-digit",
+                      year: "numeric",
+                    })
                     : "-"}
                 </span>
 
-                <span className="text-gray-500">Time</span>
+                <span className="text-primary">Time</span>
                 <span>
                   {ticket.created_at
                     ? new Date(ticket.created_at).toLocaleTimeString()
@@ -212,7 +209,8 @@ export default function ActivityPage() {
           onClick={handleSync}
           disabled={syncing || !isConnected}
         >
-          {syncing ? "Syncing..." : "Sync All"}
+         {syncing ? t("Syncing...") : t("Sync All")}
+
         </Button>
       </div>
     </div>

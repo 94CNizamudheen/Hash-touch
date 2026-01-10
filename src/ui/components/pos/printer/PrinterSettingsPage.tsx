@@ -1,16 +1,17 @@
 import { useEffect, useState } from "react"
-import { Button } from "@/ui/shadcn/components/ui/button" 
+import { Button } from "@/ui/shadcn/components/ui/button"
 import { Plus } from "lucide-react"
 import { type Printer, printerService } from "@services/local/printer.local.service"
 import PrinterStats from "./PrinterStats"
 import PrinterList from "./PrinterList"
 import PrinterFormModal from "./PrinterFormModal"
+import { useTranslation } from "react-i18next"
 
 export default function PrinterSettingsPage() {
   const [printers, setPrinters] = useState<Printer[]>([])
   const [open, setOpen] = useState(false)
   const [editing, setEditing] = useState<Printer | null>(null)
-
+  const { t } = useTranslation();
   const emptyPrinter: Printer = {
     id: crypto.randomUUID(),
     name: "",
@@ -48,26 +49,28 @@ export default function PrinterSettingsPage() {
 
   return (
     <div className="p-6 max-w-7xl mx-auto space-y-6">
-      
+
       {/* Header */}
-      <h1 className="text-3xl font-bold">Printer Management</h1>
+      <h1 className="text-3xl font-bold">
+        {t("Printer Management")}
+      </h1>
 
       <PrinterStats printers={printers} />
 
       {/* Two-Column Layout */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        
+
         {/* Left Column */}
         <div className="lg:col-span-2">
-          <div className="bg-card rounded-lg border border-border p-6">
+          <div className="bg-secondary rounded-lg border border-border p-6">
 
             {/* List Header WITH Add Button */}
             <div className="flex justify-between items-center mb-4">
-              <h2 className="text-lg font-semibold">Printers</h2>
+              <h2 className="text-lg font-semibold">{t("Printers")}</h2>
 
               <Button onClick={openAddModal} className="gap-2 btn-primary">
                 <Plus className="w-4 h-4" />
-                Add New
+                {t("Add New")}
               </Button>
             </div>
 
