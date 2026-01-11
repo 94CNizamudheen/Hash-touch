@@ -1,5 +1,7 @@
 mod db;
 mod commands;
+
+// WebSocket module exists, but will only be USED on desktop
 mod websocket;
 
 use std::sync::Arc;
@@ -7,18 +9,23 @@ use std::sync::Arc;
 use tokio::sync::mpsc;
 use tauri::Manager;
 
+// Desktop-only websocket imports
+#[cfg(desktop)]
 use websocket::WebSocketServer;
+#[cfg(desktop)]
 use websocket::event_bus::EventBus;
+#[cfg(desktop)]
 use websocket::ws_routes::register_ws_routes;
 
-/// ==============================
-/// Shared App State
-/// ==============================
+
+
+#[cfg(desktop)]
 #[derive(Clone)]
 pub struct WsState {
     pub server: Arc<WebSocketServer>,
 }
 
+#[cfg(desktop)]
 #[derive(Clone)]
 pub struct EventBusState {
     pub bus: EventBus,
@@ -39,87 +46,96 @@ pub fn run() {
                 )?;
             }
 
-            // Init DB
+            // Init DB (must already be sandbox-safe for iOS)
             db::init(app.handle());
 
             // ==============================
-            // WebSocket + EventBus
+            // DESKTOP ONLY: WebSocket + EventBus
             // ==============================
+            #[cfg(desktop)]
+            {
+                let (event_tx, event_rx) = mpsc::unbounded_channel();
 
-            let (event_tx, event_rx) = mpsc::unbounded_channel();
+                let event_bus = EventBus::new(event_rx);
+                let event_bus_clone = event_bus.clone();
 
-            let event_bus = EventBus::new(event_rx);
-            let event_bus_clone = event_bus.clone();
+                let ws_server = Arc::new(WebSocketServer::new(event_tx));
 
-            let ws_server = Arc::new(WebSocketServer::new(event_tx));
+                let ws_state = WsState {
+                    server: ws_server.clone(),
+                };
 
-            // Store in Tauri state - DON'T wrap in Arc again!
-            let ws_state = WsState {
-                server: ws_server.clone(),
-            };
+                app.manage(ws_state.clone());
+                app.manage(EventBusState {
+                    bus: event_bus.clone(),
+                });
 
-            // Manage the raw WsState, not Arc<WsState>
-            app.manage(ws_state.clone());
+                // Register websocket routes
+                let event_bus_for_routes = Arc::new(event_bus.clone());
+                let ws_state_for_routes = Arc::new(ws_state.clone());
+                tauri::async_runtime::spawn(async move {
+                    register_ws_routes(event_bus_for_routes, ws_state_for_routes).await;
+                });
+                log::info!("✅ WebSocket routes registration initiated");
 
-            app.manage(EventBusState {
-                bus: event_bus.clone(),
-            });
+                // Start EventBus
+                tauri::async_runtime::spawn(async move {
+                    event_bus_clone.start().await;
+                });
 
-            // ⚠️ REGISTER WEBSOCKET ROUTES HERE
-            let event_bus_for_routes = Arc::new(event_bus.clone());
-            let ws_state_for_routes = Arc::new(ws_state.clone());
-            tauri::async_runtime::spawn(async move {
-                register_ws_routes(event_bus_for_routes, ws_state_for_routes).await;
-            });
-            log::info!("✅ WebSocket routes registration initiated");
+                // Check device role - POS devices run as server (DESKTOP ONLY)
+                let conn = db::migrate::connection(app.handle());
+                let device_role = match db::models::app_state_repo::get_app_state(&conn) {
+                    Ok(state) => state.device_role.clone(),
+                    Err(e) => {
+                        log::warn!(
+                            "⚠️ Failed to read device role: {}, will start server when role is set",
+                            e
+                        );
+                        None
+                    }
+                };
 
-            // Start EventBus
-            tauri::async_runtime::spawn(async move {
-                event_bus_clone.start().await;
-            });
+                if let Some(role) = device_role {
+                    if role == "POS" {
+                        let ws_addr = "0.0.0.0:9001";
+                        log::info!(
+                            "🔧 POS device detected - Starting WebSocket server on {}",
+                            ws_addr
+                        );
 
-            // Check device role - POS devices always run as server
-            let conn = db::migrate::connection(app.handle());
-            let device_role = match db::models::app_state_repo::get_app_state(&conn) {
-                Ok(state) => {
-                    log::info!("📋 Device role from database: {:?}", state.device_role);
-                    state.device_role.clone()
-                },
-                Err(e) => {
-                    log::warn!("⚠️ Failed to read device role: {}, will start server when role is set", e);
-                    None
-                }
-            };
-
-            // Start server if device role is POS
-            if let Some(role) = device_role {
-                if role == "POS" {
-                    let ws_addr = "0.0.0.0:9001";
-                    log::info!("🔧 POS device detected - Starting WebSocket server on {}", ws_addr);
-                    log::info!("🌐 Server will be accessible at ws://<your-ip>:9001");
-
-                    // Start WebSocket server
-                    tauri::async_runtime::spawn(async move {
-                        log::info!("🚀 WebSocket server task started, attempting to bind to {}", ws_addr);
-                        match ws_server.start(ws_addr).await {
-                            Ok(_) => log::info!("✅ WebSocket server stopped gracefully"),
-                            Err(e) => {
-                                log::error!("❌ WebSocket server FAILED to start: {}", e);
-                                log::error!("❌ This usually means port 9001 is already in use or permission denied");
+                        tauri::async_runtime::spawn(async move {
+                            match ws_server.start(ws_addr).await {
+                                Ok(_) => log::info!("✅ WebSocket server stopped gracefully"),
+                                Err(e) => {
+                                    log::error!(
+                                        "❌ WebSocket server FAILED to start: {}",
+                                        e
+                                    );
+                                }
                             }
-                        }
-                    });
-                } else {
-                    log::info!("🔴 Non-POS device ({}) - Running as client only", role);
+                        });
+                    } else {
+                        log::info!(
+                            "🔴 Non-POS device ({}) - Running as client only",
+                            role
+                        );
+                    }
                 }
-            } else {
-                log::info!("⏳ No device role set yet - WebSocket server will start when POS role is selected");
-                log::info!("💡 After selecting POS role, the app will restart and the server will start");
+            }
+
+            // ==============================
+            // MOBILE (iOS / Android)
+            // ==============================
+            #[cfg(mobile)]
+            {
+                log::info!("📱 Mobile build detected - Server, printers disabled");
             }
 
             log::info!("🚀 Setup complete, app is ready");
             Ok(())
         })
+        // ⚠️ KEEP ALL COMMANDS — iOS will just not CALL unsafe ones
         .invoke_handler(tauri::generate_handler![
             // Location
             commands::location::get_locations,
@@ -153,11 +169,9 @@ pub fn run() {
             commands::device::save_device,
             commands::device::get_device,
 
-            //Setup
-
+            // Setup
             commands::setup::save_setup,
             commands::setup::get_setup_by_code,
-
 
             // Products
             commands::product::get_products,
@@ -251,7 +265,7 @@ pub fn run() {
             commands::kds_ticket::update_kds_ticket_status,
             commands::kds_ticket::delete_kds_ticket,
 
-            // Printers
+            // Printers (will compile; MUST NOT be called on iOS)
             commands::printer::get_printers,
             commands::printer::get_active_printers,
             commands::printer::get_printer,
@@ -268,7 +282,7 @@ pub fn run() {
             commands::websocket::broadcast_to_pos,
             commands::websocket::broadcast_order,
 
-            //queue_token
+            // Queue token
             commands::queue_token::save_queue_token,
             commands::queue_token::get_active_queue_tokens,
             commands::queue_token::update_queue_token_status,
