@@ -2,9 +2,6 @@ import { useCallback, useState } from "react";
 import { useProducts } from "@/ui/context/ProductContext";
 import { useCart } from "@/ui/context/CartContext";
 import ProductCardMobile from "./ProductCardMobile";
-import MobileCategoryTab from "./MobileCategoryTab";
-import MobileProductGroupTabs from "./MobileProductGroupTabs";
-import InputFilter from "@/ui/components/common/InputFilter";
 import type { Product } from "@/types/products";
 import { useAppState } from "@/ui/hooks/useAppState";
 import { useWorkShift } from "@/ui/context/WorkShiftContext";
@@ -17,12 +14,7 @@ import { getProductWithCombinations } from "@/services/local/product-combo.local
 import { useTranslation } from "react-i18next";
 
 const ProductsMobile = () => {
-  const {
-    filteredItems,
-    search,
-    setSearch,
-    loading,
-  } = useProducts();
+  const { filteredItems, loading } = useProducts();
   const { t } = useTranslation();
 
   const { addItem } = useCart();
@@ -90,21 +82,8 @@ const ProductsMobile = () => {
       )}
 
       {shouldShowMainUI && !showSuccess && (
-        <section key={appState?.selected_order_mode_id} className="w-full min-h-full flex flex-col bg-background">
-          <div className="sticky top-0 z-10 p-3 flex flex-col gap-3 border-b border-border bg-background">
-            <InputFilter
-              className="w-full"
-              placeholder={t("Search product...")}
-              value={search}
-              onChange={(e: any) => setSearch(e.target.value)}
-            />
-
-            {!search.trim() && <MobileProductGroupTabs />}
-
-            {!search.trim() && <MobileCategoryTab />}
-          </div>
-
-
+        <div key={appState?.selected_order_mode_id} className="w-full min-h-full bg-background">
+          {/* Product Grid - Now just the scrollable content */}
           <div className="grid grid-cols-2 gap-3 p-3">
             {loading ? (
               <div className="col-span-full text-center py-10 text-muted-foreground">
@@ -135,7 +114,7 @@ const ProductsMobile = () => {
               onConfirm={handleModalConfirm}
             />
           )}
-        </section>
+        </div>
       )}
     </>
   );

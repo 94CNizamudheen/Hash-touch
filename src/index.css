@@ -57,7 +57,7 @@
     --navigation-background: #F2F2F2;
 
     --navigation-foreground: #f4f4f5;
-    --sidebar-bg: #ffffff;
+    --sidebar-bg: #c2c2c2;
 
     --sidebar-hover: #d9dce5;
     --sidebar-active: #5ca3ff;
@@ -378,6 +378,44 @@ textarea {
 
   .safe-bottom {
     padding-bottom: var(--safe-bottom);
+  }
+
+  /* Blue Safe Area Header - for status bar background */
+  .safe-area-header {
+    padding-top: env(safe-area-inset-top);
+    background-color: var(--primary);
+  }
+
+  .safe-area-header::before {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: env(safe-area-inset-top);
+    background-color: var(--primary);
+    z-index: 9999;
+  }
+
+  /* Safe area bottom with background */
+  .safe-area-bottom {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+
+  .safe-area-bottom-bg {
+    padding-bottom: env(safe-area-inset-bottom);
+    background-color: var(--background);
+  }
+
+  .safe-area-bottom-bg::after {
+    content: '';
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: env(safe-area-inset-bottom);
+    background-color: var(--background);
+    z-index: 9999;
   }
 
   .fill-primary {

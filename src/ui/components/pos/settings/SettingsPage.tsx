@@ -12,12 +12,6 @@ export default function SettingsPage() {
       {/* Header */}
       <div className="flex items-center justify-between p-6 border-b border-border">
         <h1 className="text-3xl font-bold">{t("Settings")}</h1>
-        <button
-          onClick={() => navigate("/pos")}
-          className="px-4 py-2 rounded-lg bg-secondary hover:bg-sidebar-hover text-foreground font-medium transition-colors"
-        >
-          {t("Back to Menu")}
-        </button>
       </div>
 
       {/* Settings Menu */}

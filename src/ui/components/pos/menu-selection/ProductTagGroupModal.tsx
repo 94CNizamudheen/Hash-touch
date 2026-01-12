@@ -259,7 +259,7 @@ export default function ProductTagGroupModal({
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: "100%" }}
             transition={{ type: "tween", duration: 0.25 }}
-            className="fixed inset-0 md:inset-auto md:left-1/2 md:top-1/2 md:-translate-x-1/2 md:-translate-y-1/2 md:w-[90%] md:max-w-4xl md:max-h-[90vh] bg-secondary z-50 md:rounded-lg shadow-2xl flex flex-col"
+            className="fixed inset-0 md:inset-auto md:left-1/2 md:top-1/2 md:-translate-x-1/2 md:-translate-y-1/2 md:w-[90%] md:max-w-4xl md:max-h-[90vh] bg-secondary z-50 md:rounded-lg shadow-2xl flex flex-col safe-area "
           >
             {/* Mobile Header */}
             <div className="flex-shrink-0 md:hidden p-4 border-b border-border flex items-center justify-between bg-background">

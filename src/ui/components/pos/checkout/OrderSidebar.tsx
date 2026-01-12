@@ -70,7 +70,7 @@ export default function OrderSidebar({
         if (isMobileOverlay && e.target === e.currentTarget) onClose();
       }}
     >
-      <aside className="max-w-[500px] h-dvh bg-secondary flex flex-col border-r border-border shadow-lg">
+      <aside className="max-w-[500px] h-dvh bg-secondary flex flex-col border-r border-border shadow-lg safe-area ">
         {/* ─────────────── Header (mobile only) */}
         {isMobileOverlay && (
           <div className="h-12 px-4 flex items-center justify-between border-b border-border bg-background shrink-0">

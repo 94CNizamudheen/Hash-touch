@@ -102,11 +102,11 @@ export default function Home({
   };
 
   return (
-    <div className="min-h-screen bg-blue-300 flex items-center justify-center p-6">
+    <div className="min-h-screen bg-background flex items-center justify-center p-6">
       <div className="max-w-3xl w-full space-y-6">
-        <div className="bg-white rounded-2xl shadow p-6">
-          <h1 className="text-2xl font-semibold mb-2">Welcome to HashOne-Touch</h1>
-          <p className="text-sm text-zinc-600 mb-4">Select the device role for this installation.</p>
+        <div className="bg-card rounded-2xl shadow p-6">
+          <h1 className="text-2xl font-semibold text-foreground mb-2">Welcome to HashOne-Touch</h1>
+          <p className="text-sm text-muted-foreground mb-4">Select the device role for this installation.</p>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-6">
             {ROLES.map((r) => {
@@ -117,16 +117,16 @@ export default function Home({
                   <button
                     onClick={() => handleRoleSelect(r.key)}
                     className={`w-full p-4 rounded-lg border hover:shadow-sm text-left transition ${
-                      selectedRole === r.key ? "border-blue-600 bg-blue-50" : "border-zinc-200 bg-white"
+                      selectedRole === r.key ? "border-primary bg-tag-selected" : "border-border bg-card"
                     }`}
                   >
                     <div className="flex items-center justify-between">
                       <div>
-                        <div className="text-sm font-medium">{r.label}</div>
-                        <div className="text-xs text-zinc-500 mt-1">{r.key}</div>
+                        <div className="text-sm font-medium text-foreground">{r.label}</div>
+                        <div className="text-xs text-muted-foreground mt-1">{r.key}</div>
                       </div>
                       {isConfigured && (
-                        <span className="text-green-600 text-xs font-semibold">✓ Configured</span>
+                        <span className="text-success text-xs font-semibold">✓ Configured</span>
                       )}
                     </div>
                   </button>
@@ -139,7 +139,7 @@ export default function Home({
                         handleOpenRole(r.key);
                       }}
                       disabled={busy}
-                      className="absolute top-2 right-2 px-3 py-1 bg-blue-600 text-white text-xs rounded hover:bg-blue-700 disabled:opacity-50 transition"
+                      className="absolute top-2 right-2 px-3 py-1 bg-primary text-primary-foreground text-xs rounded hover:bg-primary-hover disabled:opacity-50 transition"
                     >
                       Launch
                     </button>
@@ -151,8 +151,8 @@ export default function Home({
 
           {/* Info for POS device */}
           {selectedRole === "POS" && (
-            <div className="mb-6 p-4 bg-green-50 rounded-lg border border-green-200">
-              <p className="text-sm text-green-800">
+            <div className="mb-6 p-4 bg-success/10 rounded-lg border border-success/30">
+              <p className="text-sm text-success">
                 ✓ This device will run as the WebSocket server. Other devices (KDS, Queue) will connect to this device.
               </p>
             </div>
@@ -160,8 +160,8 @@ export default function Home({
 
           {/* Info for KDS/Queue devices */}
           {(selectedRole === "KDS" || selectedRole === "QUEUE") && (
-            <div className="mb-6 p-4 bg-blue-50 rounded-lg border border-blue-200">
-              <p className="text-sm text-blue-800">
+            <div className="mb-6 p-4 bg-primary/10 rounded-lg border border-primary/30">
+              <p className="text-sm text-primary">
                 ℹ️ After setup, go to Settings → Device Communication to connect to your POS device.
               </p>
             </div>
@@ -170,12 +170,12 @@ export default function Home({
           <button
             onClick={createAndContinue}
             disabled={busy || !selectedRole}
-            className="w-full px-4 py-2 rounded-md bg-blue-600 text-white disabled:opacity-60 hover:bg-blue-700 transition"
+            className="w-full px-4 py-2 rounded-md bg-primary text-primary-foreground disabled:opacity-60 hover:bg-primary-hover transition"
           >
             {busy ? "Saving..." : "Save & Continue"}
           </button>
 
-          {error && <div className="mt-3 text-sm text-red-600">{error}</div>}
+          {error && <div className="mt-3 text-sm text-destructive">{error}</div>}
         </div>
       </div>
 

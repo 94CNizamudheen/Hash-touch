@@ -44,9 +44,11 @@ export default function PaymentDesktop() {
   const [loading, setLoading] = useState(false);
   const [final, setFinal] = useState({ total: 0, balance: 0 });
   const { currencyCode } = useSetup();
-  
+
   // NEW: Multi-payment state
   const [payments, setPayments] = useState<PaymentEntry[]>([]);
+
+
 
   /* Load transaction types */
   useEffect(() => {
@@ -109,10 +111,10 @@ export default function PaymentDesktop() {
       updatedPayments = payments.map((p, index) =>
         index === existingPaymentIndex
           ? {
-              ...p,
-              amount: p.amount + paymentAmount,
-              timestamp: new Date().toISOString(), // Update timestamp
-            }
+            ...p,
+            amount: p.amount + paymentAmount,
+            timestamp: new Date().toISOString(), // Update timestamp
+          }
           : p
       );
     } else {
@@ -364,6 +366,51 @@ export default function PaymentDesktop() {
     }
   };
 
+const handleSendEmail = async (email: string) => {
+  if (!appState?.tenant_domain || !appState?.access_token) {
+    showNotification.error("Missing application state");
+    return;
+  }
+
+  try {
+    const ticketRequest = buildTicketRequest({
+      items,
+      charges,
+      subtotal,
+      total,
+      paymentMethod: payments.map(p => p.paymentMethodName).join(", "),
+      paymentMethodId: payments[0]?.paymentMethodId || "",
+      tenderedAmount: final.total + final.balance,
+      locationId: appState.selected_location_id,
+      locationName: appState.selected_location_name,
+      orderModeName: appState.selected_order_mode_name,
+      channelName: "POS",
+      userName: "POS User",
+      saleTransactionTypeId: transactionTypes.find(t => t.name === "SALE")!.id,
+      paymentTransactionTypeId: transactionTypes.find(t => t.name === "PAYMENT")!.id,
+      transactionTypes,
+      queueNumber: 0,
+      currencyCode,
+    });
+
+    await ticketService.sendEmail(
+      appState.tenant_domain,
+      appState.access_token,
+      email,               
+      [ticketRequest]       
+    );
+
+    showNotification.success("Receipt sent successfully");
+  } catch (error) {
+    console.error("Send email failed:", error);
+    showNotification.error("Failed to send email");
+  }
+};
+
+
+
+
+
   return (
     <div className="fixed inset-0 flex bg-background text-foreground safe-area">
       <LeftActionRail onBackToMenu={() => navigate("/pos")} />
@@ -372,7 +419,7 @@ export default function PaymentDesktop() {
         items={items}
         total={subtotal}
         isOpen
-        onClose={() => {}}
+        onClose={() => { }}
         onBackToMenu={() => navigate("/pos")}
         payments={payments}
         onRemovePayment={onRemovePayment}
@@ -394,7 +441,7 @@ export default function PaymentDesktop() {
       <PaymentMethodsSidebar
         selectedMethod={selectedMethod}
         isOpen
-        onClose={() => {}}
+        onClose={() => { }}
         onMethodSelect={setSelectedMethod}
         onCancel={() => navigate("/pos")}
         isPaymentReady={isPaymentReady}
@@ -417,7 +464,11 @@ export default function PaymentDesktop() {
         balance={final.balance}
         onPrintReceipt={handlePrintReceipt}
         onNewOrder={() => navigate("/pos")}
+        onSendEmail={handleSendEmail}
       />
+
+
+
     </div>
   );
 }

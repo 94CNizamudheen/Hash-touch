@@ -12,7 +12,7 @@ import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 
 import { useTheme } from "@/ui/context/ThemeContext";
-import { Moon, Sun } from "lucide-react";
+import { Moon, Sun, X } from "lucide-react";
 import DirectionToggle from "@/ui/components/common/DirectionToggle";
 import { useWorkShift } from "@/ui/context/WorkShiftContext";
 import { useAppState } from "@/ui/hooks/useAppState";
@@ -25,8 +25,13 @@ import { logoutService } from "@/services/auth/logout.service";
 import { initialSync } from "@/services/data/initialSync.service";
 import { localEventBus } from "@/services/eventbus/LocalEventBus";
 import type { DeviceRole } from "@/types/app-state";
+import { cn } from "@/lib/utils";
 
-const MenuSelectionSidebarMobile = () => {
+interface MenuSelectionSidebarMobileProps {
+  onClose: () => void;
+}
+
+const MenuSelectionSidebarMobile = ({ onClose }: MenuSelectionSidebarMobileProps) => {
   const { t } = useTranslation();
   const router = useNavigate();
 
@@ -84,6 +89,7 @@ const MenuSelectionSidebarMobile = () => {
   const handleStartSync = async () => {
     if (!appState?.tenant_domain || !appState?.access_token) {
       showNotification.error(t("Cannot sync: Missing tenant or access token"));
+
       return;
     }
 
@@ -107,6 +113,8 @@ const MenuSelectionSidebarMobile = () => {
       await new Promise(resolve => setTimeout(resolve, 1000));
 
       showNotification.success(t("Sync completed successfully"), 3000);
+      onClose();
+
     } catch (error) {
       console.error("Sync failed:", error);
       showNotification.error(t("Sync failed") + ": " + (error instanceof Error ? error.message : "Unknown error"));
@@ -163,9 +171,11 @@ const MenuSelectionSidebarMobile = () => {
       mode.name
     );
     setShowDineInBoard(false);
+    onClose();
   };
 
   const handleLogoutClick = async () => {
+     onClose();
     // Check if shift is open
     if (isShiftOpen) {
       showNotification.info(t("Please close your shift before logging out"), 4000);
@@ -258,25 +268,18 @@ const MenuSelectionSidebarMobile = () => {
         onSwitch={handleDeviceSwitch}
       />
 
-      {/* Drawer – keep safe area unchanged */}
-      <div
-        className="safe-area fixed right-0 top-0 bottom-0 w-60  
-                   bg-background z-40 shadow-xl flex flex-col
-                   rounded-l-2xl"
-      >
+      {/* Drawer */}
+      <div className="h-full w-full bg-background flex flex-col">
         {/* Header */}
-        <div className="flex-shrink-0 p-4 border-b border-border flex items-center justify-between">
-          <h3 className="text-lg font-semibold text-foreground">
-            Menu Actions
+        <div className="flex-shrink-0 px-4 py-3 border-b border-border flex items-center justify-between">
+          <h3 className="text-base font-semibold text-foreground">
+            {t("Menu")}
           </h3>
-
-          {/* Dark mode toggle */}
-          <button onClick={toggleTheme}>
-            {theme === "dark" ? (
-              <Sun className="w-5 h-5 stroke-primary" strokeWidth={2.5} />
-            ) : (
-              <Moon className="w-5 h-5 stroke-primary" strokeWidth={2.5} />
-            )}
+          <button
+            onClick={onClose}
+            className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-secondary active:scale-95 transition-transform"
+          >
+            <X className="w-5 h-5 text-foreground" />
           </button>
         </div>
 
@@ -315,7 +318,10 @@ const MenuSelectionSidebarMobile = () => {
                   item.action?.(openModal);
                   if (item.link) router(item.link);
                 }}
-                className="flex items-center gap-3 p-3 bg-navigation rounded-lg cursor-pointer active:scale-[0.98]"
+               className={cn(
+                                   "bg-secondary flex items-center gap-2 p-2 xl:p-3 rounded-lg cursor-pointer hover:bg-sidebar-hover",
+                                   item.link && location.pathname === item.link && "bg-sidebar text-primary-foreground"
+                                 )}
               >
                 {item.title === "Dark Mode"
                   ? theme === "dark"
@@ -347,17 +353,19 @@ const MenuSelectionSidebarMobile = () => {
 
         {/* Footer */}
         <div className="flex-shrink-0 p-3 border-t border-border bg-background">
-          <div className="flex flex-col gap-3 pt-4">
+          <div className="flex flex-col gap-2">
             {MENUSELECTIONNAVIGATION.filter(
               (item) => item.position === "Bottom"
             ).map((item) => (
               <div
                 key={item.id}
                 onClick={() => {
+                  onClose();
                   if (item.link) router(item.link);
                   item.action?.(openModal);
+                   
                 }}
-                className="flex items-center gap-3 p-3 bg-navigation rounded-lg cursor-pointer active:scale-[0.98]"
+                className="flex items-center gap-3 p-3 bg-secondary rounded-lg cursor-pointer active:scale-[0.98]"
               >
                 {item.icon}
                 <p className="text-body font-medium text-sm">

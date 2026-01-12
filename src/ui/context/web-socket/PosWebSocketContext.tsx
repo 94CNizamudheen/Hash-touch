@@ -36,31 +36,34 @@ export const PosWebSocketProvider = ({ children }: { children: ReactNode }) => {
     const [client, setClient] = useState<WebSocketClient | null>(null);
 
     const clientRef = useRef<WebSocketClient | null>(null);
-
+    const connectingRef = useRef(false);
     /* =========================
        CONNECT (POS is server)
     ========================= */
+
     const connect = useCallback(async (wsUrl: string) => {
         if (state?.device_role !== "POS") return;
 
-        const device = await deviceService.getDevice();
-        if (!device) {
-            setError("Device not found");
+        // 🔒 HARD LOCK
+        if (connectingRef.current || clientRef.current) {
+            console.log("⚠️ [POS] Already connected or connecting, skipping");
             return;
         }
 
+        connectingRef.current = true;
         setIsConnecting(true);
         setError(null);
 
         try {
-            clientRef.current?.disconnect();
+            const device = await deviceService.getDevice();
+            if (!device) throw new Error("Device not found");
 
-            // Use unique ID (device.id + role) to support multiple apps on same device
             const uniqueDeviceId = `${device.id}_POS`;
             const wsClient = new WebSocketClient(wsUrl, uniqueDeviceId, "POS");
 
             await wsClient.connect();
             await wsClient.waitForRegisterAck();
+
             websocketService.setClient(wsClient);
 
             clientRef.current = wsClient;
@@ -70,21 +73,22 @@ export const PosWebSocketProvider = ({ children }: { children: ReactNode }) => {
             console.log("✅ [POS] WebSocket connected");
         } catch (err) {
             setError(err instanceof Error ? err.message : "Connection failed");
-            setIsConnected(false);
+            clientRef.current = null;
         } finally {
+            connectingRef.current = false;
             setIsConnecting(false);
         }
-    }, [state]);
+    }, [state?.device_role]);
 
     useEffect(() => {
-        if (!state || state.device_role !== "POS") return;
+        if (state?.device_role !== "POS") return;
         if (!state.ws_server_url) return;
-        if (isConnected || isConnecting) return;
+        if (clientRef.current) return;
 
         console.log("🔍 [POS] Auto-connecting to WS:", state.ws_server_url);
-
         connect(state.ws_server_url);
-    }, [state, isConnected, isConnecting, connect]);
+    }, [state?.device_role, state?.ws_server_url, connect]);
+
 
     /* =========================
        DISCONNECT
@@ -92,6 +96,7 @@ export const PosWebSocketProvider = ({ children }: { children: ReactNode }) => {
     const disconnect = useCallback(() => {
         clientRef.current?.disconnect();
         clientRef.current = null;
+        connectingRef.current = false;
 
         setClient(null);
         setIsConnected(false);
@@ -100,6 +105,7 @@ export const PosWebSocketProvider = ({ children }: { children: ReactNode }) => {
 
         console.log("🔌 [POS] WebSocket disconnected");
     }, []);
+
 
     /* =========================
        WS MESSAGE HANDLERS (POS)

@@ -1,6 +1,11 @@
-use tauri::{AppHandle, Manager, WebviewUrl, WebviewWindowBuilder};
+use tauri::AppHandle;
+#[cfg(desktop)]
+use tauri::Manager;
+#[cfg(not(any(target_os = "android", target_os = "ios")))]
+use tauri::{WebviewUrl, WebviewWindowBuilder};
 use crate::db::migrate;
 use crate::db::models::app_state_repo;
+#[cfg(desktop)]
 use crate::WsState;
 use local_ip_address::local_ip;
 
@@ -54,6 +59,8 @@ pub fn set_device_role(app: AppHandle, role: String) -> Result<(), String> {
     app_state_repo::update_app_state(&conn, "device_role", &role)
         .map_err(|e| e.to_string())?;
 
+    // Start WebSocket server on desktop when role is POS
+    #[cfg(desktop)]
     if role == "POS" {
         let state = app.state::<WsState>();
         let server = state.server.clone();

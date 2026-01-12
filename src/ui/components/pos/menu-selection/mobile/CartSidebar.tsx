@@ -103,13 +103,13 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
             animate={{ x: 0 }}
             exit={{ x: "-100%" }}
             transition={{ type: "tween", duration: 0.3 }}
-            className=" fixed left-0 top-0 bottom-0 w-[80%] sm:w-[60%] 
+            className="safe-area fixed left-0 top-0 bottom-0 w-[80%] sm:w-[60%] 
                        bg-background z-50 shadow-2xl flex flex-col 
                        pointer-events-auto border-r border-border rounded-r-2xl"
           >
 
             {/* Cart Items */}
-            <div className="flex-1 overflow-y-auto p-3 flex flex-col gap-3 min-h-0">
+            <div className="flex-1 overflow-y-auto p-3 flex flex-col gap-3 min-h-0 ">
               {items.length > 0 ? (
                 items.map((item) => (
                   <CardDineIn
@@ -139,7 +139,7 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
             </div>
 
             {/* Footer */}
-            <footer className="flex-shrink-0 border-t border-border p-3 flex flex-col gap-2 bg-background">
+            <footer className="flex-shrink-0 border-t border-border p-3 flex flex-col gap-2 bg-background safe-area-bottom ">
               {/* Totals Section */}
               {items.length > 0 && (
                 <div className="space-y-1 text-xs pb-2">

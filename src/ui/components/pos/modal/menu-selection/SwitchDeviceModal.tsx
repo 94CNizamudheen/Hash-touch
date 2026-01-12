@@ -19,17 +19,17 @@ const DEVICE_ROLES: {
   {
     key: "POS",
     label: "Point of Sale",
-    icon: <ShoppingCart className="w-5 h-5" />,
+    icon: <ShoppingCart className="w-5 h-5 stroke-primary" />,
   },
   {
     key: "KDS",
     label: "Kitchen Display",
-    icon: <ChefHat className="w-5 h-5" />,
+    icon: <ChefHat className="w-5 h-5 stroke-primary" />,
   },
   {
     key: "QUEUE",
     label: "Queue Display",
-    icon: <Users className="w-5 h-5" />,
+    icon: <Users className="w-5 h-5 stroke-primary" />,
   },
 ];
 
@@ -72,7 +72,7 @@ const SwitchDeviceModal = ({
       <SheetContent
         side="left"
         showCloseButton={false}
-        className="max-h-[90%] sm:max-h-[70%] my-auto rounded-r-2xl p-8 sm:w-auto bg-secondary"
+        className="max-h-[50%] my-auto rounded-r-2xl p-8 sm:w-auto bg-secondary"
       >
         {/* ===== Header ===== */}
         <SheetHeader className="border-b border-accent px-4 sm:px-5 pb-1 sm:pb-4">

@@ -28,6 +28,7 @@ import type { DeviceRole } from "@/types/app-state";
 
 
 
+
 const MenuSelectionSidebar = ({
   onChangeStyle,
   style,
@@ -55,6 +56,7 @@ const MenuSelectionSidebar = ({
   const { showNotification } = useNotification();
   const [isSyncing, setIsSyncing] = useState(false);
   const [syncStatus, setSyncStatus] = useState<"syncing" | "synced">("syncing");
+
 
 
   const { theme, setTheme, isHydrated } = useTheme();
@@ -302,7 +304,8 @@ const MenuSelectionSidebar = ({
                     if (item.link) router(item.link);
                   }}
                   className={cn(
-                    "bg-secondary flex items-center gap-2 p-2 xl:p-3 rounded-lg cursor-pointer hover:bg-sidebar-hover"
+                    "bg-secondary flex items-center gap-2 p-2 xl:p-3 rounded-lg cursor-pointer hover:bg-sidebar-hover",
+                    item.link && location.pathname === item.link && "bg-sidebar text-primary-foreground"
                   )}
                 >
                   {/* Direction Toggle - Full Width */}

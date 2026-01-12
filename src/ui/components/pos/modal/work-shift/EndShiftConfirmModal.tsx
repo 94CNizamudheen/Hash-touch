@@ -22,7 +22,6 @@ export default function EndShiftConfirmModal({
 
     setIsLoading(true);
     try {
-      // 🔒 Check for pending syncs
       const blocks = await checkBlocks();
       if (blocks.totalSyncs > 0) {
         showNotification.info(
@@ -32,13 +31,8 @@ export default function EndShiftConfirmModal({
         return;
       }
 
-      // ✅ IMPORTANT: wait until shift is REALLY closed
       await endShift("Admin");
-
-      // ✅ Notify parent ONLY after success
       onConfirm?.();
-
-      // ✅ Close modal last
       onClose();
     } catch (error) {
       console.error("Failed to end shift:", error);

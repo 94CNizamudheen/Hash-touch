@@ -1,15 +1,17 @@
 mod db;
 mod commands;
 
-// WebSocket module exists, but will only be USED on desktop
+// WebSocket module - only used on desktop
+#[cfg(desktop)]
 mod websocket;
 
+// Desktop-only imports
+#[cfg(desktop)]
 use std::sync::Arc;
-
+#[cfg(desktop)]
 use tokio::sync::mpsc;
+#[cfg(desktop)]
 use tauri::Manager;
-
-// Desktop-only websocket imports
 #[cfg(desktop)]
 use websocket::WebSocketServer;
 #[cfg(desktop)]
@@ -33,7 +35,7 @@ pub struct EventBusState {
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
-    tauri::Builder::default()
+    let builder = tauri::Builder::default()
         .setup(|app| {
             log::info!("⚙️  Starting setup...");
 
@@ -134,159 +136,300 @@ pub fn run() {
 
             log::info!("🚀 Setup complete, app is ready");
             Ok(())
-        })
-        // ⚠️ KEEP ALL COMMANDS — iOS will just not CALL unsafe ones
-        .invoke_handler(tauri::generate_handler![
-            // Location
-            commands::location::get_locations,
-            commands::location::save_locations,
-            commands::location::select_location,
+        });
 
-            // App state
-            commands::app_state::get_app_state,
-            commands::app_state::clear_app_state,
-            commands::app_state::clear_all_data,
-            commands::app_state::set_tenant,
-            commands::app_state::set_location,
-            commands::app_state::set_order_modes,
-            commands::app_state::set_device_role,
-            commands::app_state::set_theme,
-            commands::app_state::set_language,
-            commands::app_state::get_kds_settings,
-            commands::app_state::set_kds_settings,
-            commands::app_state::get_kds_view_mode,
-            commands::app_state::set_kds_view_mode,
-            commands::app_state::get_ws_settings,
-            commands::app_state::set_ws_server_mode,
-            commands::app_state::set_ws_server_url,
-            commands::app_state::get_local_ip,
-            commands::app_state::set_setup_code,
-            commands::app_state::open_role_window,
-            commands::app_state::get_configured_roles,
+    // Desktop: includes WebSocket commands
+    #[cfg(desktop)]
+    let builder = builder.invoke_handler(tauri::generate_handler![
+        // Location
+        commands::location::get_locations,
+        commands::location::save_locations,
+        commands::location::select_location,
 
-            // Device
-            commands::device::get_devices,
-            commands::device::save_device,
-            commands::device::get_device,
+        // App state
+        commands::app_state::get_app_state,
+        commands::app_state::clear_app_state,
+        commands::app_state::clear_all_data,
+        commands::app_state::set_tenant,
+        commands::app_state::set_location,
+        commands::app_state::set_order_modes,
+        commands::app_state::set_device_role,
+        commands::app_state::set_theme,
+        commands::app_state::set_language,
+        commands::app_state::get_kds_settings,
+        commands::app_state::set_kds_settings,
+        commands::app_state::get_kds_view_mode,
+        commands::app_state::set_kds_view_mode,
+        commands::app_state::get_ws_settings,
+        commands::app_state::set_ws_server_mode,
+        commands::app_state::set_ws_server_url,
+        commands::app_state::get_local_ip,
+        commands::app_state::set_setup_code,
+        commands::app_state::open_role_window,
+        commands::app_state::get_configured_roles,
 
-            // Setup
-            commands::setup::save_setup,
-            commands::setup::get_setup_by_code,
+        // Device
+        commands::device::get_devices,
+        commands::device::save_device,
+        commands::device::get_device,
 
-            // Products
-            commands::product::get_products,
-            commands::product::save_products,
-            commands::product::clear_products_cache,
-            commands::product::update_product_sold_out_status,
+        // Setup
+        commands::setup::save_setup,
+        commands::setup::get_setup_by_code,
 
-            // Product groups
-            commands::product_group::get_product_groups,
-            commands::product_group::save_product_groups,
+        // Products
+        commands::product::get_products,
+        commands::product::save_products,
+        commands::product::clear_products_cache,
+        commands::product::update_product_sold_out_status,
 
-            commands::product_group_category::get_product_group_categories,
-            commands::product_group_category::save_product_group_categories,
+        // Product groups
+        commands::product_group::get_product_groups,
+        commands::product_group::save_product_groups,
 
-            // Tags
-            commands::product_tag_group::get_product_tag_groups,
-            commands::product_tag_group::save_product_tag_groups,
-            commands::product_tag_group::get_product_tag_groups_by_product,
+        commands::product_group_category::get_product_group_categories,
+        commands::product_group_category::save_product_group_categories,
 
-            commands::product_tag::get_product_tags,
-            commands::product_tag::save_product_tags,
-            commands::product_tag::get_product_tags_by_group,
+        // Tags
+        commands::product_tag_group::get_product_tag_groups,
+        commands::product_tag_group::save_product_tag_groups,
+        commands::product_tag_group::get_product_tag_groups_by_product,
 
-            // Tag Group Mappings
-            commands::product_tag_group_mapping::save_product_tag_group_mappings,
+        commands::product_tag::get_product_tags,
+        commands::product_tag::save_product_tags,
+        commands::product_tag::get_product_tags_by_group,
 
-            // Combos
-            commands::prouct_combo::get_product_with_combos,
+        // Tag Group Mappings
+        commands::product_tag_group_mapping::save_product_tag_group_mappings,
 
-            // Categories
-            commands::category::get_categories,
-            commands::category::save_categories,
+        // Combos
+        commands::prouct_combo::get_product_with_combos,
 
-            // Cart
-            commands::cart_store::get_cart_draft,
-            commands::cart_store::save_cart_draft,
-            commands::cart_store::clear_cart_draft,
+        // Categories
+        commands::category::get_categories,
+        commands::category::save_categories,
 
-            // Work shift
-            commands::work_shift::get_work_shift_draft,
-            commands::work_shift::save_work_shift_draft,
-            commands::work_shift::clear_work_shift_draft,
+        // Cart
+        commands::cart_store::get_cart_draft,
+        commands::cart_store::save_cart_draft,
+        commands::cart_store::clear_cart_draft,
 
-            // Workday
-            commands::workday::save_workday,
-            commands::workday::get_all_workdays,
-            commands::workday::get_pending_workdays,
-            commands::workday::get_active_workday,
-            commands::workday::get_workday_by_id,
-            commands::workday::update_workday,
-            commands::workday::update_workday_sync_status,
-            commands::workday::set_workday_server_id,
-            commands::workday::delete_workday,
-            commands::workday::get_workdays_by_date_range,
-            commands::workday::get_workdays_by_location,
-            commands::workday::clear_all_workdays,
+        // Work shift
+        commands::work_shift::get_work_shift_draft,
+        commands::work_shift::save_work_shift_draft,
+        commands::work_shift::clear_work_shift_draft,
 
-            // Charges
-            commands::charges::save_charges,
-            commands::charges::save_charge_mappings,
-            commands::charges::get_charges,
-            commands::charges::get_charge_mappings,
-            commands::charges::clear_charges_cache,
+        // Workday
+        commands::workday::save_workday,
+        commands::workday::get_all_workdays,
+        commands::workday::get_pending_workdays,
+        commands::workday::get_active_workday,
+        commands::workday::get_workday_by_id,
+        commands::workday::update_workday,
+        commands::workday::update_workday_sync_status,
+        commands::workday::set_workday_server_id,
+        commands::workday::delete_workday,
+        commands::workday::get_workdays_by_date_range,
+        commands::workday::get_workdays_by_location,
+        commands::workday::clear_all_workdays,
 
-            // Payment Methods
-            commands::payment_method::save_payment_methods,
-            commands::payment_method::get_payment_methods,
-            commands::payment_method::clear_payment_methods_cache,
+        // Charges
+        commands::charges::save_charges,
+        commands::charges::save_charge_mappings,
+        commands::charges::get_charges,
+        commands::charges::get_charge_mappings,
+        commands::charges::clear_charges_cache,
 
-            // Transaction Types
-            commands::transaction_type::save_transaction_types,
-            commands::transaction_type::get_transaction_types,
-            commands::transaction_type::clear_transaction_types_cache,
+        // Payment Methods
+        commands::payment_method::save_payment_methods,
+        commands::payment_method::get_payment_methods,
+        commands::payment_method::clear_payment_methods_cache,
 
-            // Tickets
-            commands::ticket::save_ticket,
-            commands::ticket::get_all_tickets,
-            commands::ticket::get_pending_tickets,
-            commands::ticket::update_ticket_sync_status,
-            commands::ticket::delete_ticket,
-            commands::ticket::get_sync_stats,
-            commands::ticket::clear_all_tickets,
-            commands::ticket::get_max_queue_number,
-            commands::ticket::update_ticket_order_status,
+        // Transaction Types
+        commands::transaction_type::save_transaction_types,
+        commands::transaction_type::get_transaction_types,
+        commands::transaction_type::clear_transaction_types_cache,
 
-            // KDS Tickets
-            commands::kds_ticket::save_kds_ticket,
-            commands::kds_ticket::get_all_kds_tickets,
-            commands::kds_ticket::get_active_kds_tickets,
-            commands::kds_ticket::get_kds_tickets_by_status,
-            commands::kds_ticket::update_kds_ticket_status,
-            commands::kds_ticket::delete_kds_ticket,
+        // Tickets
+        commands::ticket::save_ticket,
+        commands::ticket::get_all_tickets,
+        commands::ticket::get_pending_tickets,
+        commands::ticket::update_ticket_sync_status,
+        commands::ticket::delete_ticket,
+        commands::ticket::get_sync_stats,
+        commands::ticket::clear_all_tickets,
+        commands::ticket::get_max_queue_number,
+        commands::ticket::update_ticket_order_status,
 
-            // Printers (will compile; MUST NOT be called on iOS)
-            commands::printer::get_printers,
-            commands::printer::get_active_printers,
-            commands::printer::get_printer,
-            commands::printer::save_printer,
-            commands::printer::delete_printer,
-            commands::printer::set_printer_active,
-            commands::printer::test_printer,
-            commands::printer::print_receipt,
-            commands::printer::print_receipt_to_all_active,
+        // KDS Tickets
+        commands::kds_ticket::save_kds_ticket,
+        commands::kds_ticket::get_all_kds_tickets,
+        commands::kds_ticket::get_active_kds_tickets,
+        commands::kds_ticket::get_kds_tickets_by_status,
+        commands::kds_ticket::update_kds_ticket_status,
+        commands::kds_ticket::delete_kds_ticket,
 
-            // WebSocket
-            commands::websocket::broadcast_to_kds,
-            commands::websocket::broadcast_to_queue,
-            commands::websocket::broadcast_to_pos,
-            commands::websocket::broadcast_order,
+        // Printers
+        commands::printer::get_printers,
+        commands::printer::get_active_printers,
+        commands::printer::get_printer,
+        commands::printer::save_printer,
+        commands::printer::delete_printer,
+        commands::printer::set_printer_active,
+        commands::printer::test_printer,
+        commands::printer::print_receipt,
+        commands::printer::print_receipt_to_all_active,
 
-            // Queue token
-            commands::queue_token::save_queue_token,
-            commands::queue_token::get_active_queue_tokens,
-            commands::queue_token::update_queue_token_status,
-        ])
+        // WebSocket (desktop only)
+        commands::websocket::broadcast_to_kds,
+        commands::websocket::broadcast_to_queue,
+        commands::websocket::broadcast_to_pos,
+        commands::websocket::broadcast_order,
+
+        // Queue token
+        commands::queue_token::save_queue_token,
+        commands::queue_token::get_active_queue_tokens,
+        commands::queue_token::update_queue_token_status,
+    ]);
+
+    // Mobile: excludes WebSocket commands
+    #[cfg(mobile)]
+    let builder = builder.invoke_handler(tauri::generate_handler![
+        // Location
+        commands::location::get_locations,
+        commands::location::save_locations,
+        commands::location::select_location,
+
+        // App state
+        commands::app_state::get_app_state,
+        commands::app_state::clear_app_state,
+        commands::app_state::clear_all_data,
+        commands::app_state::set_tenant,
+        commands::app_state::set_location,
+        commands::app_state::set_order_modes,
+        commands::app_state::set_device_role,
+        commands::app_state::set_theme,
+        commands::app_state::set_language,
+        commands::app_state::get_kds_settings,
+        commands::app_state::set_kds_settings,
+        commands::app_state::get_kds_view_mode,
+        commands::app_state::set_kds_view_mode,
+        commands::app_state::get_ws_settings,
+        commands::app_state::set_ws_server_mode,
+        commands::app_state::set_ws_server_url,
+        commands::app_state::get_local_ip,
+        commands::app_state::set_setup_code,
+        commands::app_state::open_role_window,
+        commands::app_state::get_configured_roles,
+
+        // Device
+        commands::device::get_devices,
+        commands::device::save_device,
+        commands::device::get_device,
+
+        // Setup
+        commands::setup::save_setup,
+        commands::setup::get_setup_by_code,
+
+        // Products
+        commands::product::get_products,
+        commands::product::save_products,
+        commands::product::clear_products_cache,
+        commands::product::update_product_sold_out_status,
+
+        // Product groups
+        commands::product_group::get_product_groups,
+        commands::product_group::save_product_groups,
+
+        commands::product_group_category::get_product_group_categories,
+        commands::product_group_category::save_product_group_categories,
+
+        // Tags
+        commands::product_tag_group::get_product_tag_groups,
+        commands::product_tag_group::save_product_tag_groups,
+        commands::product_tag_group::get_product_tag_groups_by_product,
+
+        commands::product_tag::get_product_tags,
+        commands::product_tag::save_product_tags,
+        commands::product_tag::get_product_tags_by_group,
+
+        // Tag Group Mappings
+        commands::product_tag_group_mapping::save_product_tag_group_mappings,
+
+        // Combos
+        commands::prouct_combo::get_product_with_combos,
+
+        // Categories
+        commands::category::get_categories,
+        commands::category::save_categories,
+
+        // Cart
+        commands::cart_store::get_cart_draft,
+        commands::cart_store::save_cart_draft,
+        commands::cart_store::clear_cart_draft,
+
+        // Work shift
+        commands::work_shift::get_work_shift_draft,
+        commands::work_shift::save_work_shift_draft,
+        commands::work_shift::clear_work_shift_draft,
+
+        // Workday
+        commands::workday::save_workday,
+        commands::workday::get_all_workdays,
+        commands::workday::get_pending_workdays,
+        commands::workday::get_active_workday,
+        commands::workday::get_workday_by_id,
+        commands::workday::update_workday,
+        commands::workday::update_workday_sync_status,
+        commands::workday::set_workday_server_id,
+        commands::workday::delete_workday,
+        commands::workday::get_workdays_by_date_range,
+        commands::workday::get_workdays_by_location,
+        commands::workday::clear_all_workdays,
+
+        // Charges
+        commands::charges::save_charges,
+        commands::charges::save_charge_mappings,
+        commands::charges::get_charges,
+        commands::charges::get_charge_mappings,
+        commands::charges::clear_charges_cache,
+
+        // Payment Methods
+        commands::payment_method::save_payment_methods,
+        commands::payment_method::get_payment_methods,
+        commands::payment_method::clear_payment_methods_cache,
+
+        // Transaction Types
+        commands::transaction_type::save_transaction_types,
+        commands::transaction_type::get_transaction_types,
+        commands::transaction_type::clear_transaction_types_cache,
+
+        // Tickets
+        commands::ticket::save_ticket,
+        commands::ticket::get_all_tickets,
+        commands::ticket::get_pending_tickets,
+        commands::ticket::update_ticket_sync_status,
+        commands::ticket::delete_ticket,
+        commands::ticket::get_sync_stats,
+        commands::ticket::clear_all_tickets,
+        commands::ticket::get_max_queue_number,
+        commands::ticket::update_ticket_order_status,
+
+        // KDS Tickets
+        commands::kds_ticket::save_kds_ticket,
+        commands::kds_ticket::get_all_kds_tickets,
+        commands::kds_ticket::get_active_kds_tickets,
+        commands::kds_ticket::get_kds_tickets_by_status,
+        commands::kds_ticket::update_kds_ticket_status,
+        commands::kds_ticket::delete_kds_ticket,
+
+        // Queue token
+        commands::queue_token::save_queue_token,
+        commands::queue_token::get_active_queue_tokens,
+        commands::queue_token::update_queue_token_status,
+    ]);
+
+    builder
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }

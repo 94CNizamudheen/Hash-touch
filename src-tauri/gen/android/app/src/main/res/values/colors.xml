@@ -7,4 +7,15 @@
     <color name="teal_700">#FF018786</color>
     <color name="black">#FF000000</color>
     <color name="white">#FFFFFFFF</color>
+
+    <!-- App Primary Blue Colors -->
+    <color name="primary_blue">#FF005CE5</color>
+    <color name="primary_blue_dark">#FF0047B3</color>
+    <color name="primary_blue_light">#FF9098D4</color>
+
+    <!-- Safe Area Colors -->
+    <color name="status_bar_light">#FF005CE5</color>
+    <color name="status_bar_dark">#FF1B1E22</color>
+    <color name="nav_bar_light">#FFF5F5F6</color>
+    <color name="nav_bar_dark">#FF1B1E22</color>
 </resources>

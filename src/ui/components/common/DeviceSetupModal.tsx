@@ -68,11 +68,11 @@ export default function DeviceSetupModal({
   return (
     <div className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center">
       <div className="bg-background w-full max-w-md rounded-xl shadow-lg p-6">
-        <h2 className="text-lg font-semibold mb-2">
+        <h2 className="text-lg font-semibold text-foreground mb-2">
           Configure {role} Device
         </h2>
 
-        <p className="text-sm text-zinc-600 mb-4">
+        <p className="text-sm text-muted-foreground mb-4">
           Enter the setup code provided by your backend.
         </p>
 
@@ -80,12 +80,12 @@ export default function DeviceSetupModal({
           value={code}
           onChange={(e) => setCode(e.target.value)}
           placeholder="Enter setup code"
-          className="w-full border rounded-md px-3 py-2 mb-3"
+          className="w-full border border-input rounded-md px-3 py-2 mb-3 bg-card text-foreground"
           disabled={loading}
         />
 
         {error && (
-          <div className="text-sm text-red-600 mb-3">
+          <div className="text-sm text-destructive mb-3">
             {error}
           </div>
         )}
@@ -93,7 +93,7 @@ export default function DeviceSetupModal({
         <div className="flex justify-end gap-2">
           <button
             onClick={onClose}
-            className="px-4 py-2 text-sm border rounded-md"
+            className="px-4 py-2 text-sm border border-border rounded-md text-foreground hover:bg-muted transition"
             disabled={loading}
           >
             Cancel
@@ -102,7 +102,7 @@ export default function DeviceSetupModal({
           <button
             onClick={handleSubmit}
             disabled={loading}
-            className="px-4 py-2 text-sm bg-blue-600 text-white rounded-md disabled:opacity-60"
+            className="px-4 py-2 text-sm bg-primary text-primary-foreground rounded-md disabled:opacity-60 hover:bg-primary-hover transition"
           >
             {loading ? "Validating..." : "Continue"}
           </button>

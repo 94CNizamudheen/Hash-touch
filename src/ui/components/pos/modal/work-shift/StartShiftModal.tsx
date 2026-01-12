@@ -84,7 +84,7 @@ export default function StartShiftModal({
               }
             }}
             disabled={isLoading}
-            className="flex-1 bg-blue-600 text-white font-medium rounded-lg py-3 hover:bg-blue-700 transition-colors disabled:bg-blue-400 disabled:cursor-not-allowed"
+            className="flex-1 bg-primary text-white font-medium rounded-lg py-3 hover:bg-blue-700 transition-colors disabled:bg-blue-400 disabled:cursor-not-allowed"
           >
             {isLoading ? "Starting..." : "Start Shift"}
           </button>

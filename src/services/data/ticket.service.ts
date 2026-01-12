@@ -3,6 +3,13 @@ import { ticketLocal } from "../local/ticket.local.service";
 import { isOnline } from "@/ui/utils/networkDetection";
 import { API_BASE } from "@/config/env";
 
+
+export interface SendEmailPayload {
+  email: string;
+  tickets: TicketRequest[];
+}
+
+
 async function post(domain: string, path: string, token: string, body: any) {
   const url = `${API_BASE}/api/${domain}/inbound/${path}`;
 
@@ -18,7 +25,7 @@ async function post(domain: string, path: string, token: string, body: any) {
     },
     body: JSON.stringify(body),
   });
-  console.log("response of ticket fetch",res)
+  console.log("response of ticket fetch", res)
 
   if (!res.ok) {
     const errorText = await res.text();
@@ -152,4 +159,56 @@ export const ticketService = {
     console.log("📡 Syncing tickets:", tickets.length);
     return post(domain, "sync-tickets", token, tickets);
   },
+
+  async sendEmail(
+    domain: string,
+    token: string,
+    email: string,
+    tickets: TicketRequest[]
+  ): Promise<{ success: boolean; message?: string }> {
+    return postWithQuery(
+      domain,
+      "send-receipts",
+      token,
+      { email },
+      tickets
+    );
+  }
+
+
 };
+
+
+
+async function postWithQuery(
+  domain: string,
+  path: string,
+  token: string,
+  query: Record<string, string>,
+  body: any
+) {
+  const params = new URLSearchParams(query).toString();
+  const url = `${API_BASE}/api/${domain}/inbound/${path}?${params}`;
+
+  console.log(`📡 POST ${url}`);
+  console.log(`📡 Request body:`, JSON.stringify(body, null, 2));
+
+  const res = await fetch(url, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${token}`,
+      Accept: "*/*",
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(body),
+  });
+
+  if (!res.ok) {
+    const errorText = await res.text();
+    throw new Error(
+      `Failed to ${path}: ${res.status} ${res.statusText} - ${errorText}`
+    );
+  }
+
+  return res.json();
+}
