@@ -466,9 +466,6 @@ const handleSendEmail = async (email: string) => {
         onNewOrder={() => navigate("/pos")}
         onSendEmail={handleSendEmail}
       />
-
-
-
     </div>
   );
 }

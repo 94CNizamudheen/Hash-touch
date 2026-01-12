@@ -1,10 +1,10 @@
 import { useState, type ReactNode } from "react";
-import { ShoppingCart, Menu, Search } from "lucide-react";
-import { motion, AnimatePresence } from "framer-motion";
-import { useCart } from "@/ui/context/CartContext";
-import { useSetup } from "@/ui/context/SetupContext";
+import {  Menu, Search } from "lucide-react";
+import { motion, AnimatePresence, type PanInfo } from "framer-motion";
+
 import { useProducts } from "@/ui/context/ProductContext";
 import { useAppState } from "@/ui/hooks/useAppState";
+import { useTheme } from "@/ui/context/ThemeContext";
 // import { useNotification } from "@/ui/context/NotificationContext";
 // import { useTranslation } from "react-i18next";
 import CartSidebar from "./CartSidebar";
@@ -12,6 +12,7 @@ import MenuSelectionSidebarMobile from "./MenuSelectionSidebarMobile";
 import MobileProductGroupTabs from "./MobileProductGroupTabs";
 import MobileCategoryTab from "./MobileCategoryTab";
 import ModalDepartmentMobile from "../../modal/menu-selection/ModalDepartmentMobile";
+import MobileBottomCartBar from "./MobileBottomCartBar";
 
 
 /* =========================
@@ -66,15 +67,15 @@ const MobileStickyFilters = ({
   const selectedOrderModeName = appState?.selected_order_mode_name || "Dine In";
 
   return (
-    <div className="flex-shrink-0 bg-background border-b border-border">
-      <div className="p-3 space-y-3">
+    <div className="flex-shrink-0 bg-background ">
+      <div className="p-1 space-y-3">
         {/* Order Mode Chip - Clickable */}
-        <div className="flex items-center justify-center">
+        <div className="flex items-center justify-center bg-primary  rounded-full">
           <button
             onClick={onOrderModeClick}
-            className="inline-flex items-center gap-2 px-6 py-2.5 bg-primary text-primary-foreground rounded-full text-sm font-semibold shadow-md hover:bg-primary-hover active:scale-95 transition-all"
+            className="inline-flex items-center gap-2 px-2 py-2.5  text-background text-sm font-semibold  active:scale-95 transition-all"
           >
-            <div className="w-2 h-2 bg-primary-foreground rounded-full animate-pulse" />
+           
             {selectedOrderModeName}
           </button>
         </div>
@@ -89,87 +90,6 @@ const MobileStickyFilters = ({
   );
 };
 
-/* =========================
-   Fixed Bottom Cart Bar with View Cart Button
-========================= */
-const MobileBottomCartBar = ({ onOpenCart }: { onOpenCart: () => void }) => {
-  const { items } = useCart();
-  const { currencyCode } = useSetup();
-
-  const total = items.reduce((sum, item) => sum + item.price * item.quantity, 0);
-  const itemCount = items.reduce((sum, item) => sum + item.quantity, 0);
-  const hasItems = items.length > 0;
-
-  return (
-    <div className="sticky bottom-8 left-0 right-0 z-40 pointer-events-none safe-area-bottom">
-      <div className="px-4 pb-4 pt-2">
-        <motion.button
-          initial={{ y: 100, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          transition={{ type: "spring", damping: 25, stiffness: 300 }}
-          onClick={hasItems ? onOpenCart : undefined}
-          disabled={!hasItems}
-          className={`
-            w-full h-16 px-6 rounded-2xl
-            flex items-center justify-between
-            shadow-[0_4px_20px_rgba(0,0,0,0.15)]
-            pointer-events-auto
-            transition-all duration-300
-            ${hasItems
-              ? "bg-gradient-to-r from-blue-600 to-blue-700 text-white hover:shadow-[0_6px_24px_rgba(59,130,246,0.4)] hover:scale-[1.02] active:scale-[0.98] cursor-pointer"
-              : "bg-gray-100 text-gray-400 cursor-not-allowed"
-            }
-          `}
-        >
-          <div className="flex items-center gap-3">
-            <div className="relative">
-              <div className={`p-2 rounded-xl ${hasItems ? 'bg-white/20' : 'bg-gray-200'}`}>
-                <ShoppingCart className="w-5 h-5" />
-              </div>
-              {itemCount > 0 && (
-                <motion.span
-                  initial={{ scale: 0 }}
-                  animate={{ scale: 1 }}
-                  className="absolute -top-1 -right-1 bg-red-500 text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center shadow-md"
-                >
-                  {itemCount > 9 ? "9+" : itemCount}
-                </motion.span>
-              )}
-            </div>
-            <div className="text-left">
-              <div className="font-semibold text-sm">
-                {hasItems ? `${itemCount} ${itemCount === 1 ? 'Item' : 'Items'}` : 'Cart Empty'}
-              </div>
-              <div className={`text-xs ${hasItems ? 'text-white/80' : 'text-gray-500'}`}>
-                {hasItems ? 'Tap to view' : 'Add items to cart'}
-              </div>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-2">
-            <div className="text-right">
-              <div className="text-xs opacity-80">Total</div>
-              <div className="font-bold text-xl">
-                {currencyCode}{total.toFixed(2)}
-              </div>
-            </div>
-            {hasItems && (
-              <motion.div
-                animate={{ x: [0, 4, 0] }}
-                transition={{ repeat: Infinity, duration: 1.5 }}
-              >
-                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                </svg>
-              </motion.div>
-            )}
-          </div>
-        </motion.button>
-      </div>
-    </div>
-  );
-};
-
 
 
 const MobileView = ({ children }: { children?: ReactNode }) => {
@@ -178,8 +98,24 @@ const MobileView = ({ children }: { children?: ReactNode }) => {
   const [showOrderModeModal, setShowOrderModeModal] = useState(false);
   const { search, setSearch } = useProducts();
   const { state: appState, setOrderMode } = useAppState();
+  const { direction } = useTheme();
+  const isRTL = direction === "rtl";
   // const { showNotification } = useNotification();
   // const { t } = useTranslation();
+
+  // Handle drag to close menu sidebar
+  const handleMenuDragEnd = (_: MouseEvent | TouchEvent | PointerEvent, info: PanInfo) => {
+    // In RTL, swipe right to close (positive offset); in LTR, swipe left to close (negative offset)
+    if (isRTL) {
+      if (info.offset.x > 100 || info.velocity.x > 500) {
+        setMenuOpen(false);
+      }
+    } else {
+      if (info.offset.x < -100 || info.velocity.x < -500) {
+        setMenuOpen(false);
+      }
+    }
+  };
 
   const handleOrderModeSelect = async (mode: { id: string; name: string }) => {
     if (!appState) return;
@@ -205,7 +141,7 @@ const MobileView = ({ children }: { children?: ReactNode }) => {
       {/* CART SIDEBAR (LEFT) */}
       <CartSidebar open={cartOpen} onClose={() => setCartOpen(false)} />
 
-      {/* MENU SIDEBAR (RIGHT) */}
+      {/* MENU SIDEBAR - Direction aware */}
       <AnimatePresence>
         {menuOpen && (
           <>
@@ -218,11 +154,17 @@ const MobileView = ({ children }: { children?: ReactNode }) => {
             />
 
             <motion.div
-              initial={{ x: "100%" }}
+              initial={{ x: isRTL ? "100%" : "-100%" }}
               animate={{ x: 0 }}
-              exit={{ x: "100%" }}
-              transition={{ type: "tween", duration: 0.3 }}
-              className="fixed right-0 top-0 bottom-0 w-[75%] max-w-[280px] z-50 shadow-xl bg-background safe-area"
+              exit={{ x: isRTL ? "100%" : "-100%" }}
+              transition={{ type: "spring", damping: 25, stiffness: 300 }}
+              drag="x"
+              dragConstraints={{ left: 0, right: 0 }}
+              dragElastic={isRTL ? { left: 0, right: 0.2 } : { left: 0.2, right: 0 }}
+              onDragEnd={handleMenuDragEnd}
+              className={`fixed top-0 bottom-0 w-[80%] max-w-[320px] z-50 shadow-2xl bg-background safe-area ${
+                isRTL ? "right-0 rounded-l-2xl" : "left-0 rounded-r-2xl"
+              }`}
             >
               <MenuSelectionSidebarMobile onClose={() => setMenuOpen(false)} />
             </motion.div>

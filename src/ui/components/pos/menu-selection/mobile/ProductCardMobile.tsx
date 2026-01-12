@@ -98,7 +98,7 @@ const ProductCardMobile = ({ item, onAdd }: ProductCardMobileProps) => {
           className={`
           font-semibold text-xs sm:text-sm lg:text-sm
           line-clamp-2 mb-1
-          ${isSoldOut ? "text-muted-foreground line-through" : "text-gray-900"}
+          ${isSoldOut ? "text-muted-foreground " : "text-foregrouund"}
         `}
         >
           {item.name}

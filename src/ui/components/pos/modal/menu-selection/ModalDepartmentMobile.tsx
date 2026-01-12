@@ -1,7 +1,6 @@
 import { motion, AnimatePresence } from "framer-motion";
 import { X } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { useState } from "react";
 
 import { useAppState } from "@/ui/hooks/useAppState";
 import { useNotification } from "@/ui/context/NotificationContext";
@@ -17,7 +16,7 @@ const ModalDepartmentMobile = ({ open, onClose, onSelect }: Props) => {
   const { state: appState, loading } = useAppState();
   const { showNotification } = useNotification();
   const { t } = useTranslation();
-  const [selected, setSelected] = useState<string | null>(null);
+
 
   if (loading) return null;
 
@@ -76,13 +75,12 @@ const ModalDepartmentMobile = ({ open, onClose, onSelect }: Props) => {
                   </p>
                 ) : (
                   orderModes.map((mode) => {
-                    const isActive = selected === mode.id;
+
 
                     return (
                       <button
                         key={mode.id}
                         onClick={() => {
-                          setSelected(mode.id);
 
                           onSelect({
                             id: mode.id,
@@ -102,11 +100,9 @@ const ModalDepartmentMobile = ({ open, onClose, onSelect }: Props) => {
                           flex items-center justify-center
                           text-sm font-semibold
                           transition-all
-                          active:scale-95
+                          active:scale-95 bg-primary text-white
                           `,
-                          isActive
-                            ? "bg-primary text-primary-foreground"
-                            : "bg-primary text-foreground hover:bg-muted/80"
+                          
                         )}
                       >
                         {mode.title}

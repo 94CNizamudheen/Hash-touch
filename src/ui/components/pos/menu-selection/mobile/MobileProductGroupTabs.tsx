@@ -18,7 +18,7 @@ const MobileProductGroupTabs = () => {
             key={group.id}
             onClick={() => setSelectedGroup(group.id)}
             className={cn(
-              "flex-shrink-0 px-5 py-2 rounded-xl text-sm font-semibold transition-all",
+              "flex-shrink-0 px-3 py-2 rounded-xl text-sm font-semibold transition-all",
               selectedGroup === group.id
                 ? "bg-primary text-primary-foreground shadow"
                 : "bg-navigation text-foregrpund hover:bg-muted/80"

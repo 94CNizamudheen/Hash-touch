@@ -1,4 +1,4 @@
-import { motion, AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence, type PanInfo } from "framer-motion";
 
 import { Button } from "@/ui/shadcn/components/ui/button";
 
@@ -13,6 +13,7 @@ import type { CartItem } from "@/types/cart";
 import { useTranslation } from "react-i18next";
 import { useCharges } from "@/ui/hooks/useCharges";
 import { useSetup } from "@/ui/context/SetupContext";
+import { useTheme } from "@/ui/context/ThemeContext";
 
 type CartSidebarProps = {
   open: boolean;
@@ -23,6 +24,8 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
   const navigate = useNavigate();
   const { t } = useTranslation();
   const { currencyCode } = useSetup();
+  const { direction } = useTheme();
+  const isRTL = direction === "rtl";
 
   const {
     items,
@@ -43,14 +46,27 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
     (sum, item) => sum + item.price * item.quantity,
     0
   );
-  
+
   // Calculate charges (hook called unconditionally)
   const { charges, totalCharges } = useCharges(items, total);
   const subtotal = total;
   const grandTotal = subtotal + totalCharges;
-  
+
   // Avoid flicker before SQLite hydration
   if (!isHydrated) return null;
+
+  // Handle drag to close - direction aware
+  const handleDragEnd = (_: MouseEvent | TouchEvent | PointerEvent, info: PanInfo) => {
+    if (isRTL) {
+      if (info.offset.x > 100 || info.velocity.x > 500) {
+        onClose();
+      }
+    } else {
+      if (info.offset.x < -100 || info.velocity.x < -500) {
+        onClose();
+      }
+    }
+  };
 
   const handleSettle = () => {
     navigate("/pos/payment-panel", {
@@ -96,16 +112,20 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
             transition={{ duration: 0.25 }}
           />
 
-          {/* Drawer */}
+          {/* Drawer - Direction aware */}
           <motion.div
             key="cart-drawer"
-            initial={{ x: "-100%" }}
+            initial={{ x: isRTL ? "100%" : "-100%" }}
             animate={{ x: 0 }}
-            exit={{ x: "-100%" }}
-            transition={{ type: "tween", duration: 0.3 }}
-            className="safe-area fixed left-0 top-0 bottom-0 w-[80%] sm:w-[60%] 
-                       bg-background z-50 shadow-2xl flex flex-col 
-                       pointer-events-auto border-r border-border rounded-r-2xl"
+            exit={{ x: isRTL ? "100%" : "-100%" }}
+            transition={{ type: "spring", damping: 25, stiffness: 300 }}
+            drag="x"
+            dragConstraints={{ left: 0, right: 0 }}
+            dragElastic={isRTL ? { left: 0, right: 0.2 } : { left: 0.2, right: 0 }}
+            onDragEnd={handleDragEnd}
+            className={`safe-area fixed top-0 bottom-0 w-[80%] max-w-[320px]
+                       bg-background z-50 shadow-2xl flex flex-col
+                       pointer-events-auto ${isRTL ? "right-0 rounded-l-2xl" : "left-0 rounded-r-2xl"}`}
           >
 
             {/* Cart Items */}

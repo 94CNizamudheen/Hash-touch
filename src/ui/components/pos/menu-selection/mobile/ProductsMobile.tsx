@@ -84,7 +84,7 @@ const ProductsMobile = () => {
       {shouldShowMainUI && !showSuccess && (
         <div key={appState?.selected_order_mode_id} className="w-full min-h-full bg-background">
           {/* Product Grid - Now just the scrollable content */}
-          <div className="grid grid-cols-2 gap-3 p-3">
+          <div className="grid grid-cols-2 gap-3 p-3 pb-32">
             {loading ? (
               <div className="col-span-full text-center py-10 text-muted-foreground">
                 {t("Loading products...")}

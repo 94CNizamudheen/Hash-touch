@@ -12,7 +12,7 @@ import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 
 import { useTheme } from "@/ui/context/ThemeContext";
-import { Moon, Sun, X } from "lucide-react";
+import { Moon, Sun, } from "lucide-react";
 import DirectionToggle from "@/ui/components/common/DirectionToggle";
 import { useWorkShift } from "@/ui/context/WorkShiftContext";
 import { useAppState } from "@/ui/hooks/useAppState";
@@ -40,8 +40,7 @@ const MenuSelectionSidebarMobile = ({ onClose }: MenuSelectionSidebarMobileProps
     state: appState,
     loading,
     setOrderMode,
-    selectedLocationName,
-    selectedOrderModeName
+    selectedLocationName
   } = useAppState();
   const { shift } = useWorkShift();
   const { checkBlocks } = useLogoutGuard();
@@ -268,118 +267,151 @@ const MenuSelectionSidebarMobile = ({ onClose }: MenuSelectionSidebarMobileProps
         onSwitch={handleDeviceSwitch}
       />
 
-      {/* Drawer */}
+      {/* Modern Drawer */}
       <div className="h-full w-full bg-background flex flex-col">
-        {/* Header */}
-        <div className="flex-shrink-0 px-4 py-3 border-b border-border flex items-center justify-between">
-          <h3 className="text-base font-semibold text-foreground">
-            {t("Menu")}
-          </h3>
-          <button
-            onClick={onClose}
-            className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-secondary active:scale-95 transition-transform"
-          >
-            <X className="w-5 h-5 text-foreground" />
-          </button>
-        </div>
+      
 
         {/* Scroll area */}
-        <div className="flex-1 overflow-y-auto min-h-0 p-4 space-y-6">
-          <div className="flex flex-col gap-3">
+        <div className="flex-1 overflow-y-auto min-h-0 px-4 py-5">
+          {/* Quick Actions */}
+          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">{t("Quick Actions")}</p>
+          <div className="grid grid-cols-3 gap-2 mb-6">
+            {/* Theme Toggle */}
+            <button
+              onClick={toggleTheme}
+              className="flex flex-col items-center gap-2 p-3 rounded-xl bg-secondary hover:bg-sidebar-hover active:scale-95 transition-all"
+            >
+              {theme === "dark"
+                ? <Sun className="w-5 h-5 text-warning" strokeWidth={2} />
+                : <Moon className="w-5 h-5 text-primary" strokeWidth={2} />
+              }
+              <span className="text-[10px] font-medium text-foreground">
+                {theme === "dark" ? t("Light") : t("Dark")}
+              </span>
+            </button>
+
+            {/* Sync */}
+            <button
+              onClick={handleStartSync}
+              className="flex flex-col items-center gap-2 p-3 rounded-xl bg-secondary hover:bg-sidebar-hover active:scale-95 transition-all"
+            >
+              <svg className="w-5 h-5 text-success" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+              </svg>
+              <span className="text-[10px] font-medium text-foreground">{t("Sync")}</span>
+            </button>
+
+            {/* Language */}
+            <button
+              onClick={() => setShowLanguageModal(true)}
+              className="flex flex-col items-center gap-2 p-3 rounded-xl bg-secondary hover:bg-sidebar-hover active:scale-95 transition-all"
+            >
+              <svg className="w-5 h-5 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M3 5h12M9 3v2m1.048 9.5A18.022 18.022 0 016.412 9m6.088 9h7M11 21l5-10 5 10M12.751 5C11.783 10.77 8.07 15.61 3 18.129" />
+              </svg>
+              <span className="text-[10px] font-medium text-foreground">{t("Language")}</span>
+            </button>
+          </div>
+
+          {/* Menu Items */}
+          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">{t("Navigation")}</p>
+          <div className="flex flex-col gap-2">
             {MENUSELECTIONNAVIGATION.filter(
-              (item) => item.position === "Top"
+              (item) => item.position === "Top" && !["Dark Mode", "Start Sync", "Language", "Direction"].includes(item.title)
             ).map((item) => (
               <div
                 key={item.id}
                 onClick={() => {
-                  // Direction handled only by switch
-                  if (item.title === "Direction") return;
-
-                  if (item.title === "Dark Mode") {
-                    toggleTheme();
-                    return;
-                  }
-
-                  if (item.title === "Start Sync") {
-                    handleStartSync();
-                    return;
-                  }
-
                   if (item.title === "Logout") {
                     handleLogoutClick();
                     return;
                   }
-
-                  if (item.title === "Language") {
-                    setShowLanguageModal(true);
-                    return;
-                  }
-
                   item.action?.(openModal);
                   if (item.link) router(item.link);
                 }}
-               className={cn(
-                                   "bg-secondary flex items-center gap-2 p-2 xl:p-3 rounded-lg cursor-pointer hover:bg-sidebar-hover",
-                                   item.link && location.pathname === item.link && "bg-sidebar text-primary-foreground"
-                                 )}
+                className={cn(
+                  "flex items-center gap-3 p-3 rounded-xl cursor-pointer transition-all active:scale-[0.98]",
+                  "bg-secondary hover:bg-sidebar-hover",
+                  item.link && location.pathname === item.link && "bg-primary/10 border border-primary/20"
+                )}
               >
-                {item.title === "Dark Mode"
-                  ? theme === "dark"
-                    ? <Sun className="w-5 h-5" strokeWidth={2.5} />
-                    : <Moon className="w-5 h-5" strokeWidth={2.5} />
-                  : item.icon}
-
-                <p className="text-navigation font-medium text-sm">
-                  {item.title === "Dark Mode"
-                    ? theme === "dark"
-                      ? t("Light Mode")
-                      : t("Dark Mode")
-                    : t(item.title)}
+                <div className={cn(
+                  "w-9 h-9 rounded-lg flex items-center justify-center",
+                  item.title === "Logout" ? "bg-destructive/10" : "bg-primary/10"
+                )}>
+                  <span className={item.title === "Logout" ? "text-destructive" : "text-primary"}>
+                    {item.icon}
+                  </span>
+                </div>
+                <p className="text-sm font-medium text-foreground flex-1">
+                  {t(item.title)}
                 </p>
                 {item.title === "Activities" && pendingTicketsCount > 0 && (
-                  <span className="-right-1 bg-destructive text-background text-xs rounded-full w-4 h-4 flex items-center justify-center">
+                  <span className="bg-destructive text-background text-xs font-bold rounded-full px-2 py-0.5">
                     {pendingTicketsCount > 9 ? "9+" : pendingTicketsCount}
                   </span>
                 )}
+                <svg className="w-4 h-4 text-muted-foreground" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                </svg>
               </div>
             ))}
           </div>
 
           {/* Direction Toggle */}
-          <div className="px-3 pb-3">
+          <div className="mt-6">
+            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">{t("Direction")}</p>
             <DirectionToggle className="w-full" />
           </div>
-        </div>
 
-        {/* Footer */}
-        <div className="flex-shrink-0 p-3 border-t border-border bg-background">
-          <div className="flex flex-col gap-2">
-            {MENUSELECTIONNAVIGATION.filter(
-              (item) => item.position === "Bottom"
-            ).map((item) => (
-              <div
-                key={item.id}
-                onClick={() => {
-                  onClose();
-                  if (item.link) router(item.link);
-                  item.action?.(openModal);
-                   
-                }}
-                className="flex items-center gap-3 p-3 bg-secondary rounded-lg cursor-pointer active:scale-[0.98]"
-              >
-                {item.icon}
-                <p className="text-body font-medium text-sm">
-                  {item.title === "Location"
-                    ? selectedLocationName
-                    : item.title === "Dine In"
-                      ? selectedOrderModeName || t("Select Mode")
-                      : item.title === "Switch Device"
-                        ?  t("Switch Device")
-                        : t(item.title)}
-                </p>
-              </div>
-            ))}
+          {/* Settings Section */}
+          <div className="mt-6">
+            <div className="flex flex-col gap-2">
+              {MENUSELECTIONNAVIGATION.filter(
+                (item) => item.position === "Bottom" && item.title !== "Dine In"
+              ).map((item) => (
+                <div
+                  key={item.id}
+                  onClick={() => {
+                    // Call action first for modals
+                    if (item.title === "Switch Device") {
+                      setShowSwitchDevice(true);
+                      return;
+                    }
+
+                    item.action?.(openModal);
+                    if (item.link) {
+                      onClose();
+                      router(item.link);
+                    }
+                  }}
+                  className="flex items-center gap-3 p-3 bg-secondary rounded-xl cursor-pointer active:scale-[0.98] transition-all hover:bg-sidebar-hover"
+                >
+                  <div className="w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center">
+                    <span className="text-primary">{item.icon}</span>
+                  </div>
+                  <div className="flex-1">
+                    <p className="text-xs text-muted-foreground">
+                      {t(item.title)}
+                    </p>
+                    <p className="text-sm font-semibold text-foreground">
+                      {item.title === "Location"
+                        ? selectedLocationName
+                        : item.title === "Switch Device"
+                          ? t("Switch Device")
+                          : t(item.title)}
+                    </p>
+                  </div>
+                  <svg className="w-4 h-4 text-muted-foreground" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                  </svg>
+                </div>
+              ))}
+            </div>
           </div>
+
+          {/* Bottom padding for scroll */}
+          <div className="h-4" />
         </div>
       </div>
     </>
