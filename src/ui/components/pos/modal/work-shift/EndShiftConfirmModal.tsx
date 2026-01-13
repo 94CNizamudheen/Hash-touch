@@ -3,6 +3,7 @@ import { useWorkShift } from "@/ui/context/WorkShiftContext";
 import { useLogoutGuard } from "@/ui/hooks/useLogoutGuard";
 import { useNotification } from "@/ui/context/NotificationContext";
 import { useTranslation } from "react-i18next";
+import { isOnline } from "@/ui/utils/networkDetection";
 
 export default function EndShiftConfirmModal({
   onClose,
@@ -19,10 +20,16 @@ export default function EndShiftConfirmModal({
 
   const handleEndShift = async () => {
     if (isLoading) return;
+    if (!(await isOnline())) {
+      showNotification.error(t("Network not detected, check connection"));
+      return;
+    }
 
     setIsLoading(true);
     try {
+
       const blocks = await checkBlocks();
+
       if (blocks.totalSyncs > 0) {
         showNotification.info(
           t("Please wait for pending syncs to complete before closing shift"),
@@ -87,11 +94,11 @@ export default function EndShiftConfirmModal({
         </div>
 
         <h2 className="text-xl font-bold text-center mb-3 text-gray-900">
-           {t("End Work Shift?")}
+          {t("End Work Shift?")}
         </h2>
 
         <p className="text-center text-gray-600 mb-8">
-           {t("Are you sure you want to end the current shift?")}
+          {t("Are you sure you want to end the current shift?")}
         </p>
 
         <div className="flex gap-3">
@@ -100,7 +107,7 @@ export default function EndShiftConfirmModal({
             disabled={isLoading}
             className="flex-1 border-2 border-gray-300 text-gray-700 font-medium rounded-lg py-3 hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
-           {t("Cancel")} 
+            {t("Cancel")}
           </button>
 
           <button

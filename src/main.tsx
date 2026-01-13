@@ -15,7 +15,7 @@ createRoot(document.getElementById('root')!).render(
     <BrowserRouter>
       <Provider store={store}>
         <PersistGate loading={null} persistor={persistor}>
-          <div className="safe-area-header safe-area-bottom safe-area-bottom-bg" >
+          <div className="" >
             <NotificationProvider>
             <ThemeProvider>
               <AppStateProvider>

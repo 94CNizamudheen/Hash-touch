@@ -17,7 +17,8 @@ interface ProductCardMobileProps {
   onAdd: (item: Product) => void;
 }
 
-const ProductCardMobile = ({ item, onAdd }: ProductCardMobileProps) => {
+const 
+ProductCardMobile = ({ item, onAdd }: ProductCardMobileProps) => {
   const {currencyCode,}= useSetup()
   const { triggerAnimation } = useAnimation();
 

@@ -1,17 +1,13 @@
 import { useState, type ReactNode } from "react";
-import {  Menu, Search } from "lucide-react";
+import { Menu, Search } from "lucide-react";
 import { motion, AnimatePresence, type PanInfo } from "framer-motion";
 
 import { useProducts } from "@/ui/context/ProductContext";
-import { useAppState } from "@/ui/hooks/useAppState";
 import { useTheme } from "@/ui/context/ThemeContext";
-// import { useNotification } from "@/ui/context/NotificationContext";
-// import { useTranslation } from "react-i18next";
 import CartSidebar from "./CartSidebar";
 import MenuSelectionSidebarMobile from "./MenuSelectionSidebarMobile";
 import MobileProductGroupTabs from "./MobileProductGroupTabs";
 import MobileCategoryTab from "./MobileCategoryTab";
-import ModalDepartmentMobile from "../../modal/menu-selection/ModalDepartmentMobile";
 import MobileBottomCartBar from "./MobileBottomCartBar";
 
 
@@ -54,32 +50,16 @@ const MobileHeader = ({
 };
 
 /* =========================
-   Sticky Filter Section with Clickable Order Mode
+   Sticky Filter Section
 ========================= */
 const MobileStickyFilters = ({
   searchValue,
-  onOrderModeClick
 }: {
   searchValue: string;
-  onOrderModeClick: () => void;
 }) => {
-  const { state: appState } = useAppState();
-  const selectedOrderModeName = appState?.selected_order_mode_name || "Dine In";
-
   return (
     <div className="flex-shrink-0 bg-background ">
       <div className="p-1 space-y-3">
-        {/* Order Mode Chip - Clickable */}
-        <div className="flex items-center justify-center bg-primary  rounded-full">
-          <button
-            onClick={onOrderModeClick}
-            className="inline-flex items-center gap-2 px-2 py-2.5  text-background text-sm font-semibold  active:scale-95 transition-all"
-          >
-           
-            {selectedOrderModeName}
-          </button>
-        </div>
-
         {/* Product Groups - Only show if no search */}
         {!searchValue.trim() && <MobileProductGroupTabs />}
 
@@ -95,13 +75,9 @@ const MobileStickyFilters = ({
 const MobileView = ({ children }: { children?: ReactNode }) => {
   const [cartOpen, setCartOpen] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
-  const [showOrderModeModal, setShowOrderModeModal] = useState(false);
   const { search, setSearch } = useProducts();
-  const { state: appState, setOrderMode } = useAppState();
   const { direction } = useTheme();
   const isRTL = direction === "rtl";
-  // const { showNotification } = useNotification();
-  // const { t } = useTranslation();
 
   // Handle drag to close menu sidebar
   const handleMenuDragEnd = (_: MouseEvent | TouchEvent | PointerEvent, info: PanInfo) => {
@@ -117,27 +93,8 @@ const MobileView = ({ children }: { children?: ReactNode }) => {
     }
   };
 
-  const handleOrderModeSelect = async (mode: { id: string; name: string }) => {
-    if (!appState) return;
-
-    const { order_mode_ids, order_mode_names } = appState;
-
-    if (!order_mode_ids || !order_mode_names) return;
-
-    console.log("🟦 Mobile: Calling setOrderMode with:", mode.id);
-
-    await setOrderMode(
-      order_mode_ids ?? [],
-      order_mode_names ?? [],
-      mode.id,
-      mode.name
-    );
-
-    setShowOrderModeModal(false);
-  };
-
   return (
-    <div className="relative h-screen w-full bg-background overflow-hidden flex flex-col">
+    <div className="relative h-screen w-full bg-background overflow-hidden flex flex-col safe-area-header safe-area-bottom safe-area-bottom-bg">
       {/* CART SIDEBAR (LEFT) */}
       <CartSidebar open={cartOpen} onClose={() => setCartOpen(false)} />
 
@@ -172,15 +129,6 @@ const MobileView = ({ children }: { children?: ReactNode }) => {
         )}
       </AnimatePresence>
 
-      {/* ORDER MODE MODAL */}
-      {showOrderModeModal && (
-        <ModalDepartmentMobile
-          open={showOrderModeModal}
-          onClose={() => setShowOrderModeModal(false)}
-          onSelect={handleOrderModeSelect}
-        />
-      )}
-
       {/* FIXED HEADER */}
       <MobileHeader
         onOpenMenu={() => setMenuOpen(true)}
@@ -189,10 +137,7 @@ const MobileView = ({ children }: { children?: ReactNode }) => {
       />
 
       {/* STICKY FILTERS */}
-      <MobileStickyFilters
-        searchValue={search}
-        onOrderModeClick={() => setShowOrderModeModal(true)}
-      />
+      <MobileStickyFilters searchValue={search} />
 
       {/* SCROLLABLE CONTENT */}
       <main className="flex-1 overflow-y-auto pb-16">

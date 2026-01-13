@@ -7,6 +7,7 @@ import SelectLocationPage from "@/ui/components/auth/SelectLocationPage";
 import Home from "@/ui/Home";
 import RoleRouter from "@/ui/routes/RoleRouter";
 import SplashScreen from "@/ui/components/common/SplashScreen";
+import DeviceSetupModal from "@/ui/components/common/DeviceSetupModal";
 
 import { initialSync } from "@/services/data/initialSync.service";
 import { appStateApi } from "@/services/tauri/appState";
@@ -54,6 +55,13 @@ export default function App() {
   const [isSyncing, setIsSyncing] = useState(false);
   const [syncStatus, setSyncStatus] = useState<"syncing" | "synced">("syncing");
 
+  // Logo URL from setup settings
+  const [logoUrl, setLogoUrl] = useState<string | null>(null);
+
+  // Setup modal state (shown after tenant login)
+  const [showSetupModal, setShowSetupModal] = useState(false);
+  const [pendingTenant, setPendingTenant] = useState<{ domain: string; token: string } | null>(null);
+
   // Check for role parameter in URL
   useEffect(() => {
     const roleParam = searchParams.get('role') as DeviceRole;
@@ -91,6 +99,15 @@ export default function App() {
       if (device) {
         setDeviceId(device.id);
         console.log("[App] Device ID set to:", device.id);
+      }
+
+      // Load logo URL from setup settings
+      if (state.setup_code) {
+        const logo = await setupLocal.getImageByMediaTag(state.setup_code, "logo_image");
+        if (logo) {
+          setLogoUrl(logo);
+          appStateApi.setLogoUrl(logo); 
+        }
       }
 
       setBooting(false);
@@ -147,16 +164,59 @@ export default function App() {
   }, [handleSwitchRole]);
 
   const handleTenantSelected = async (domain: string, token: string) => {
+    // Store pending tenant and show setup modal
+    setPendingTenant({ domain, token });
+    setShowSetupModal(true);
+  };
+
+  const handleSetupSuccess = async (_code: string, setup: any) => {
+    if (!pendingTenant) return;
+
+    setShowSetupModal(false);
     setLoadingTenant(true);
+
     try {
-      await appStateApi.setTenant(domain, token);
+      // Save tenant info
+      await appStateApi.setTenant(pendingTenant.domain, pendingTenant.token);
+
+      // Save setup code
+      await appStateApi.setSetupCode(setup.code);
+
+      // Save setup to local DB
+      await setupLocal.save({
+        id: setup.id,
+        code: setup.code,
+        name: setup.name,
+        setup_type: setup.setup_type,
+        channel: setup.channel,
+        settings: typeof setup.settings === "string" ? setup.settings : JSON.stringify(setup.settings),
+        country_code: setup.country?.code ?? null,
+        currency_code: setup.currency?.code ?? null,
+        currency_symbol: setup.currency?.symbol ?? null,
+        active: setup.active ? 1 : 0,
+        sort_order: setup.sort_order ?? 0,
+        created_at: setup.created_at,
+        updated_at: setup.updated_at,
+      });
+
+      // Load logo URL from setup settings
+      const logo = await setupLocal.getImageByMediaTag(setup.code, "logo_image");
+      if (logo) setLogoUrl(logo);
+
+      // Update Redux state
       dispatch(
         hydrateAppState({
           ...appState,
-          tenant_domain: domain,
-          access_token: token,
+          tenant_domain: pendingTenant.domain,
+          access_token: pendingTenant.token,
+          setup_code: setup.code,
         })
       );
+
+      await refreshAppStateContext();
+      setPendingTenant(null);
+    } catch (err) {
+      console.error("Setup failed:", err);
     } finally {
       setLoadingTenant(false);
     }
@@ -220,19 +280,16 @@ export default function App() {
     }
   };
 
-  const handleRoleSelected = async (role: DeviceRole, setup: any) => {
+  const handleRoleSelected = async (role: DeviceRole) => {
     setLoadingRole(true);
 
     try {
-      // Only set device role in DB for the first role (main window)
-      if (!appState.device_role) {
-        await appStateApi.setDeviceRole(role);
-        dispatch(setDeviceRole(role));
-      }
-      
-      await appStateApi.setSetupCode(setup.code);
+      // Set device role in DB
+      await appStateApi.setDeviceRole(role);
+      dispatch(setDeviceRole(role));
       await refreshAppStateContext();
 
+      // Register device if not exists
       let device = await deviceService.getDevice();
       if (!device) {
         device = await deviceService.registerDevices({
@@ -242,27 +299,7 @@ export default function App() {
       }
       setDeviceId(device.id);
 
-      await setupLocal.save({
-        id: setup.id,
-        code: setup.code,
-        name: setup.name,
-        setup_type: setup.setup_type,
-        channel: setup.channel,
-        settings: setup.settings,
-        country_code: setup.country?.code ?? null,
-        currency_code: setup.currency?.code ?? null,
-        currency_symbol: setup.currency?.symbol ?? null,
-        active: setup.active ? 1 : 0,
-        sort_order: setup.sort_order ?? 0,
-        created_at: setup.created_at,
-        updated_at: setup.updated_at,
-      });
-
-      // If configuring POS, it will start the WebSocket server
-      if (role === "POS") {
-        // setTimeout(() => window.location.reload(), 500);
-        return;
-      }
+      console.log(`✅ ${role} role configured successfully`);
     } catch (err) {
       console.error("handleRoleSelected error:", err);
     } finally {
@@ -271,7 +308,7 @@ export default function App() {
   };
 
   if (booting || isSwitchingDevice) {
-    return <SplashScreen type={1} />;
+    return <SplashScreen type={1} logoUrl={logoUrl} />;
   }
 
   // Secondary windows (opened via open_role_window) skip auth checks
@@ -305,19 +342,36 @@ export default function App() {
 
   // Main window flow (normal authentication)
   if (loadingTenant) {
-    return <SplashScreen type={1} />;
+    return <SplashScreen type={1} logoUrl={logoUrl} />;
   }
 
   if (!appState.tenant_domain) {
-    return <TenantLogin onTenantSelected={handleTenantSelected} />;
+    return (
+      <>
+        <TenantLogin onTenantSelected={handleTenantSelected} />
+        {showSetupModal && pendingTenant && (
+          <DeviceSetupModal
+            open={showSetupModal}
+            role="POS"
+            domain={pendingTenant.domain}
+            token={pendingTenant.token}
+            onSuccess={handleSetupSuccess}
+            onClose={() => {
+              setShowSetupModal(false);
+              setPendingTenant(null);
+            }}
+          />
+        )}
+      </>
+    );
   }
 
   if (isSyncing) {
-    return <SplashScreen type={4} syncStatus={syncStatus} />;
+    return <SplashScreen type={4} syncStatus={syncStatus} logoUrl={logoUrl} />;
   }
 
   if (loadingLocation) {
-    return <SplashScreen type={1} />;
+    return <SplashScreen type={1} logoUrl={logoUrl} />;
   }
 
   if (!appState.selected_location_id) {
@@ -331,7 +385,7 @@ export default function App() {
   }
 
   if (loadingRole) {
-    return <SplashScreen type={1} />;
+    return <SplashScreen type={1} logoUrl={logoUrl} />;
   }
 
   // Check if we need to show role selection (main window only)
@@ -340,8 +394,6 @@ export default function App() {
   if (!effectiveRole) {
     return (
       <Home
-        tenantDomain={appState.tenant_domain!}
-        accessToken={appState.access_token!}
         onRoleSelected={handleRoleSelected}
       />
     );

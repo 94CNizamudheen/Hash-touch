@@ -1,5 +1,6 @@
 mod db;
 mod commands;
+mod printer;
 
 // WebSocket module - only used on desktop
 #[cfg(desktop)]
@@ -131,7 +132,7 @@ pub fn run() {
             // ==============================
             #[cfg(mobile)]
             {
-                log::info!("📱 Mobile build detected - Server, printers disabled");
+                log::info!("📱 Mobile build detected - WebSocket server disabled, network printers enabled");
             }
 
             log::info!("🚀 Setup complete, app is ready");
@@ -167,6 +168,7 @@ pub fn run() {
         commands::app_state::set_setup_code,
         commands::app_state::open_role_window,
         commands::app_state::get_configured_roles,
+        commands::app_state::set_logo_url,
 
         // Device
         commands::device::get_devices,
@@ -290,6 +292,9 @@ pub fn run() {
         commands::queue_token::save_queue_token,
         commands::queue_token::get_active_queue_tokens,
         commands::queue_token::update_queue_token_status,
+        
+        commands::resync::clear_resync_data,
+
     ]);
 
     // Mobile: excludes WebSocket commands
@@ -321,6 +326,7 @@ pub fn run() {
         commands::app_state::set_setup_code,
         commands::app_state::open_role_window,
         commands::app_state::get_configured_roles,
+        commands::app_state::set_logo_url,
 
         // Device
         commands::device::get_devices,
@@ -423,10 +429,24 @@ pub fn run() {
         commands::kds_ticket::update_kds_ticket_status,
         commands::kds_ticket::delete_kds_ticket,
 
+        // Printers (mobile support)
+        commands::printer::get_printers,
+        commands::printer::get_active_printers,
+        commands::printer::get_printer,
+        commands::printer::save_printer,
+        commands::printer::delete_printer,
+        commands::printer::set_printer_active,
+        commands::printer::test_printer,
+        commands::printer::print_receipt,
+        commands::printer::print_receipt_to_all_active,
+
         // Queue token
         commands::queue_token::save_queue_token,
         commands::queue_token::get_active_queue_tokens,
         commands::queue_token::update_queue_token_status,
+
+        commands::resync::clear_resync_data,
+
     ]);
 
     builder

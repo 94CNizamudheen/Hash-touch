@@ -6,6 +6,8 @@ import { useTranslation } from "react-i18next";
 import { ticketLocal, type DbTicket } from "@/services/local/ticket.local.service";
 import { ticketService } from "@/services/data/ticket.service";
 import { useAppState } from "@/ui/hooks/useAppState";
+import { isOnline } from "@/ui/utils/networkDetection";
+import { useNotification } from "@/ui/context/NotificationContext";
 
 type TabType = "ALL" | "SYNCED" | "UNSYNCED";
 
@@ -19,6 +21,7 @@ export default function ActivityPage() {
   const [tab, setTab] = useState<TabType>("ALL");
   const [isConnected, setIsConnected] = useState(navigator.onLine);
   const { t } = useTranslation();
+  const { showNotification } = useNotification();
   /* -------------------- LOAD DATA -------------------- */
   const loadData = async () => {
     setLoading(true);
@@ -54,6 +57,10 @@ export default function ActivityPage() {
 
   /* -------------------- SYNC -------------------- */
   const handleSync = async () => {
+    if (!(await isOnline())) {
+            showNotification.error(t("Network not detected, check connection"));
+            return;
+          }
     if (!appState?.tenant_domain || !appState?.access_token) return;
 
     setSyncing(true);

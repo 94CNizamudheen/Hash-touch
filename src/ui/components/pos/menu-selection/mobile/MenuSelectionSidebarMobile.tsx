@@ -4,8 +4,10 @@ import SwitchDeviceModal from "../../modal/menu-selection/SwitchDeviceModal";
 import EndShiftConfirmModal from "../../modal/work-shift/EndShiftConfirmModal";
 import LogoutConfirmModal from "../../modal/LogoutConfirmModal";
 import LanguageModal from "../../modal/LanguageModal";
-
+import { IoLanguageSharp } from "react-icons/io5";
+import { MdCloudSync } from "react-icons/md";
 import { MENUSELECTIONNAVIGATION } from "@/ui/constants/menu-selections";
+import { resyncLocal } from "@/services/local/resync.local.service";
 
 import { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
@@ -26,6 +28,8 @@ import { initialSync } from "@/services/data/initialSync.service";
 import { localEventBus } from "@/services/eventbus/LocalEventBus";
 import type { DeviceRole } from "@/types/app-state";
 import { cn } from "@/lib/utils";
+import SyncConfirmModal from "../../modal/SyncConfirmModal";
+import { isOnline } from "@/ui/utils/networkDetection";
 
 interface MenuSelectionSidebarMobileProps {
   onClose: () => void;
@@ -40,7 +44,8 @@ const MenuSelectionSidebarMobile = ({ onClose }: MenuSelectionSidebarMobileProps
     state: appState,
     loading,
     setOrderMode,
-    selectedLocationName
+    selectedLocationName,
+    selectedOrderModeName
   } = useAppState();
   const { shift } = useWorkShift();
   const { checkBlocks } = useLogoutGuard();
@@ -60,6 +65,7 @@ const MenuSelectionSidebarMobile = ({ onClose }: MenuSelectionSidebarMobileProps
   const [isSyncing, setIsSyncing] = useState(false);
   const [syncStatus, setSyncStatus] = useState<"syncing" | "synced">("syncing");
   // const [logoutAfterShift, setLogoutAfterShift] = useState(false);
+  const [showSyncConfirm, setShowSyncConfirm] = useState(false);
 
   // Load pending tickets count
   useEffect(() => {
@@ -85,10 +91,16 @@ const MenuSelectionSidebarMobile = ({ onClose }: MenuSelectionSidebarMobileProps
     setTheme(theme === "dark" ? "light" : "dark");
   };
 
+
+
   const handleStartSync = async () => {
+    if (!(await isOnline())) {
+      showNotification.error(t("Network not detected, check connection"));
+      return;
+    }
+
     if (!appState?.tenant_domain || !appState?.access_token) {
       showNotification.error(t("Cannot sync: Missing tenant or access token"));
-
       return;
     }
 
@@ -100,6 +112,7 @@ const MenuSelectionSidebarMobile = ({ onClose }: MenuSelectionSidebarMobileProps
     try {
       setIsSyncing(true);
       setSyncStatus("syncing");
+      await resyncLocal.clearBusinessData();
 
       await initialSync(appState.tenant_domain, appState.access_token, {
         channel: appState.device_role ?? "POS",
@@ -113,14 +126,18 @@ const MenuSelectionSidebarMobile = ({ onClose }: MenuSelectionSidebarMobileProps
 
       showNotification.success(t("Sync completed successfully"), 3000);
       onClose();
-
     } catch (error) {
       console.error("Sync failed:", error);
-      showNotification.error(t("Sync failed") + ": " + (error instanceof Error ? error.message : "Unknown error"));
+      showNotification.error(
+        t("Sync failed") +
+        ": " +
+        (error instanceof Error ? error.message : "Unknown error")
+      );
     } finally {
       setIsSyncing(false);
     }
   };
+
 
   const openModal = async (content: string) => {
     switch (content) {
@@ -135,6 +152,11 @@ const MenuSelectionSidebarMobile = ({ onClose }: MenuSelectionSidebarMobileProps
         break;
       case "shift":
         if (isShiftOpen) {
+          // Check network before allowing shift end
+          if (!navigator.onLine) {
+            showNotification.error(t("Network not detected, check connection"));
+            return;
+          }
           setShowEndShift(true);
         }
         break;
@@ -174,7 +196,7 @@ const MenuSelectionSidebarMobile = ({ onClose }: MenuSelectionSidebarMobileProps
   };
 
   const handleLogoutClick = async () => {
-     onClose();
+    onClose();
     // Check if shift is open
     if (isShiftOpen) {
       showNotification.info(t("Please close your shift before logging out"), 4000);
@@ -194,6 +216,10 @@ const MenuSelectionSidebarMobile = ({ onClose }: MenuSelectionSidebarMobileProps
   };
 
   const handleConfirmLogout = async () => {
+    if (!(await isOnline())) {
+        showNotification.error(t("Network not detected, check connection"));
+        return;
+      }
     setIsLoggingOut(true);
     try {
       // Use centralized logout service to clear all data
@@ -255,6 +281,12 @@ const MenuSelectionSidebarMobile = ({ onClose }: MenuSelectionSidebarMobileProps
           onSelect={handleOrderModeSelect}
         />
       )}
+      {showSyncConfirm && (
+        <SyncConfirmModal
+          onClose={() => setShowSyncConfirm(false)}
+          onConfirm={handleStartSync}
+        />
+      )}
 
       <LanguageModal
         isOpen={showLanguageModal}
@@ -269,7 +301,7 @@ const MenuSelectionSidebarMobile = ({ onClose }: MenuSelectionSidebarMobileProps
 
       {/* Modern Drawer */}
       <div className="h-full w-full bg-background flex flex-col">
-      
+
 
         {/* Scroll area */}
         <div className="flex-1 overflow-y-auto min-h-0 px-4 py-5">
@@ -292,12 +324,10 @@ const MenuSelectionSidebarMobile = ({ onClose }: MenuSelectionSidebarMobileProps
 
             {/* Sync */}
             <button
-              onClick={handleStartSync}
+              onClick={() => setShowSyncConfirm(true)}
               className="flex flex-col items-center gap-2 p-3 rounded-xl bg-secondary hover:bg-sidebar-hover active:scale-95 transition-all"
             >
-              <svg className="w-5 h-5 text-success" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-              </svg>
+              <MdCloudSync className="w-5 h-5 text-success" />
               <span className="text-[10px] font-medium text-foreground">{t("Sync")}</span>
             </button>
 
@@ -306,15 +336,12 @@ const MenuSelectionSidebarMobile = ({ onClose }: MenuSelectionSidebarMobileProps
               onClick={() => setShowLanguageModal(true)}
               className="flex flex-col items-center gap-2 p-3 rounded-xl bg-secondary hover:bg-sidebar-hover active:scale-95 transition-all"
             >
-              <svg className="w-5 h-5 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M3 5h12M9 3v2m1.048 9.5A18.022 18.022 0 016.412 9m6.088 9h7M11 21l5-10 5 10M12.751 5C11.783 10.77 8.07 15.61 3 18.129" />
-              </svg>
+              <IoLanguageSharp className="w-5 h-5 text-primary" />
+
               <span className="text-[10px] font-medium text-foreground">{t("Language")}</span>
             </button>
           </div>
 
-          {/* Menu Items */}
-          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">{t("Navigation")}</p>
           <div className="flex flex-col gap-2">
             {MENUSELECTIONNAVIGATION.filter(
               (item) => item.position === "Top" && !["Dark Mode", "Start Sync", "Language", "Direction"].includes(item.title)
@@ -367,6 +394,31 @@ const MenuSelectionSidebarMobile = ({ onClose }: MenuSelectionSidebarMobileProps
           {/* Settings Section */}
           <div className="mt-6">
             <div className="flex flex-col gap-2">
+              {/* Order Mode Button */}
+              <div
+                onClick={() => setShowDineInBoard(true)}
+                className="flex items-center gap-3 p-3 bg-primary rounded-xl cursor-pointer active:scale-[0.98] transition-all"
+              >
+                <div className="w-9 h-9 rounded-lg bg-primary-foreground/20 flex items-center justify-center">
+                  <span className="text-primary-foreground">
+                    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                    </svg>
+                  </span>
+                </div>
+                <div className="flex-1">
+                  <p className="text-xs text-background">
+                    {t("Order Mode")}
+                  </p>
+                  <p className="text-sm font-semibold text-primary-foreground">
+                    {selectedOrderModeName || t("Select Mode")}
+                  </p>
+                </div>
+                <svg className="w-4 h-4 text-primary-foreground/70" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                </svg>
+              </div>
+
               {MENUSELECTIONNAVIGATION.filter(
                 (item) => item.position === "Bottom" && item.title !== "Dine In"
               ).map((item) => (

@@ -1,7 +1,7 @@
 use crate::db::migrate;
 use crate::db::models::printer::Printer;
 use crate::db::models::printer_repo::PrinterRepo;
-use crate::websocket::printer::{PrinterConfig, PrinterService, ReceiptData};
+use crate::printer::{PrinterConfig, PrinterService, ReceiptData};
 use tauri::{command, AppHandle};
 
 #[command]

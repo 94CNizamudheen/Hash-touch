@@ -1,8 +1,9 @@
 import { Button } from "@/ui/shadcn/components/ui/button";
 import { Input } from "@/ui/shadcn/components/ui/input";
 import { useTranslation } from "react-i18next";
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { Mail, Printer, Plus } from "lucide-react";
+import Keyboard from "@/ui/components/common/keyboard";
 
 interface PaymentSuccessModalProps {
   isOpen: boolean;
@@ -24,12 +25,31 @@ export default function PaymentSuccessModal({
   const { t } = useTranslation();
   const [showEmailInput, setShowEmailInput] = useState(false);
   const [email, setEmail] = useState("");
+  const [showKeyboard, setShowKeyboard] = useState(false);
+
+  const inputRef = useRef<HTMLInputElement>(null);
+  const keyboardRef = useRef<HTMLDivElement>(null);
+
+  /* close keyboard on outside click */
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (
+        !inputRef.current?.contains(e.target as Node) &&
+        !keyboardRef.current?.contains(e.target as Node)
+      ) {
+        setShowKeyboard(false);
+      }
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, []);
 
   if (!isOpen) return null;
 
   return (
     <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/60 p-4">
-      <div className="relative w-full max-w-2xl rounded-lg bg-white p-6 shadow-lg">
+      <div className={`w-full max-w-2xl ${showKeyboard ? "pb-[280px]" : ""}`}>
+      <div className="relative w-full rounded-lg bg-white p-6 shadow-lg">
 
         {/* Success Icon */}
         <div className="absolute -top-10 left-1/2 -translate-x-1/2">
@@ -91,10 +111,12 @@ export default function PaymentSuccessModal({
             </p>
 
             <Input
+              ref={inputRef}
               type="email"
               placeholder="customer@example.com"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
+              onFocus={() => setShowKeyboard(true)}
             />
 
             <div className="flex gap-3 justify-end">
@@ -103,6 +125,7 @@ export default function PaymentSuccessModal({
                 onClick={() => {
                   setShowEmailInput(false);
                   setEmail("");
+                  setShowKeyboard(false);
                 }}
               >
                 {t("Cancel")}
@@ -114,6 +137,7 @@ export default function PaymentSuccessModal({
                   onSendEmail(email);
                   setShowEmailInput(false);
                   setEmail("");
+                  setShowKeyboard(false);
                 }}
                 disabled={!email}
               >
@@ -122,6 +146,20 @@ export default function PaymentSuccessModal({
             </div>
           </div>
         )}
+      </div>
+
+      {/* Custom Keyboard */}
+      {showKeyboard && (
+        <div
+          ref={keyboardRef}
+          className="fixed bottom-0 left-0 w-full min-h-[300px] px-44 py-4 bg-background z-50"
+        >
+          <Keyboard
+            defaultValue={email}
+            onChange={(value) => setEmail(value)}
+          />
+        </div>
+      )}
       </div>
     </div>
   );

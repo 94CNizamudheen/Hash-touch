@@ -1,11 +1,10 @@
 import { motion, AnimatePresence, type PanInfo } from "framer-motion";
-
-import { Button } from "@/ui/shadcn/components/ui/button";
-
+import { ShoppingBag, Plus } from "lucide-react";
+import { MdAddShoppingCart } from "react-icons/md";
 import { useNavigate } from "react-router-dom";
 import { useCart } from "@/ui/context/CartContext";
 import EmptyCart from "@/assets/empty-cart.png";
-import CardDineIn from "../../common/card/CardDineIn";
+import CartItemCardMobile from "./CartItemCardMobile";
 import ProductTagGroupModal from "../ProductTagGroupModal";
 import ClearCartConfirmModal from "../../modal/ClearCartConfirmModal";
 import { useState } from "react";
@@ -13,7 +12,8 @@ import type { CartItem } from "@/types/cart";
 import { useTranslation } from "react-i18next";
 import { useCharges } from "@/ui/hooks/useCharges";
 import { useSetup } from "@/ui/context/SetupContext";
-import { useTheme } from "@/ui/context/ThemeContext";
+import { FaArrowCircleDown } from "react-icons/fa";
+import { Button } from "@/ui/shadcn/components/ui/button"; 
 
 type CartSidebarProps = {
   open: boolean;
@@ -23,9 +23,9 @@ type CartSidebarProps = {
 const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
   const navigate = useNavigate();
   const { t } = useTranslation();
-  const { currencyCode } = useSetup();
-  const { direction } = useTheme();
-  const isRTL = direction === "rtl";
+  const { currencyCode, currencySymbol } = useSetup();
+
+
 
   const {
     items,
@@ -41,30 +41,22 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
   const [selectedCartItem, setSelectedCartItem] = useState<CartItem | null>(null);
   const [showClearConfirm, setShowClearConfirm] = useState(false);
 
-  // Calculate total and charges before early returns to keep hooks order stable
   const total = items.reduce(
     (sum, item) => sum + item.price * item.quantity,
     0
   );
 
-  // Calculate charges (hook called unconditionally)
   const { charges, totalCharges } = useCharges(items, total);
   const subtotal = total;
   const grandTotal = subtotal + totalCharges;
+  const itemCount = items.reduce((sum, item) => sum + item.quantity, 0);
 
-  // Avoid flicker before SQLite hydration
   if (!isHydrated) return null;
 
-  // Handle drag to close - direction aware
   const handleDragEnd = (_: MouseEvent | TouchEvent | PointerEvent, info: PanInfo) => {
-    if (isRTL) {
-      if (info.offset.x > 100 || info.velocity.x > 500) {
-        onClose();
-      }
-    } else {
-      if (info.offset.x < -100 || info.velocity.x < -500) {
-        onClose();
-      }
+    // Close on downward drag
+    if (info.offset.y > 100 || info.velocity.y > 500) {
+      onClose();
     }
   };
 
@@ -72,6 +64,10 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
     navigate("/pos/payment-panel", {
       state: { items, total: grandTotal },
     });
+  };
+
+  const handleAddMore = () => {
+    onClose();
   };
 
   const handleClearCart = () => {
@@ -87,12 +83,8 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
 
   const handleModalConfirm = (modifiers: { name: string; qty: number; price: number }[]) => {
     if (!selectedCartItem || !selectedCartItem.product_id) return;
-
-    // Get the base price from product (we need to fetch it or store it)
-    // For now, we'll calculate it from the current item
     const currentModifiersTotal = selectedCartItem.modifiers?.reduce((sum, m) => sum + m.price * m.qty, 0) || 0;
     const basePrice = selectedCartItem.price - currentModifiersTotal;
-
     updateModifiers(selectedCartItem.id, modifiers, basePrice);
     setModalOpen(false);
   };
@@ -112,97 +104,143 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
             transition={{ duration: 0.25 }}
           />
 
-          {/* Drawer - Direction aware */}
+          {/* Full Page Cart - Slides from Bottom */}
           <motion.div
             key="cart-drawer"
-            initial={{ x: isRTL ? "100%" : "-100%" }}
-            animate={{ x: 0 }}
-            exit={{ x: isRTL ? "100%" : "-100%" }}
+            initial={{ y: "100%" }}
+            animate={{ y: 0 }}
+            exit={{ y: "100%" }}
             transition={{ type: "spring", damping: 25, stiffness: 300 }}
-            drag="x"
-            dragConstraints={{ left: 0, right: 0 }}
-            dragElastic={isRTL ? { left: 0, right: 0.2 } : { left: 0.2, right: 0 }}
+            drag="y"
+            dragConstraints={{ top: 0, bottom: 0 }}
+            dragElastic={{ top: 0, bottom: 0.2 }}
             onDragEnd={handleDragEnd}
-            className={`safe-area fixed top-0 bottom-0 w-[80%] max-w-[320px]
-                       bg-background z-50 shadow-2xl flex flex-col
-                       pointer-events-auto ${isRTL ? "right-0 rounded-l-2xl" : "left-0 rounded-r-2xl"}`}
+            className={`safe-area fixed inset-0 bg-background z-50 flex flex-col pointer-events-auto`}
           >
-
-            {/* Cart Items */}
-            <div className="flex-1 overflow-y-auto p-3 flex flex-col gap-3 min-h-0 ">
-              {items.length > 0 ? (
-                items.map((item) => (
-                  <CardDineIn
-                    key={item.id}
-                    menu={item.name}
-                    quantity={item.quantity}
-                    price={item.price}
-                    modifiers={item.modifiers}
-                    onIncrement={() => increment(item.id)}
-                    onDecrement={() => decrement(item.id)}
-                    onRemove={() => remove(item.id)}
-                    onClick={() => handleCardClick(item)}
-                  />
-                ))
-              ) : (
-                <div className="flex flex-col items-center justify-center flex-1 py-10">
-                  <img
-                    src={EmptyCart}
-                    alt="Empty cart"
-                    className="w-32 h-32 opacity-80 mb-3"
-                  />
-                  <p className="text-center text-muted-foreground text-sm">
-                    {t("No items in cart")}
-                  </p>
-                </div>
-              )}
-            </div>
-
-            {/* Footer */}
-            <footer className="flex-shrink-0 border-t border-border p-3 flex flex-col gap-2 bg-background safe-area-bottom ">
-              {/* Totals Section */}
-              {items.length > 0 && (
-                <div className="space-y-1 text-xs pb-2">
-                  <div className="flex justify-between text-foreground">
-                    <span>{t("Sub Total")}</span>
-                    <span>{currencyCode} {subtotal.toFixed(2)}</span>
-                  </div>
-
-                  {charges.filter(charge => charge.applied).map((charge) => (
-                    <div key={charge.id} className="flex justify-between text-muted-foreground">
-                      <span>
-                        {charge.name} ({charge.percentage}%)
-                      </span>
-                      <span>{currencyCode} {charge.amount.toFixed(2)}</span>
-                    </div>
-                  ))}
-
-                  <div className="flex justify-between font-semibold text-sm pt-1 border-t border-border text-foreground">
-                    <span>{t("Grand Total")}</span>
-                    <span>{currencyCode} {grandTotal.toFixed(2)}</span>
-                  </div>
-                </div>
-              )}
-
-              {/* Action Buttons */}
-              <div className="flex gap-2">
-                <Button
-                  onClick={handleSettle}
-                  className="flex-1 h-10 bg-primary text-primary-foreground text-sm font-medium rounded-lg hover:bg-primary-hover active:bg-primary-hover"
-                  disabled={!items.length}
+            {/* Header */}
+            <header className="flex-shrink-0 px-4 py-3 border-b border-border bg-background">
+              <div className="flex items-center justify-between">
+                <button
+                  onClick={onClose}
+                  className="w-10 h-10 rounded-xl bg-secondary flex items-center justify-center active:scale-95 transition-transform"
                 >
-                  {t("Settle")}
-                </Button>
+                  <FaArrowCircleDown  className="w-5 h-5 text-foreground" />
+                </button>
+
+                <div className="flex items-center gap-2">
+                  <ShoppingBag className="w-5 h-5 text-primary" />
+                  <h1 className="text-lg font-bold text-foreground">{t("My Cart")}</h1>
+                  {itemCount > 0 && (
+                    <span className="bg-primary text-primary-foreground text-xs font-bold px-2 py-0.5 rounded-full">
+                      {itemCount}
+                    </span>
+                  )}
+                </div>
 
                 <Button
-                  onClick={() => setShowClearConfirm(true)}
-                  className="flex-1 h-10 bg-secondary text-foreground text-sm font-medium rounded-lg hover:bg-muted active:bg-muted"
-                  disabled={!items.length}
+                  onClick={() => items.length > 0 && setShowClearConfirm(true)}
+                  disabled={items.length === 0}
+                  variant="destructive"
+                  size="sm"
                 >
                   {t("Clear")}
                 </Button>
               </div>
-            </footer>
+            </header>
+
+            {/* Cart Items */}
+            <div className="flex-1 overflow-y-auto min-h-0">
+              {items.length > 0 ? (
+                <div className="p-4 space-y-3">
+                  {items.map((item) => (
+                    <CartItemCardMobile
+                      key={item.id}
+                      name={item.name}
+                      quantity={item.quantity}
+                      price={item.price}
+                      imageUrl={item.image_url}
+                      modifiers={item.modifiers}
+                      onIncrement={() => increment(item.id)}
+                      onDecrement={() => decrement(item.id)}
+                      onRemove={() => remove(item.id)}
+                      onClick={() => handleCardClick(item)}
+                    />
+                  ))}
+
+                </div>
+              ) : (
+                <div className="flex flex-col items-center justify-center flex-1 h-full py-20">
+                  <img
+                    src={EmptyCart}
+                    alt="Empty cart"
+                    className="w-40 h-40 opacity-80 mb-4"
+                  />
+                  <p className="text-lg font-medium text-foreground mb-1">
+                    {t("Your cart is empty")}
+                  </p>
+                  <p className="text-sm text-muted-foreground mb-6">
+                    {t("Add items to get started")}
+                  </p>
+                  <button
+                    onClick={handleAddMore}
+                    className="px-6 py-3 bg-primary text-primary-foreground rounded-xl font-semibold flex items-center gap-2 active:scale-95 transition-transform"
+                  >
+                    <Plus className="w-5 h-5" />
+                    {t("Browse Menu")}
+                  </button>
+                </div>
+              )}
+            </div>
+
+            {/* Footer - Only show when items exist */}
+            {items.length > 0 && (
+              <footer className="flex-shrink-0 border-t border-border bg-secondary ">
+                {/* Order Summary */}
+                <div className="px-4 py-3 space-y-2">
+                  <div className="flex justify-between text-sm">
+                    <span className="text-muted-foreground">{t("Subtotal")} ({itemCount} {t("items")})</span>
+                    <span className="text-foreground">{currencyCode} {subtotal.toFixed(2)}</span>
+                  </div>
+
+                  {charges.filter(charge => charge.applied).map((charge) => (
+                    <div key={charge.id} className="flex justify-between text-sm">
+                      <span className="text-muted-foreground">
+                        {charge.name} ({charge.percentage}%)
+                      </span>
+                      <span className="text-foreground">{currencyCode} {charge.amount.toFixed(2)}</span>
+                    </div>
+                  ))}
+
+                  <div className="flex justify-between pt-2 border-t border-border">
+                    <span className="text-base font-bold text-foreground">{t("Total")}</span>
+                    <span className="text-xl font-bold text-primary">
+                      {currencySymbol}{grandTotal.toFixed(2)}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Checkout Buttons */}
+                <div className="px-4 pb-4 flex gap-3">
+                  <button
+                    onClick={handleAddMore}
+                    className="h-14 bg-secondary text-foreground border-2 border-primary rounded-xl font-semibold text-base flex items-center justify-center gap-2 active:scale-[0.98] transition-transform flex-shrink-0 px-6"
+                  >
+                    <MdAddShoppingCart className="w-6 h-6" />
+                    <span>{t("Add More")}</span>
+                  </button>
+                  
+                  <button
+                    onClick={handleSettle}
+                    className="flex-1 h-14 bg-primary text-primary-foreground rounded-xl font-bold text-base flex items-center justify-center gap-3 active:scale-[0.98] transition-transform shadow-lg"
+                  >
+                    <span>{t("Settle")}</span>
+                    <span className="bg-primary-foreground/20 px-3 py-1 rounded-lg text-sm">
+                      {currencySymbol}{grandTotal.toFixed(2)}
+                    </span>
+                  </button>
+                </div>
+              </footer>
+            )}
           </motion.div>
 
           {/* Product Tag Group Modal */}

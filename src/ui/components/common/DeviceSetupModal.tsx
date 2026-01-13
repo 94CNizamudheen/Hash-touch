@@ -1,4 +1,7 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { Input } from "@/ui/shadcn/components/ui/input";
+import { Button } from "@/ui/shadcn/components/ui/button";
+import Keyboard from "./keyboard";
 import { commonDataService } from "@/services/data/common.data.service";
 import type { DeviceRole } from "@/types/app-state";
 
@@ -20,17 +23,30 @@ export default function DeviceSetupModal({
   onClose,
 }: Props) {
   const [code, setCode] = useState("");
+  const [showKeyboard, setShowKeyboard] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const inputRef = useRef<HTMLInputElement>(null);
+  const keyboardRef = useRef<HTMLDivElement>(null);
+
+  /* close keyboard on outside click */
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (
+        !inputRef.current?.contains(e.target as Node) &&
+        !keyboardRef.current?.contains(e.target as Node)
+      ) {
+        setShowKeyboard(false);
+      }
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, []);
 
   if (!open) return null;
 
   const handleSubmit = async () => {
-    if (!domain || !token) {
-      setError("Tenant is not initialized. Please login again.");
-      return;
-    }
-
     if (!code.trim()) {
       setError("Setup code is required");
       return;
@@ -44,22 +60,15 @@ export default function DeviceSetupModal({
         domain,
         token,
         code.trim(),
-        role 
+        role
       );
 
-      if (!Array.isArray(setups) || setups.length === 0) {
-        throw new Error("Invalid setup code");
-      }
+      if (!setups?.length) throw new Error("Invalid setup code");
 
-      const setup = setups[0];
-
-      onSuccess(code.trim(), setup);
+      onSuccess(code.trim(), setups[0]);
+      setShowKeyboard(false);
     } catch (e: any) {
-      console.error("[DeviceSetupModal] setup fetch error:", e);
-      setError(
-        e?.message ||
-        "Failed to validate setup code. Please try again."
-      );
+      setError(e.message || "Validation failed");
     } finally {
       setLoading(false);
     }
@@ -67,47 +76,57 @@ export default function DeviceSetupModal({
 
   return (
     <div className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center">
-      <div className="bg-background w-full max-w-md rounded-xl shadow-lg p-6">
-        <h2 className="text-lg font-semibold text-foreground mb-2">
-          Configure {role} Device
-        </h2>
+      <div className={`w-full max-w-lg ${showKeyboard ? "pb-[280px]" : ""}`}>
+        <div
+          className={`
+          bg-background w-full max-w-md rounded-xl p-6
+          transition-all
+          
+        `}
+        >
+          <h2 className="text-lg font-semibold mb-3">
+            Configure {role} Device
+          </h2>
 
-        <p className="text-sm text-muted-foreground mb-4">
-          Enter the setup code provided by your backend.
-        </p>
+          {/* ✅ Plain Input */}
+          <Input
+            ref={inputRef}
+            value={code}
+            placeholder="Enter setup code"
+            onChange={(e) => setCode(e.target.value)}
+            onFocus={() => setShowKeyboard(true)}
+            className="mb-2"
+          />
 
-        <input
-          value={code}
-          onChange={(e) => setCode(e.target.value)}
-          placeholder="Enter setup code"
-          className="w-full border border-input rounded-md px-3 py-2 mb-3 bg-card text-foreground"
-          disabled={loading}
-        />
+          {error && (
+            <p className="text-sm text-destructive mb-2">{error}</p>
+          )}
 
-        {error && (
-          <div className="text-sm text-destructive mb-3">
-            {error}
+          <div className="flex justify-end gap-2">
+            <Button variant="outline" onClick={onClose}>
+              Cancel
+            </Button>
+            <Button onClick={handleSubmit} disabled={loading}>
+              {loading ? "Validating..." : "Continue"}
+            </Button>
           </div>
-        )}
 
-        <div className="flex justify-end gap-2">
-          <button
-            onClick={onClose}
-            className="px-4 py-2 text-sm border border-border rounded-md text-foreground hover:bg-muted transition"
-            disabled={loading}
-          >
-            Cancel
-          </button>
-
-          <button
-            onClick={handleSubmit}
-            disabled={loading}
-            className="px-4 py-2 text-sm bg-primary text-primary-foreground rounded-md disabled:opacity-60 hover:bg-primary-hover transition"
-          >
-            {loading ? "Validating..." : "Continue"}
-          </button>
+          {/* ✅ Custom Keyboard */}
+          {showKeyboard && (
+            <div
+              ref={keyboardRef}
+              className="fixed bottom-0 left-0 w-full min-h-[300px] px-44 py-4 bg-background z-50"
+            >
+              <Keyboard
+                defaultValue={code}
+                initKeyboard={1} // numeric (optional)
+                onChange={(value) => setCode(value)}
+              />
+            </div>
+          )}
         </div>
       </div>
+
     </div>
   );
 }

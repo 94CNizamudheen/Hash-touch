@@ -1,40 +1,34 @@
 import { useState, useEffect } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { type DeviceRole } from "@/services/local/device.local.service";
-import DeviceSetupModal from "./components/common/DeviceSetupModal";
 
 const ROLES: { key: DeviceRole; label: string; }[] = [
-  { 
-    key: "POS", 
+  {
+    key: "POS",
     label: "Point of Sale",
   },
-  // { 
-  //   key: "KIOSK", 
+  // {
+  //   key: "KIOSK",
   //   label: "Self-Ordering Kiosk",
   // },
-  { 
-    key: "KDS", 
+  {
+    key: "KDS",
     label: "Kitchen Display System",
   },
-  { 
-    key: "QUEUE", 
+  {
+    key: "QUEUE",
     label: "Queue Display",
   },
 ];
 
 interface Props {
-  tenantDomain: string;
-  accessToken: string;
-  onRoleSelected: (role: DeviceRole, setup: any) => Promise<void>;
+  onRoleSelected: (role: DeviceRole) => Promise<void>;
 }
 
 export default function Home({
-  tenantDomain,
-  accessToken,
   onRoleSelected,
 }: Props) {
   const [selectedRole, setSelectedRole] = useState<DeviceRole | null>(null);
-  const [showModal, setShowModal] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [configuredRoles, setConfiguredRoles] = useState<Set<DeviceRole>>(new Set());
@@ -59,26 +53,20 @@ export default function Home({
     setError(null);
   };
 
-  const createAndContinue = () => {
-    if (!selectedRole) return;
-    setShowModal(true);
-  };
-
-  const handleSetupSuccess = async (_code: string, setup: any) => {
+  const handleContinue = async () => {
     if (!selectedRole) return;
 
-    setShowModal(false);
     setBusy(true);
+    setError(null);
 
     try {
-      await onRoleSelected(selectedRole, setup);
-      
+      await onRoleSelected(selectedRole);
+
       // Add to configured roles
       setConfiguredRoles(prev => new Set(prev).add(selectedRole));
-      
-      // 🟢 DON'T automatically open window - let user click Launch button
+
       console.log(`✅ ${selectedRole} configured successfully`);
-      
+
     } catch (err: any) {
       console.error("Role setup failed:", err);
       setError(err.message || "Failed to complete setup");
@@ -111,7 +99,7 @@ export default function Home({
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-6">
             {ROLES.map((r) => {
               const isConfigured = configuredRoles.has(r.key);
-              
+
               return (
                 <div key={r.key} className="relative">
                   <button
@@ -130,7 +118,7 @@ export default function Home({
                       )}
                     </div>
                   </button>
-                  
+
                   {/* Launch button for configured roles */}
                   {isConfigured && (
                     <button
@@ -168,7 +156,7 @@ export default function Home({
           )}
 
           <button
-            onClick={createAndContinue}
+            onClick={handleContinue}
             disabled={busy || !selectedRole}
             className="w-full px-4 py-2 rounded-md bg-primary text-primary-foreground disabled:opacity-60 hover:bg-primary-hover transition"
           >
@@ -178,21 +166,6 @@ export default function Home({
           {error && <div className="mt-3 text-sm text-destructive">{error}</div>}
         </div>
       </div>
-
-      {/* Setup Modal */}
-      {selectedRole && (
-        <DeviceSetupModal
-          open={showModal}
-          role={selectedRole}
-          domain={tenantDomain}
-          token={accessToken}
-          onSuccess={handleSetupSuccess}
-          onClose={() => {
-            setShowModal(false);
-            setSelectedRole(null);
-          }}
-        />
-      )}
     </div>
   );
 }

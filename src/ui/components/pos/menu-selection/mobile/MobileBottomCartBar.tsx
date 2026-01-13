@@ -1,6 +1,6 @@
 import { useCart } from "@/ui/context/CartContext";
 import { useSetup } from "@/ui/context/SetupContext";
-
+import { FaArrowUp } from "react-icons/fa";
 import { motion, AnimatePresence } from "framer-motion";
 import { ShoppingCart } from "lucide-react";
 
@@ -13,7 +13,6 @@ const MobileBottomCartBar = ({ onOpenCart }: { onOpenCart: () => void }) => {
 
   return (
     <AnimatePresence>
-      {items.length > 0 && (
         <motion.div
           key="mobile-bottom-cart"
           initial={{ y: 120, opacity: 0 }}
@@ -44,14 +43,16 @@ const MobileBottomCartBar = ({ onOpenCart }: { onOpenCart: () => void }) => {
                     <ShoppingCart className="w-5 h-5" />
                   </div>
 
-                  <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center">
-                    {itemCount > 9 ? "9+" : itemCount}
-                  </span>
+                  {itemCount > 0 && (
+                    <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center">
+                      {itemCount > 9 ? "9+" : itemCount}
+                    </span>
+                  )}
                 </div>
 
                 <div>
                   <div className="font-semibold text-sm">
-                    {itemCount} {itemCount === 1 ? "Item" : "Items"}
+                    {itemCount > 0 ? `${itemCount} ${itemCount === 1 ? "Item" : "Items"}` : "My Cart"}
                   </div>
                   <div className="text-xs text-white/80">
                     Tap to view
@@ -62,9 +63,11 @@ const MobileBottomCartBar = ({ onOpenCart }: { onOpenCart: () => void }) => {
               {/* RIGHT */}
               <div className="flex items-center gap-2">
                 <div className="text-right">
-                  <div className="text-xs opacity-80">Total</div>
+                  <div className="text-xs opacity-80">
+                    {itemCount > 0 ? "Total" : ""}
+                  </div>
                   <div className="font-bold text-xl">
-                    {currencyCode} {total.toFixed(2)}
+                    {itemCount > 0 ? `${currencyCode} ${total.toFixed(2)}` : "Add items"}
                   </div>
                 </div>
 
@@ -72,15 +75,12 @@ const MobileBottomCartBar = ({ onOpenCart }: { onOpenCart: () => void }) => {
                   animate={{ x: [0, 6, 0] }}
                   transition={{ repeat: Infinity, duration: 1.2 }}
                 >
-                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                  </svg>
+                  <FaArrowUp />
                 </motion.div>
               </div>
             </button>
           </div>
         </motion.div>
-      )}
     </AnimatePresence>
   );
 };

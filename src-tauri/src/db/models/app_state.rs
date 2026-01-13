@@ -20,4 +20,5 @@ pub struct AppState {
     pub ws_server_mode: Option<i32>,
     pub ws_server_url: Option<String>,
     pub setup_code: Option<String>,
+    pub logo_url: Option<String>,
 }

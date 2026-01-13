@@ -1,7 +1,8 @@
 import { useNavigate } from "react-router-dom";
 import { SETTINGS_MENU } from "@/ui/constants/settings";
 import { useTranslation } from "react-i18next";
-import { ChevronRight } from "lucide-react";
+import { ChevronRight, ArrowLeft } from "lucide-react";
+import { Button } from "@/ui/shadcn/components/ui/button";
 
 export default function SettingsPage() {
   const { t } = useTranslation();
@@ -10,8 +11,16 @@ export default function SettingsPage() {
   return (
     <div className="flex flex-col h-full bg-background text-foreground">
       {/* Header */}
-      <div className="flex items-center justify-between p-6 border-b border-border">
-        <h1 className="text-3xl font-bold">{t("Settings")}</h1>
+      <div className="flex items-center justify-center relative py-4 border-b border-border">
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={() => navigate("/pos")}
+          className="absolute left-2"
+        >
+          <ArrowLeft />
+        </Button>
+        <h1 className="text-xl font-semibold">{t("Settings")}</h1>
       </div>
 
       {/* Settings Menu */}

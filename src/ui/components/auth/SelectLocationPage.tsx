@@ -95,7 +95,7 @@ export default function SelectLocationPage({
         <img
           src={logo}
           alt="Hashmato"
-          className="h-10 md:h-12 w-auto object-contain"
+          className="h-10 md:h-12 w-auto object-contain mx-auto"
         />
 
         {/* Title */}
@@ -122,7 +122,7 @@ export default function SelectLocationPage({
         ) : (
           <>
             {/* Location Grid */}
-            <div className="grid grid-cols-3 gap-3">
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
               {locations.map((loc) => {
                 const isActive = selected?.id === loc.id;
 

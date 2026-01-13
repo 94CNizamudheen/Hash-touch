@@ -9,6 +9,7 @@ interface SplashScreenProps {
   syncStatus?: "syncing" | "synced";
   retryCount?: number;
   onRetry?: () => void;
+  logoUrl?: string | null;
 }
 
 const SplashScreen = ({
@@ -16,32 +17,28 @@ const SplashScreen = ({
   connectionStatus = "connecting",
   syncStatus = "syncing",
   retryCount = 0,
-  onRetry
+  onRetry,
+  logoUrl
 }: SplashScreenProps) => {
   const { theme } = useTheme();
+
+  const getLogoSrc = () => {
+    if (logoUrl) return logoUrl;
+    return theme === "light" ? Logo : LogoDark;
+  };
 
   switch (type) {
     case 1:
       return (
         <div className="fixed inset-0 flex items-center justify-center bg-background z-50">
           <div className="max-w-md mx-auto px-4">
-            {theme === "light" ? (
-              <img
-                src={Logo}
-                alt="Logo"
-                width={300}
-                height={50}
-                className="h-auto animate-pulse"
-              />
-            ) : (
-              <img
-                src={LogoDark}
-                alt="Logo"
-                width={300}
-                height={50}
-                className="h-auto animate-pulse"
-              />
-            )}
+            <img
+              src={getLogoSrc()}
+              alt="Logo"
+              width={300}
+              height={50}
+              className="h-auto animate-pulse"
+            />
           </div>
         </div>
       );
@@ -50,23 +47,13 @@ const SplashScreen = ({
       return (
         <div className="fixed inset-0 flex items-center justify-center text-center bg-background z-50">
           <div className="flex flex-col gap-10 max-w-md mx-auto px-4">
-            {theme === "light" ? (
-              <img
-                src={Logo}
-                alt="Logo"
-                width={300}
-                height={50}
-                className="h-auto animate-pulse"
-              />
-            ) : (
-              <img
-                src={LogoDark}
-                alt="Logo"
-                width={300}
-                height={50}
-                className="h-auto animate-pulse"
-              />
-            )}
+            <img
+              src={getLogoSrc()}
+              alt="Logo"
+              width={300}
+              height={50}
+              className="h-auto animate-pulse"
+            />
           </div>
         </div>
       );
@@ -77,23 +64,13 @@ const SplashScreen = ({
         <div className="fixed inset-0 flex items-center justify-center bg-background z-50">
           <div className="max-w-md mx-auto text-center space-y-6 p-6">
             {/* Logo */}
-            {theme === "light" ? (
-              <img
-                src={Logo}
-                alt="Logo"
-                width={300}
-                height={50}
-                className="h-auto mx-auto"
-              />
-            ) : (
-              <img
-                src={LogoDark}
-                alt="Logo"
-                width={300}
-                height={50}
-                className="h-auto mx-auto"
-              />
-            )}
+            <img
+              src={getLogoSrc()}
+              alt="Logo"
+              width={300}
+              height={50}
+              className="h-auto mx-auto"
+            />
 
             {/* WiFi Icon with status */}
             <div className="flex justify-center">
@@ -190,23 +167,13 @@ const SplashScreen = ({
         <div className="fixed inset-0 flex items-center justify-center bg-background z-50">
           <div className="max-w-md mx-auto text-center space-y-6 p-6">
             {/* Logo */}
-            {theme === "light" ? (
-              <img
-                src={Logo}
-                alt="Logo"
-                width={300}
-                height={50}
-                className="h-auto mx-auto"
-              />
-            ) : (
-              <img
-                src={LogoDark}
-                alt="Logo"
-                width={300}
-                height={50}
-                className="h-auto mx-auto"
-              />
-            )}
+            <img
+              src={getLogoSrc()}
+              alt="Logo"
+              width={300}
+              height={50}
+              className="h-auto mx-auto"
+            />
 
             {/* Status Text */}
             <div className="space-y-2">

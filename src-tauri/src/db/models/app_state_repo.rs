@@ -21,7 +21,8 @@ pub fn get_app_state(conn: &Connection) -> anyhow::Result<AppState> {
                kds_settings,
                ws_server_mode,
                ws_server_url,
-               setup_code
+               setup_code,
+               logo_url,
         FROM app_state
         WHERE id = 1
         "#,
@@ -54,6 +55,7 @@ pub fn get_app_state(conn: &Connection) -> anyhow::Result<AppState> {
                 ws_server_mode: row.get(15)?,
                 ws_server_url: row.get(16)?,
                 setup_code:row.get(17)?,
+                logo_url: row.get(18)?,
 
             })
         },
@@ -86,6 +88,7 @@ pub fn get_app_state(conn: &Connection) -> anyhow::Result<AppState> {
                 ws_server_mode: Some(0),
                 ws_server_url: Some("ws://localhost:9001".to_string()),
                 setup_code:Some("grid".to_string()),
+                logo_url: None,
             })
         }
 

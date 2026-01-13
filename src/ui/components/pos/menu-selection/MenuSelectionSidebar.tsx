@@ -25,6 +25,9 @@ import DirectionToggle from "@/ui/components/common/DirectionToggle";
 import { initialSync } from "@/services/data/initialSync.service";
 import { localEventBus } from "@/services/eventbus/LocalEventBus";
 import type { DeviceRole } from "@/types/app-state";
+import { resyncLocal } from "@/services/local/resync.local.service";
+import SyncConfirmModal from "../modal/SyncConfirmModal";
+import { isOnline } from "@/ui/utils/networkDetection";
 
 
 
@@ -56,6 +59,7 @@ const MenuSelectionSidebar = ({
   const { showNotification } = useNotification();
   const [isSyncing, setIsSyncing] = useState(false);
   const [syncStatus, setSyncStatus] = useState<"syncing" | "synced">("syncing");
+  const [showSyncConfirm, setShowSyncConfirm] = useState(false);
 
 
 
@@ -90,6 +94,11 @@ const MenuSelectionSidebar = ({
   if (!isHydrated || loading) return null;
 
   const handleStartSync = async () => {
+   if (!(await isOnline())) {
+        showNotification.error(t("Network not detected, check connection"));
+        return;
+      }
+
     if (!appState?.tenant_domain || !appState?.access_token) {
       showNotification.error(t("Cannot sync: Missing tenant or access token"));
       return;
@@ -104,6 +113,8 @@ const MenuSelectionSidebar = ({
       setIsSyncing(true);
       setSyncStatus("syncing");
 
+      await resyncLocal.clearBusinessData();
+
       await initialSync(appState.tenant_domain, appState.access_token, {
         channel: appState.device_role ?? "POS",
         locationId: appState.selected_location_id,
@@ -117,7 +128,11 @@ const MenuSelectionSidebar = ({
       showNotification.success(t("Sync completed successfully"), 3000);
     } catch (error) {
       console.error("Sync failed:", error);
-      showNotification.error(t("Sync failed") + ": " + (error instanceof Error ? error.message : "Unknown error"));
+      showNotification.error(
+        t("Sync failed") +
+        ": " +
+        (error instanceof Error ? error.message : "Unknown error")
+      );
     } finally {
       setIsSyncing(false);
     }
@@ -139,6 +154,11 @@ const MenuSelectionSidebar = ({
         break;
       case "shift":
         if (isShiftOpen) {
+          // Check network before allowing shift end
+          if (!navigator.onLine) {
+            showNotification.error(t("Network not detected, check connection"));
+            return;
+          }
           setShowEndShift(true);
         }
         break;
@@ -208,10 +228,16 @@ const MenuSelectionSidebar = ({
       setIsLoggingOut(false);
     }
   };
-
+  const handleOpenSyncConfirm = async() => {
+    if (!(await isOnline())) {
+            showNotification.error(t("Network not detected, check connection"));
+            return;
+          }
+    setShowSyncConfirm(true);
+  }
   // Show splash screen during logout
   if (isLoggingOut) {
-    return <SplashScreen type={1} />;
+    return <SplashScreen type={1}  />;
   }
 
   // Show splash screen during sync
@@ -252,6 +278,12 @@ const MenuSelectionSidebar = ({
           }}
         />
       )}
+      {showSyncConfirm && (
+        <SyncConfirmModal
+          onClose={() => setShowSyncConfirm(false)}
+          onConfirm={handleStartSync}
+        />
+      )}
 
       <LanguageModal
         isOpen={showLanguageModal}
@@ -286,7 +318,7 @@ const MenuSelectionSidebar = ({
                     }
 
                     if (item.title === "Start Sync") {
-                      handleStartSync();
+                      handleOpenSyncConfirm();
                       return;
                     }
 

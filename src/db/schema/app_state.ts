@@ -43,4 +43,5 @@ export const appStateSqlite = sqliteTable("app_state", {
     .default(sql`CURRENT_TIMESTAMP`),
     
   setupCode: text("setup_code"),
+  logoUrl: text("logo_url").default(""),
 });

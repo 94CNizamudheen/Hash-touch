@@ -1,8 +1,8 @@
-
 import { useState } from "react";
 import { FormProvider, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
+import { useTranslation } from "react-i18next";
 
 import { authService } from "@services/auth/auth.service";
 import TenantForm from "./TenantForm";
@@ -13,14 +13,14 @@ import { cn } from "@/lib/utils";
 import { useNotification } from "@/ui/context/NotificationContext";
 
 const tenantSchema = z.object({
-  domain: z.string().min(2, "Tenant is required"),
+  domain: z
+    .string()
+    .transform((val) => val.trim())
+    .pipe(z.string().min(2, "Tenant is required")),
   email: z
     .string()
-    .min(3, "Email is required")
-    .regex(
-      /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
-      "Invalid email format"
-    ),
+    .transform((val) => val.trim())
+    .pipe(z.string().min(3, "Email is required").regex(/^[^\s@]+@[^\s@]+\.[^\s@]+$/, "Invalid email format")),
   password: z.string().min(4, "Password must be at least 4 characters"),
 });
 type TenantLoginForm = z.infer<typeof tenantSchema>;
@@ -32,10 +32,11 @@ interface TenantLoginProps {
 export default function TenantLogin({
   onTenantSelected,
 }: TenantLoginProps) {
+  const { t } = useTranslation();
   const { theme } = useTheme();
   const [isLoading, setIsLoading] = useState(false);
   const [showKeyboard, setShowKeyboard] = useState(false);
-  const { showNotification } = useNotification()
+  const { showNotification } = useNotification();
 
   /* =========================
      React Hook Form
@@ -53,6 +54,12 @@ export default function TenantLogin({
      Submit Handler
   ========================= */
   const onSubmit = async (data: TenantLoginForm) => {
+    // Check network connection first
+    if (!navigator.onLine) {
+      showNotification.error(t("Network not detected, check connection"));
+      return;
+    }
+
     try {
       setIsLoading(true);
 

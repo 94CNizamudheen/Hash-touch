@@ -17,6 +17,9 @@ const ProductsMobile = () => {
   const { filteredItems, loading } = useProducts();
   const { t } = useTranslation();
 
+  // Filter out products where is_product_tag === true
+  const displayProducts = filteredItems.filter(item => !item.is_product_tag);
+
   const { addItem } = useCart();
   const { state: appState } = useAppState();
   const { shift, isHydrated } = useWorkShift();
@@ -58,7 +61,6 @@ const ProductsMobile = () => {
 
   if (!isHydrated) return null;
 
-  // If logging out, show splash screen instead of shift modals
   if (isLoggingOut) {
     return <SplashScreen type={1} />;
   }
@@ -86,11 +88,9 @@ const ProductsMobile = () => {
           {/* Product Grid - Now just the scrollable content */}
           <div className="grid grid-cols-2 gap-3 p-3 pb-32">
             {loading ? (
-              <div className="col-span-full text-center py-10 text-muted-foreground">
-                {t("Loading products...")}
-              </div>
-            ) : filteredItems.length > 0 ? (
-              filteredItems.map((item) => (
+            <SplashScreen type={1} />
+            ) : displayProducts.length > 0 ? (
+              displayProducts.map((item) => (
                 <ProductCardMobile
                   key={item.id}
                   item={item}

@@ -15,7 +15,7 @@ const LeftSyncNetwork = ({ wsConnected }: LeftSyncNetworkProps) => {
       onClick={() => navigate("/kds/settings/connection")}
       className={cn(
         "p-2 rounded shadow transition-colors",
-        wsConnected ? "bg-green-500" : "bg-red-500"
+        wsConnected ? "bg-success" : "bg-destructive"
       )}
       title={wsConnected ? "Connected to POS - Click to manage" : "Disconnected - Click to connect"}
     >

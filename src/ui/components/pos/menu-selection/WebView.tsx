@@ -6,7 +6,7 @@ const WebView = ({ children }: { children?: ReactNode }) => {
   const { tempStyle, setTempStyle } = useTempStyle();
 
   return (
-    <div className="flex w-full h-full overflow-hidden safe-area">
+    <div className="flex w-full h-full overflow-hidden ">
       {/* Left Sidebar - Menu Selection */}
       <div className="h-full overflow-hidden border-r border-border flex-shrink-0 bg-background">
         <MenuSelectionSidebar

@@ -24,6 +24,7 @@ import PaymentSuccessModal from "./PaymentSuccessModal";
 
 import { transactionTypeLocal } from "@/services/local/transaction-type.local.service";
 import { useNotification } from "@/ui/context/NotificationContext";
+import type { TicketRequest } from "@/types/ticket";
 
 export default function PaymentDesktop() {
   const navigate = useNavigate();
@@ -32,6 +33,8 @@ export default function PaymentDesktop() {
   const { paymentMethods } = usePaymentMethods();
   const { transactionTypes } = useTransactionTypes();
   const { showNotification } = useNotification();
+  const [savedReceiptData, setSavedReceiptData] = useState<ReceiptData | null>(null);
+  const [savedTicketRequest, setSavedTicketRequest] = useState<TicketRequest | null>(null);
 
   const subtotal = Math.round(items.reduce((s, i) => s + i.price * i.quantity, 0) * 100) / 100;
   const { charges, totalCharges } = useCharges(items, subtotal);
@@ -47,6 +50,7 @@ export default function PaymentDesktop() {
 
   // NEW: Multi-payment state
   const [payments, setPayments] = useState<PaymentEntry[]>([]);
+
 
 
 
@@ -214,6 +218,7 @@ export default function PaymentDesktop() {
         queueNumber,
         currencyCode,
       });
+      setSavedTicketRequest(ticketRequest);
 
       const result = await ticketService.createTicket(
         appState.tenant_domain,
@@ -308,6 +313,33 @@ export default function PaymentDesktop() {
       const hasCashPayment = paymentsToProcess.some(p =>
         p.paymentMethodName.toLowerCase().includes("cash")
       );
+      const receiptDataToSave: ReceiptData = {
+        ticket_number: String(ticketRequest.ticket.ticket_number),
+        location_name: appState.selected_location_name,
+        order_mode: appState.selected_order_mode_name,
+        items: items.map(item => ({
+          name: item.name,
+          quantity: item.quantity,
+          price: item.price,
+          total: item.price * item.quantity,
+        })),
+        subtotal,
+        charges: charges.filter(c => c.applied).map(c => ({
+          name: c.name,
+          amount: c.amount,
+        })),
+        total,
+        payment_method: paymentsToProcess
+          .map(p => p.paymentMethodName)
+          .join(", "),
+        tendered: totalTendered,
+        change: Math.abs(finalRemainingBalance),
+        timestamp: new Date().toLocaleString(),
+      };
+
+      setSavedReceiptData(receiptDataToSave);
+
+
 
       if (hasCashPayment) {
         setShowDrawer(true);
@@ -334,78 +366,45 @@ export default function PaymentDesktop() {
     setPayments([]); // Clear payments
   };
 
-  /* 🖨️ PRINT RECEIPT */
+
   const handlePrintReceipt = async () => {
     try {
-      const receiptData: ReceiptData = {
-        ticket_number: `TKT-${Date.now()}`,
-        location_name: appState?.selected_location_name || "Unknown Location",
-        order_mode: appState?.selected_order_mode_name || "POS",
-        items: items.map(item => ({
-          name: item.name,
-          quantity: item.quantity,
-          price: item.price,
-          total: item.price * item.quantity,
-        })),
-        subtotal,
-        charges: charges.map(charge => ({
-          name: charge.name,
-          amount: charge.amount,
-        })),
-        total: final.total,
-        payment_method: payments.map(p => p.paymentMethodName).join(", "),
-        tendered: final.total + final.balance,
-        change: final.balance,
-        timestamp: new Date().toLocaleString(),
-      };
+      if (!savedReceiptData) {
+        showNotification.error("No receipt data available");
+        return;
+      }
 
-      await printerService.printReceiptToAllActive(receiptData);
+      await printerService.printReceiptToAllActive(savedReceiptData);
       showNotification.success("Receipt printed successfully");
-    } catch (error) {
+    } catch {
       showNotification.error("Failed to print receipt");
     }
   };
 
-const handleSendEmail = async (email: string) => {
-  if (!appState?.tenant_domain || !appState?.access_token) {
-    showNotification.error("Missing application state");
-    return;
-  }
 
-  try {
-    const ticketRequest = buildTicketRequest({
-      items,
-      charges,
-      subtotal,
-      total,
-      paymentMethod: payments.map(p => p.paymentMethodName).join(", "),
-      paymentMethodId: payments[0]?.paymentMethodId || "",
-      tenderedAmount: final.total + final.balance,
-      locationId: appState.selected_location_id,
-      locationName: appState.selected_location_name,
-      orderModeName: appState.selected_order_mode_name,
-      channelName: "POS",
-      userName: "POS User",
-      saleTransactionTypeId: transactionTypes.find(t => t.name === "SALE")!.id,
-      paymentTransactionTypeId: transactionTypes.find(t => t.name === "PAYMENT")!.id,
-      transactionTypes,
-      queueNumber: 0,
-      currencyCode,
-    });
+  const handleSendEmail = async (email: string) => {
+    if (
+      !savedTicketRequest ||
+      !appState?.tenant_domain ||
+      !appState?.access_token
+    ) {
+      showNotification.error("No ticket data available");
+      return;
+    }
 
-    await ticketService.sendEmail(
-      appState.tenant_domain,
-      appState.access_token,
-      email,               
-      [ticketRequest]       
-    );
+    try {
+      await ticketService.sendEmail(
+        appState.tenant_domain,
+        appState.access_token,
+        email,
+        [savedTicketRequest] 
+      );
 
-    showNotification.success("Receipt sent successfully");
-  } catch (error) {
-    console.error("Send email failed:", error);
-    showNotification.error("Failed to send email");
-  }
-};
+      showNotification.success("Receipt sent successfully");
+    } catch {
+      showNotification.error("Failed to send email");
+    }
+  };
 
 
 

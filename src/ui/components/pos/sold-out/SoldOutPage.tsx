@@ -1,15 +1,17 @@
-
 import { useState, useEffect, useMemo } from "react";
+import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { useProducts } from "@/ui/context/ProductContext";
 import { productLocal } from "@/services/local/product.local.service";
 import { useNotification } from "@/ui/context/NotificationContext";
 import type { Product } from "@/types/products";
-import { PackageX } from "lucide-react";
+import { PackageX, ArrowLeft } from "lucide-react";
+import { Button } from "@/ui/shadcn/components/ui/button";
 import SoldOutProductItem from "./Soldoutproductitem";
 import InputFilter from "@/ui/components/common/InputFilter";
 
 const SoldOutPage = () => {
+    const navigate = useNavigate();
     const { t } = useTranslation();
     const { items: allProducts, updateSoldOutInContext } = useProducts();
     const { showNotification } = useNotification();
@@ -126,9 +128,19 @@ const SoldOutPage = () => {
         <div className="h-screen flex flex-col bg-background">
             {/* Header */}
             <div className="flex-shrink-0 p-4 border-b border-border bg-background">
-                <h1 className="text-2xl font-bold text-foreground text-center mb-4">
-                    {t("Sold Out Products")}
-                </h1>
+                <div className="flex items-center justify-center relative mb-4">
+                    <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => navigate("/pos")}
+                        className="absolute left-0"
+                    >
+                        <ArrowLeft />
+                    </Button>
+                    <h1 className="text-xl font-semibold text-foreground">
+                        {t("Sold Out Products")}
+                    </h1>
+                </div>
 
                 {/* Search Input */}
                 <InputFilter

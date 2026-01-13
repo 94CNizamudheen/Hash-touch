@@ -8,28 +8,36 @@ import { cn } from "@/lib/utils";
 import { useAppState } from "@/ui/hooks/useAppState";
 import { useNotification } from "@/ui/context/NotificationContext";
 import { useTranslation } from "react-i18next";
-import { ChefHat, Users, ShoppingCart } from "lucide-react";
+import { ChefHat, Users, ShoppingCart, Monitor } from "lucide-react";
 import type { DeviceRole } from "@/types/app-state";
 
 const DEVICE_ROLES: {
   key: DeviceRole;
   label: string;
+  description: string;
   icon: React.ReactNode;
+  color: string;
 }[] = [
   {
     key: "POS",
     label: "Point of Sale",
-    icon: <ShoppingCart className="w-5 h-5 stroke-primary" />,
+    description: "Take orders & process payments",
+    icon: <ShoppingCart className="w-5 h-5" />,
+    color: "text-primary",
   },
   {
     key: "KDS",
     label: "Kitchen Display",
-    icon: <ChefHat className="w-5 h-5 stroke-primary" />,
+    description: "View & manage kitchen orders",
+    icon: <ChefHat className="w-5 h-5" />,
+    color: "text-warning",
   },
   {
     key: "QUEUE",
     label: "Queue Display",
-    icon: <Users className="w-5 h-5 stroke-primary" />,
+    description: "Show order status to customers",
+    icon: <Users className="w-5 h-5" />,
+    color: "text-success",
   },
 ];
 
@@ -72,40 +80,62 @@ const SwitchDeviceModal = ({
       <SheetContent
         side="left"
         showCloseButton={false}
-        className="max-h-[50%] my-auto rounded-r-2xl p-8 sm:w-auto bg-secondary"
+        className="max-h-[60%] my-auto rounded-r-2xl p-0 sm:w-[320px] bg-background border-0 shadow-xl"
       >
         {/* ===== Header ===== */}
-        <SheetHeader className="border-b border-accent px-4 sm:px-5 pb-1 sm:pb-4">
-          <SheetTitle className="text-foreground font-semibold text-sm sm:text-base md:text-lg">
-            {t("Switch Device Mode")}
-          </SheetTitle>
+        <SheetHeader className="px-5 pt-6 pb-4">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
+              <Monitor className="w-5 h-5 text-primary" />
+            </div>
+            <div>
+              <SheetTitle className="text-foreground font-semibold text-base">
+                {t("Switch Device")}
+              </SheetTitle>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                {t("Current")}: {currentRole}
+              </p>
+            </div>
+          </div>
         </SheetHeader>
 
         {/* ===== Role List ===== */}
-        <div className="mt-6 sm:mt-10 px-4 sm:px-5 overflow-y-auto">
-          <div className="grid grid-cols-1 gap-3">
+        <div className="px-4 pb-6">
+          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3 px-1">
+            {t("Available Modes")}
+          </p>
+          <div className="flex flex-col gap-2">
             {availableRoles.map((role) => (
               <button
                 key={role.key}
                 onClick={() => handleRoleSelect(role)}
                 className={cn(
-                  "w-full p-4 rounded-lg flex items-center gap-4 cursor-pointer transition-all",
-                  "border-2 rtl:flex-row-reverse",
-                  "bg-sidebar-hover hover:bg-primary hover:text-primary-foreground border-transparent"
+                  "w-full p-4 rounded-xl flex items-center gap-4 cursor-pointer transition-all",
+                  "rtl:flex-row-reverse",
+                  "bg-secondary hover:bg-sidebar-hover active:scale-[0.98]"
                 )}
               >
-                <div className="p-2 rounded-lg bg-background">
-                  {role.icon}
+                <div className={cn(
+                  "w-10 h-10 rounded-xl flex items-center justify-center",
+                  role.key === "POS" && "bg-primary/10",
+                  role.key === "KDS" && "bg-warning/10",
+                  role.key === "QUEUE" && "bg-success/10"
+                )}>
+                  <span className={role.color}>{role.icon}</span>
                 </div>
 
-                <div className="text-left rtl:text-right">
-                  <p className="font-medium">
+                <div className="text-left rtl:text-right flex-1">
+                  <p className="font-medium text-sm text-foreground">
                     {t(role.label)}
                   </p>
-                  <p className="text-xs text-muted-foreground">
-                    {role.key}
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    {t(role.description)}
                   </p>
                 </div>
+
+                <svg className="w-4 h-4 text-muted-foreground rtl:rotate-180" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                </svg>
               </button>
             ))}
           </div>

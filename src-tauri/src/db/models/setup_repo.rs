@@ -50,14 +50,19 @@ pub fn get_setup_by_code(
     conn: &Connection,
     code: &str,
 ) -> anyhow::Result<Option<Setup>> {
+    // Use explicit column names to avoid order mismatch
     let mut stmt = conn.prepare(
-        r#"SELECT * FROM setups WHERE code = ?1 LIMIT 1"#
+        r#"SELECT
+            id, code, name, setup_type, channel, settings,
+            country_code, currency_code, currency_symbol,
+            active, sort_order, created_at, updated_at
+        FROM setups WHERE code = ?1 LIMIT 1"#
     )?;
 
     let mut rows = stmt.query(params![code])?;
 
     if let Some(row) = rows.next()? {
-        Ok(Some(Setup {
+        let setup = Setup {
             id: row.get(0)?,
             code: row.get(1)?,
             name: row.get(2)?,
@@ -71,8 +76,14 @@ pub fn get_setup_by_code(
             sort_order: row.get(10)?,
             created_at: row.get(11)?,
             updated_at: row.get(12)?,
-        }))
+        };
+        log::info!("📦 Found setup: code={}, settings_len={}",
+            setup.code,
+            setup.settings.as_ref().map(|s| s.len()).unwrap_or(0)
+        );
+        Ok(Some(setup))
     } else {
+        log::warn!("⚠️ No setup found for code: {}", code);
         Ok(None)
     }
 }

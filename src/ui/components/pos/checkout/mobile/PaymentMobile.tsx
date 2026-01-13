@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import {  Loader2 } from "lucide-react";
+import { Loader2, ChevronUp } from "lucide-react";
 import { MdAddShoppingCart } from "react-icons/md";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
@@ -23,6 +23,7 @@ import { transactionTypeLocal } from "@/services/local/transaction-type.local.se
 import { printerService, type ReceiptData } from "@/services/local/printer.local.service";
 import { useTranslation } from "react-i18next";
 import PaymentEntriesModal from "../PaymentEntriesModal";
+import type { TicketRequest } from "@/types/ticket";
 
 export default function PaymentMobile() {
   const navigate = useNavigate();
@@ -46,6 +47,8 @@ export default function PaymentMobile() {
   const [loading, setLoading] = useState(false);
   const [payments, setPayments] = useState<PaymentEntry[]>([]);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
+  const [savedReceiptData, setSavedReceiptData] = useState<ReceiptData | null>(null);
+  const [savedTicketRequest, setSavedTicketRequest] = useState<TicketRequest | null>(null);
 
   useEffect(() => {
     transactionTypeLocal.getAllTransactionTypes();
@@ -57,12 +60,20 @@ export default function PaymentMobile() {
     }
   }, [paymentMethods, selectedMethod]);
 
+  // Redirect to POS if cart is empty (prevents back navigation to empty payment page)
+  // But NOT when showing success modal or drawer modal (payment flow completed)
+  useEffect(() => {
+    if (isHydrated && items.length === 0 && !showSuccess && !showDrawer) {
+      navigate("/pos", { replace: true });
+    }
+  }, [isHydrated, items.length, showSuccess, showDrawer, navigate]);
+
   if (!isHydrated) return null;
 
   const totalPaid = Math.round(payments.reduce((sum, p) => sum + p.amount, 0) * 100) / 100;
   const remainingBalance = Math.round((grandTotal - totalPaid) * 100) / 100;
   const tendered = parseFloat(inputValue) || 0;
-  const changeAmount = tendered > remainingBalance ? tendered - remainingBalance : 0;
+
   const isPaymentReady = !isNaN(tendered) && tendered > 0;
   const isPaymentsClickable = payments.length > 0;
 
@@ -186,6 +197,7 @@ export default function PaymentMobile() {
         queueNumber,
         currencyCode,
       });
+      setSavedTicketRequest(ticketRequest);
 
       const result = await ticketService.createTicket(appState.tenant_domain, appState.access_token, ticketRequest);
 
@@ -252,6 +264,30 @@ export default function PaymentMobile() {
 
       const hasCashPayment = paymentsToProcess.some((p) => p.paymentMethodName.toLowerCase().includes("cash"));
 
+      // Save receipt data BEFORE clearing the cart
+      const receiptDataToSave: ReceiptData = {
+        ticket_number: String(ticketRequest.ticket.ticket_number),
+        location_name: appState.selected_location_name,
+        order_mode: appState.selected_order_mode_name,
+        items: items.map((item) => ({
+          name: item.name,
+          quantity: item.quantity,
+          price: item.price,
+          total: item.price * item.quantity,
+        })),
+        subtotal,
+        charges: charges.filter((c) => c.applied).map((charge) => ({
+          name: charge.name,
+          amount: charge.amount,
+        })),
+        total: grandTotal,
+        payment_method: paymentMethodName,
+        tendered: totalTendered,
+        change: Math.abs(finalRemainingBalance),
+        timestamp: new Date().toLocaleString(),
+      };
+      setSavedReceiptData(receiptDataToSave);
+
       if (hasCashPayment) {
         setShowDrawer(true);
       } else {
@@ -279,59 +315,46 @@ export default function PaymentMobile() {
 
   const handlePrintReceipt = async () => {
     try {
-      const receiptData: ReceiptData = {
-        ticket_number: `TKT-${Date.now()}`,
-        location_name: appState?.selected_location_name || "Unknown",
-        order_mode: appState?.selected_order_mode_name || "POS",
-        items: items.map((item) => ({ name: item.name, quantity: item.quantity, price: item.price, total: item.price * item.quantity })),
-        subtotal,
-        charges: charges.map((charge) => ({ name: charge.name, amount: charge.amount })),
-        total: final.total,
-        payment_method: payments.map((p) => p.paymentMethodName).join(", "),
-        tendered: final.total + final.balance,
-        change: final.balance,
-        timestamp: new Date().toLocaleString(),
-      };
-      await printerService.printReceiptToAllActive(receiptData);
+      if (!savedReceiptData) {
+        showNotification.error(t("No receipt data available"));
+        return;
+      }
+      await printerService.printReceiptToAllActive(savedReceiptData);
       showNotification.success(t("Receipt printed"));
     } catch {
       showNotification.error(t("Failed to print"));
     }
   };
 
+
   const handleSendEmail = async (email: string) => {
-    if (!appState?.tenant_domain || !appState?.access_token) return;
+    if (
+      !savedTicketRequest ||
+      !appState?.tenant_domain ||
+      !appState?.access_token
+    ) {
+      showNotification.error("No ticket data available");
+      return;
+    }
 
     try {
-      const ticketRequest = buildTicketRequest({
-        items,
-        charges,
-        subtotal,
-        total: grandTotal,
-        paymentMethod: payments.map((p) => p.paymentMethodName).join(", "),
-        paymentMethodId: payments[0]?.paymentMethodId || "",
-        tenderedAmount: final.total + final.balance,
-        locationId: appState.selected_location_id,
-        locationName: appState.selected_location_name,
-        orderModeName: appState.selected_order_mode_name,
-        channelName: "POS",
-        userName: "POS User",
-        saleTransactionTypeId: transactionTypes.find((t) => t.name === "SALE")!.id,
-        paymentTransactionTypeId: transactionTypes.find((t) => t.name === "PAYMENT")!.id,
-        transactionTypes,
-        queueNumber: 0,
-        currencyCode,
-      });
+      await ticketService.sendEmail(
+        appState.tenant_domain,
+        appState.access_token,
+        email,
+        [savedTicketRequest]
+      );
 
-      await ticketService.sendEmail(appState.tenant_domain, appState.access_token, email, [ticketRequest]);
-      showNotification.success(t("Receipt sent"));
+      showNotification.success("Receipt sent successfully");
     } catch {
-      showNotification.error(t("Failed to send email"));
+      showNotification.error("Failed to send email");
     }
   };
 
+
+
   return (
-    <div className="fixed inset-0 flex flex-col bg-background safe-area">
+    <div className="fixed inset-0 flex flex-col bg-background safe-area safe-area-header safe-area-bottom safe-area-bottom-bg">
       {/* Payment Methods - Horizontal Scroll */}
       <div className="flex-shrink-0 p-3 border-b border-border">
         <div className="flex gap-2 overflow-x-auto no-scrollbar pb-1">
@@ -342,11 +365,10 @@ export default function PaymentMobile() {
                 key={method.id}
                 whileTap={{ scale: 0.95 }}
                 onClick={() => setSelectedMethod(method.name)}
-                className={`flex-shrink-0 px-4 py-2.5 rounded-xl text-sm font-medium transition-all ${
-                  isSelected
+                className={`flex-shrink-0 px-4 py-2.5 rounded-xl text-sm font-medium transition-all ${isSelected
                     ? "bg-primary text-primary-foreground shadow-md"
                     : "bg-secondary text-foreground hover:bg-muted"
-                }`}
+                  }`}
               >
                 {t(method.name)}
               </motion.button>
@@ -375,13 +397,7 @@ export default function PaymentMobile() {
               inputMode="decimal"
               readOnly
             />
-            {changeAmount > 0 && (
-              <div className="absolute -bottom-5 left-0 right-0 text-center">
-                <span className="text-xs text-success font-medium">
-                  {t("Change")}: {currencySymbol} {changeAmount.toFixed(2)}
-                </span>
-              </div>
-            )}
+
           </div>
         </div>
 
@@ -410,13 +426,12 @@ export default function PaymentMobile() {
             <button
               key={key}
               onClick={() => onKey(key)}
-              className={`h-12 rounded-xl border border-border text-xl font-semibold transition-all active:scale-95 ${
-                key === "C"
+              className={`h-12 rounded-xl border border-border text-xl font-semibold transition-all active:scale-95 ${key === "C"
                   ? "bg-destructive/10 text-destructive"
                   : key === "."
-                  ? "bg-secondary text-foreground"
-                  : "bg-secondary text-foreground hover:bg-muted"
-              }`}
+                    ? "bg-secondary text-foreground"
+                    : "bg-secondary text-foreground hover:bg-muted"
+                }`}
             >
               {key}
             </button>
@@ -425,14 +440,30 @@ export default function PaymentMobile() {
       </div>
 
       {/* Fixed Bottom - Totals & Action Buttons */}
-      <div className="flex-shrink-0 border-t border-border bg-secondary safe-area-bottom">
+      <div className="flex-shrink-0 border-t border-border bg-secondary ">
         {/* Totals Section - More compact */}
-        <div
-          className="px-4 py-2.5 text-sm space-y-1 cursor-pointer "
+        <motion.div
+          className={`px-4 py-2.5 text-sm space-y-1 relative ${isPaymentsClickable
+              ? "cursor-pointer active:bg-muted/50"
+              : ""
+            }`}
           onClick={() => {
             if (isPaymentsClickable) setShowPaymentModal(true);
           }}
+          whileTap={isPaymentsClickable ? { scale: 0.99 } : {}}
         >
+          {/* Chevron indicator when payments exist - centered at top */}
+          {isPaymentsClickable && (
+            <motion.div
+              className="absolute left-1/2 -translate-x-1/2 -top-3"
+              animate={{ y: [0, -3, 0] }}
+              transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut" }}
+            >
+              <div className="bg-primary rounded-full p-1 shadow-md">
+                <ChevronUp className="w-4 h-4 text-primary-foreground" />
+              </div>
+            </motion.div>
+          )}
           <div className="flex justify-between">
             <span className="text-muted-foreground">
               {t("Subtotal")} ({items.reduce((a, b) => a + b.quantity, 0)})
@@ -466,18 +497,17 @@ export default function PaymentMobile() {
               </div>
             </>
           )}
-        </div>
+        </motion.div>
 
         {/* Action Buttons - Pay (70%) and Home (30%) */}
         <div className="px-4 pb-4 flex gap-2">
           <button
             onClick={() => onAddPayment()}
             disabled={!isPaymentReady || loading}
-            className={`flex-[7] h-14 rounded-xl font-semibold text-base transition-all active:scale-[0.98] flex items-center justify-center gap-2 ${
-              isPaymentReady && !loading
+            className={`flex-[6] h-14 rounded-xl font-semibold text-base transition-all active:scale-[0.98] flex items-center justify-center gap-2 ${isPaymentReady && !loading
                 ? "bg-primary text-primary-foreground shadow-lg"
                 : "bg-sidebar text-muted-foreground"
-            }`}
+              }`}
           >
             {loading ? (
               <>
@@ -490,13 +520,13 @@ export default function PaymentMobile() {
               </>
             )}
           </button>
-          
+
           <button
             onClick={() => navigate("/pos")}
-            className="flex-[3] h-14 rounded-xl font-semibold text-base bg-warning text-foreground hover:bg-muted active:scale-[0.98] transition-all flex items-center justify-center gap-2"
+            className="flex-[4] h-14 rounded-xl font-semibold text-base bg-warning text-foreground hover:bg-muted active:scale-[0.98] transition-all flex items-center justify-center gap-2"
           >
             <MdAddShoppingCart className="w-5 h-5" />
-            {t("Home")}
+            {t("Add More")}
           </button>
         </div>
       </div>

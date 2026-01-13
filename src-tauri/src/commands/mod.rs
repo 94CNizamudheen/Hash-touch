@@ -18,8 +18,8 @@ pub mod payment_method;
 pub mod transaction_type;
 pub mod ticket;
 pub mod kds_ticket;
-#[cfg(desktop)]
 pub mod printer;
+pub mod resync;
 #[cfg(desktop)]
 pub mod websocket;
 pub mod queue_token;

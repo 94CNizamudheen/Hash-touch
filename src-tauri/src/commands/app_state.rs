@@ -152,6 +152,13 @@ pub fn set_kds_settings(app: AppHandle, settings: String) -> Result<(), String> 
         .map_err(|e| e.to_string())?;
     Ok(())
 }
+#[tauri::command]
+pub fn set_logo_url(app: AppHandle, logo_url: String) -> Result<(), String> {
+    let conn = migrate::connection(&app);
+    app_state_repo::update_app_state(&conn, "logo_url", &logo_url)
+        .map_err(|e| e.to_string())?;
+    Ok(())
+}
 
 #[tauri::command]
 pub fn get_kds_view_mode(app: AppHandle) -> Result<String, String> {
@@ -237,26 +244,23 @@ pub fn clear_all_data(app: AppHandle) -> Result<(), String> {
     let conn = migrate::connection(&app);
     log::info!("🗑️  Starting complete database clear...");
 
-    // Clear all tables
+    // Disable foreign key checks temporarily
+    conn.execute("PRAGMA foreign_keys = OFF", [])
+        .map_err(|e| e.to_string())?;
+
+    // Clear all tables (order doesn't matter now with FK disabled)
     let tables_to_clear = vec![
-        "products",
-        "product_groups",
-        "product_group_categories",
-        "product_tag_groups",
-        "product_tags",
-        "categories",
-        "tickets",
-        "kds_tickets",
-        "charges",
-        "charge_mappings",
-        "payment_methods",
-        "transaction_types",
-        "printers",
-        "locations",
-        "device_profiles",
         "cart_draft",
         "work_shift_draft",
-        "queue_tokens"
+        "charge_mappings",
+        "charges",
+        "product_tags",
+        "product_tag_groups",
+        "product_group_categories",
+        "product_groups",
+        "products",
+        "categories",
+        "device_profiles",
     ];
 
     for table in tables_to_clear {
@@ -265,6 +269,10 @@ pub fn clear_all_data(app: AppHandle) -> Result<(), String> {
             Err(e) => log::warn!("⚠️  Failed to clear {}: {}", table, e),
         }
     }
+
+    // Re-enable foreign key checks
+    conn.execute("PRAGMA foreign_keys = ON", [])
+        .map_err(|e| e.to_string())?;
 
     // Reset app_state
     conn.execute(

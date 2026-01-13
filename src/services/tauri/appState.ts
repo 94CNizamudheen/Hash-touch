@@ -72,4 +72,7 @@ export const appStateApi = {
   getConfiguredRoles(): Promise<DeviceRole[]> {
     return invoke("get_configured_roles");
   },
+  setLogoUrl(logoUrl: string): Promise<void> {
+    return invoke("set_logo_url", { logoUrl });
+  }
 };

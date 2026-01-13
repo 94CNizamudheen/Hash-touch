@@ -1,5 +1,3 @@
-
-
 import type { Printer } from "@services/local/printer.local.service"
 import { Card } from "@/ui/shadcn/components/ui/card"
 
@@ -19,11 +17,11 @@ export default function PrinterStats({ printers }: Props) {
   ]
 
   return (
-    <div className="grid grid-cols-3 gap-4">
+    <div className="grid grid-cols-3 gap-2 sm:gap-4">
       {stats.map((stat) => (
-        <Card key={stat.label} className="p-4 bg-secondary border-border">
-          <p className="text-sm text-muted-foreground">{stat.label}</p>
-          <p className={`text-3xl font-bold ${stat.color}`}>{stat.value}</p>
+        <Card key={stat.label} className="p-3 sm:p-4 bg-secondary border-border">
+          <p className="text-xs sm:text-sm text-muted-foreground">{stat.label}</p>
+          <p className={`text-xl sm:text-3xl font-bold ${stat.color}`}>{stat.value}</p>
         </Card>
       ))}
     </div>
