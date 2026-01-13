@@ -8,7 +8,7 @@ interface NotificationContainerProps {
 
 const NotificationContainer: React.FC<NotificationContainerProps> = ({ notifications, onRemove }) => {
   return (
-    <div className="fixed top-4 left-1/2 transform -translate-x-1/2 z-50 space-y-3 pointer-events-none">
+    <div className="fixed top-16 left-1/2 transform -translate-x-1/2 z-[100] flex flex-col gap-3 pointer-events-none">
       {notifications.map(notification => (
         <NotificationItem
           key={notification.id}

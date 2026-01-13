@@ -92,8 +92,8 @@ export default function Home({
   return (
     <div className="min-h-screen bg-background flex items-center justify-center p-6">
       <div className="max-w-3xl w-full space-y-6">
-        <div className="bg-card rounded-2xl shadow p-6">
-          <h1 className="text-2xl font-semibold text-foreground mb-2">Welcome to HashOne-Touch</h1>
+        <div className="bg-secondary rounded-2xl shadow p-6">
+          <h1 className="text-2xl font-semibold text-foreground mb-2">Choose Your Device Role</h1>
           <p className="text-sm text-muted-foreground mb-4">Select the device role for this installation.</p>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-6">
@@ -104,13 +104,13 @@ export default function Home({
                 <div key={r.key} className="relative">
                   <button
                     onClick={() => handleRoleSelect(r.key)}
-                    className={`w-full p-4 rounded-lg border hover:shadow-sm text-left transition ${
-                      selectedRole === r.key ? "border-primary bg-tag-selected" : "border-border bg-card"
+                    className={`w-full p-4 rounded-lg border  hover:shadow-sm text-left transition ${
+                      selectedRole === r.key ? "border-primary bg-primary text-background" : "border-border bg-secondary-foreground"
                     }`}
                   >
                     <div className="flex items-center justify-between">
                       <div>
-                        <div className="text-sm font-medium text-foreground">{r.label}</div>
+                        <div className="text-sm font-bold text-">{r.label}</div>
                         <div className="text-xs text-muted-foreground mt-1">{r.key}</div>
                       </div>
                       {isConfigured && (
@@ -137,23 +137,7 @@ export default function Home({
             })}
           </div>
 
-          {/* Info for POS device */}
-          {selectedRole === "POS" && (
-            <div className="mb-6 p-4 bg-success/10 rounded-lg border border-success/30">
-              <p className="text-sm text-success">
-                ✓ This device will run as the WebSocket server. Other devices (KDS, Queue) will connect to this device.
-              </p>
-            </div>
-          )}
 
-          {/* Info for KDS/Queue devices */}
-          {(selectedRole === "KDS" || selectedRole === "QUEUE") && (
-            <div className="mb-6 p-4 bg-primary/10 rounded-lg border border-primary/30">
-              <p className="text-sm text-primary">
-                ℹ️ After setup, go to Settings → Device Communication to connect to your POS device.
-              </p>
-            </div>
-          )}
 
           <button
             onClick={handleContinue}

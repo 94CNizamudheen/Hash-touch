@@ -74,7 +74,7 @@ export default function ProductGroupTag({
 
         {/* BOTTOM - Quantity Controls */}
         {isSelected && quantity > 0 && (
-          <div className="flex items-center justify-center gap-4 mt-3">
+          <div className="flex items-center justify-center gap-2 sm:gap-3 md:gap-4 mt-2 sm:mt-3">
             <button
               onClick={handleDecrement}
               disabled={quantity <= 0}

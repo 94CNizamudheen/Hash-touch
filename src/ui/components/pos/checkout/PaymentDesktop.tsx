@@ -425,7 +425,7 @@ export default function PaymentDesktop() {
         onClearAllPayments={onClearAllPayments}
       />
 
-      <div className="flex-1 p-6 overflow-hidden">
+      <div className="flex-1 p-6 overflow-hidden bg-secondary">
         <CenterPaymentContent
           total={total}
           balance={changeAmount}

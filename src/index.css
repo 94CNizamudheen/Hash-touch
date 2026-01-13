@@ -26,7 +26,7 @@
     --border: #e6e6eb;
     --input: #e6e6eb;
 
-    --primary: #005CE5;
+    --primary: #005CE6;
     --primary-foreground: #fafafa;
     --primary-hover: #4986e1;
 
@@ -569,4 +569,48 @@ textarea {
 
 .animate-marquee {
   animation: marquee 4s linear infinite;
+}
+
+/* Toast Notification Animations */
+@keyframes toast-enter {
+  0% {
+    opacity: 0;
+    transform: translateY(-100%) scale(0.95);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes toast-exit {
+  0% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-20px) scale(0.95);
+  }
+}
+
+@keyframes progress-shrink {
+  0% {
+    width: 100%;
+  }
+  100% {
+    width: 0%;
+  }
+}
+
+.animate-toast-enter {
+  animation: toast-enter 0.4s cubic-bezier(0.21, 1.02, 0.73, 1) forwards;
+}
+
+.animate-toast-exit {
+  animation: toast-exit 0.3s cubic-bezier(0.21, 1.02, 0.73, 1) forwards;
+}
+
+.animate-progress-shrink {
+  animation: progress-shrink linear forwards;
 }

@@ -46,6 +46,7 @@ const MenuSelectionSidebarMobile = ({ onClose }: MenuSelectionSidebarMobileProps
     setOrderMode,
     selectedLocationName,
     selectedOrderModeName
+
   } = useAppState();
   const { shift } = useWorkShift();
   const { checkBlocks } = useLogoutGuard();
@@ -232,12 +233,12 @@ const MenuSelectionSidebarMobile = ({ onClose }: MenuSelectionSidebarMobileProps
 
   // Show splash screen during logout
   if (isLoggingOut) {
-    return <SplashScreen type={1} />;
+    return <SplashScreen type={1} logoUrl={appState.logo_url} />;
   }
 
   // Show splash screen during sync
   if (isSyncing) {
-    return <SplashScreen type={4} syncStatus={syncStatus} />;
+    return <SplashScreen type={4} syncStatus={syncStatus} logoUrl={appState.logo_url}/>;
   }
 
   return (
@@ -344,7 +345,7 @@ const MenuSelectionSidebarMobile = ({ onClose }: MenuSelectionSidebarMobileProps
 
           <div className="flex flex-col gap-2">
             {MENUSELECTIONNAVIGATION.filter(
-              (item) => item.position === "Top" && !["Dark Mode", "Start Sync", "Language", "Direction"].includes(item.title)
+              (item) => item.position === "Top" && !["Dark Mode", "Start Sync", "Language", "Direction","Change Style"].includes(item.title)
             ).map((item) => (
               <div
                 key={item.id}

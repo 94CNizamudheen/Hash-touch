@@ -1,1 +1,0 @@
-ALTER TABLE `app_state` ADD `logo_url` text DEFAULT '';

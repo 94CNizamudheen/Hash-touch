@@ -1,5 +1,5 @@
 import { Button } from "@/ui/shadcn/components/ui/button";
-import { CircleDollarSign } from "lucide-react";
+import { CiDollar } from "react-icons/ci";
 import { useTranslation } from "react-i18next";
 import { useSetup } from "@/ui/context/SetupContext";
 
@@ -61,7 +61,7 @@ export default function CenterPaymentContent({
   };
 
   return (
-    <div className="flex flex-col h-full px-1">
+    <div className="flex flex-col h-full px-1 ">
       {/* Totals */}
       <div className="mb-3">
         <div className="flex justify-between items-baseline p-3 border-b pb-1">
@@ -91,7 +91,7 @@ export default function CenterPaymentContent({
 
         <div className="relative">
           <div className="absolute left-2 top-1/2 -translate-y-1/2 text-xl">
-            <CircleDollarSign />
+            <CiDollar size={32} />
           </div>
 
           <input
@@ -102,7 +102,7 @@ export default function CenterPaymentContent({
               const v = e.target.value;
               if (/^\d*\.?\d*$/.test(v)) {
                 setInputValue(v);
-              }
+              }             
             }}
             onBlur={() => {
               if (!inputValue) return;

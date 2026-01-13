@@ -19,7 +19,8 @@ CREATE TABLE `app_state` (
 	`ws_server_url` text DEFAULT '',
 	`created_at` integer DEFAULT CURRENT_TIMESTAMP,
 	`updated_at` integer DEFAULT CURRENT_TIMESTAMP,
-	`setup_code` text
+	`setup_code` text,
+	`logo_url` text
 );
 --> statement-breakpoint
 CREATE TABLE `cart_draft` (

@@ -114,7 +114,7 @@ export default function OrderSidebar({
               <span>
                 {t("Subtotal")} ({items.reduce((a, b) => a + b.quantity, 0)})
               </span>
-              <span>{currencyCode} {subtotal.toFixed(2)}</span>totatotal area
+              <span>{currencyCode} {subtotal.toFixed(2)}</span>
               
             </div>
 

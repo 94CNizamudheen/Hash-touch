@@ -22,7 +22,7 @@ pub fn get_app_state(conn: &Connection) -> anyhow::Result<AppState> {
                ws_server_mode,
                ws_server_url,
                setup_code,
-               logo_url,
+               logo_url
         FROM app_state
         WHERE id = 1
         "#,

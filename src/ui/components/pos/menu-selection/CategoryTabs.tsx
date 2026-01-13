@@ -59,10 +59,10 @@ export default function CategoryTabs({
                   onClick={() => setSelectedCategory(cat.value)}
                   className={`
                     rounded-lg md:rounded-xl p-1.5 md:p-2 cursor-pointer flex flex-row gap-2 items-center w- max-w-[200px] border transition-colors
-                    h-10 md:h-11 lg:h-12
+                    h-14
                     ${isActive
-                      ? "bg-primary text-primary-foreground border-primary shadow-md"
-                      : "bg-secondary text-foreground border-border hover:bg-muted active:bg-muted"
+                      ? "bg-primary font-semibold text-primary-foreground border-primary shadow-md"
+                      : "bg-secondary font-medium text-foreground border-border hover:bg-muted active:bg-muted"
                     }
                   `}
                 >

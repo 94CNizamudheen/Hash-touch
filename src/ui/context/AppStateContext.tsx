@@ -18,6 +18,7 @@ interface AppStateContextType {
   ) => Promise<void>;
   setTheme: (theme: string) => Promise<void>;
   setLanguage: (language: string) => Promise<void>;
+  logoUrl?: string;
 }
 
 const AppStateContext = createContext<AppStateContextType | null>(null);
@@ -117,6 +118,7 @@ export const AppStateProvider = ({ children }: { children: React.ReactNode }) =>
       setOrderMode,
       setTheme,
       setLanguage,
+      logoUrl: state?.logo_url ?? undefined,
     }),
     [state, loading, refresh, setOrderMode, setTheme, setLanguage]
   );
