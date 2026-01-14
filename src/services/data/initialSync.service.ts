@@ -318,6 +318,7 @@ export async function initialSync(
 
   console.log("📦 Payment methods received:", paymentMethodsResponse.length);
 
+  console.log('Payment metods response',paymentMethodsResponse)
   const dbPaymentMethods = paymentMethodsResponse.map((pm: any) => ({
     id: pm.id,
     code: pm.code ?? null,
@@ -338,6 +339,7 @@ export async function initialSync(
 
   // Sync transaction types
   const transactionTypesResponse = await commonDataService.getTransactionTypes(domain, token);
+  console.log("$$$$$$ transactionTypesResponse:", transactionTypesResponse);
 
   console.log("📦 Transaction types received:", transactionTypesResponse.length);
 

@@ -14,6 +14,7 @@ import { useTransactionTypes } from "@/ui/hooks/useTransactionTypes";
 import { buildTicketRequest } from "@/ui/utils/ticketBuilder";
 import { ticketService } from "@/services/data/ticket.service";
 import { ticketLocal } from "@/services/local/ticket.local.service";
+import { calculateSurcharge } from "@/services/local/payment-method.local.service";
 import { kdsTicketLocal } from "@/services/local/kds-ticket.local.service";
 import { queueTokenLocal } from "@/services/local/queue-token.local.service";
 import { websocketService } from "@/services/websocket/websocket.service";
@@ -24,6 +25,7 @@ import { printerService, type ReceiptData } from "@/services/local/printer.local
 import { useTranslation } from "react-i18next";
 import PaymentEntriesModal from "../PaymentEntriesModal";
 import type { TicketRequest } from "@/types/ticket";
+import SurchargeConfirmModal from "../SurchargeConfirmModal";
 
 export default function PaymentMobile() {
   const navigate = useNavigate();
@@ -39,6 +41,8 @@ export default function PaymentMobile() {
   const { charges, totalCharges } = useCharges(items, subtotal);
   const grandTotal = Math.round((subtotal + totalCharges) * 100) / 100;
 
+
+
   const [inputValue, setInputValue] = useState("");
   const [selectedMethod, setSelectedMethod] = useState("");
   const [showDrawer, setShowDrawer] = useState(false);
@@ -50,6 +54,17 @@ export default function PaymentMobile() {
   const [savedReceiptData, setSavedReceiptData] = useState<ReceiptData | null>(null);
   const [savedTicketRequest, setSavedTicketRequest] = useState<TicketRequest | null>(null);
 
+  const [pendingMethod, setPendingMethod] = useState<string | null>(null);
+  const [confirmedMethod, setConfirmedMethod] = useState("");
+  const [showSurchargeConfirm, setShowSurchargeConfirm] = useState(false);
+
+  // Surcharge calculation based on selected payment method
+  const selectedPaymentMethodData = paymentMethods.find(pm => pm.name === confirmedMethod);
+
+  const surchargeInfo = calculateSurcharge(grandTotal, selectedPaymentMethodData?.processor);
+  const effectiveTotal = surchargeInfo.adjustedTotal;
+
+
   useEffect(() => {
     transactionTypeLocal.getAllTransactionTypes();
   }, []);
@@ -57,24 +72,36 @@ export default function PaymentMobile() {
   useEffect(() => {
     if (paymentMethods.length > 0 && !selectedMethod) {
       setSelectedMethod(paymentMethods[0].name);
+      setConfirmedMethod(paymentMethods[0].name);
     }
+
   }, [paymentMethods, selectedMethod]);
 
-  // Redirect to POS if cart is empty (prevents back navigation to empty payment page)
-  // But NOT when showing success modal or drawer modal (payment flow completed)
+
   useEffect(() => {
-    if (isHydrated && items.length === 0 && !showSuccess && !showDrawer) {
+    if (!isHydrated) return;
+
+
+    if (showSuccess || showDrawer || loading) return;
+
+    // ✅ Redirect only when cart is empty AND no payment is happening
+    if (items.length === 0) {
       navigate("/pos", { replace: true });
     }
-  }, [isHydrated, items.length, showSuccess, showDrawer, navigate]);
+  }, [isHydrated, items.length, showSuccess, showDrawer, loading, navigate]);
+
 
   if (!isHydrated) return null;
 
   const totalPaid = Math.round(payments.reduce((sum, p) => sum + p.amount, 0) * 100) / 100;
-  const remainingBalance = Math.round((grandTotal - totalPaid) * 100) / 100;
+  const remainingBalance = Math.round((effectiveTotal - totalPaid) * 100) / 100;
   const tendered = parseFloat(inputValue) || 0;
 
-  const isPaymentReady = !isNaN(tendered) && tendered > 0;
+  const isPaymentReady =
+    !showSurchargeConfirm &&
+    !isNaN(tendered) &&
+    tendered > 0;
+
   const isPaymentsClickable = payments.length > 0;
 
   // Generate quick amounts
@@ -92,6 +119,9 @@ export default function PaymentMobile() {
   };
 
   const onAddPayment = async (paymentMethodName?: string, amountOverride?: number) => {
+    if (showSurchargeConfirm) {
+      return;
+    }
     const paymentAmount = amountOverride !== undefined ? amountOverride : tendered;
 
     if (!paymentAmount || paymentAmount <= 0) {
@@ -99,7 +129,8 @@ export default function PaymentMobile() {
       return;
     }
 
-    const methodToUse = paymentMethodName || selectedMethod;
+    const methodToUse = paymentMethodName || confirmedMethod;
+
     const selectedPaymentMethod = paymentMethods.find((pm) => pm.name === methodToUse);
 
     if (!selectedPaymentMethod) {
@@ -133,8 +164,13 @@ export default function PaymentMobile() {
     setPayments(updatedPayments);
     setInputValue("");
 
+    // Calculate surcharge for the payment method being used
+    const paymentMethodProcessor = selectedPaymentMethod.processor;
+    const paymentSurcharge = calculateSurcharge(grandTotal, paymentMethodProcessor);
+    const totalWithSurcharge = paymentSurcharge.adjustedTotal;
+
     const newTotalPaid = Math.round(updatedPayments.reduce((sum, p) => sum + p.amount, 0) * 100) / 100;
-    const newRemainingBalance = Math.round((grandTotal - newTotalPaid) * 100) / 100;
+    const newRemainingBalance = Math.round((totalWithSurcharge - newTotalPaid) * 100) / 100;
 
     if (newRemainingBalance <= 0.01) {
       showNotification.success(`${methodToUse}: ${currencySymbol}${paymentAmount.toFixed(2)} - ${t("Completing order")}...`);
@@ -178,11 +214,16 @@ export default function PaymentMobile() {
       const paymentMethodName = uniqueMethods.length === 1 ? uniqueMethods[0] : "SPLIT";
       const paymentMethodId = paymentsToProcess[0]?.paymentMethodId || "";
 
+      // Calculate surcharge based on the primary payment method
+      const primaryPaymentMethod = paymentMethods.find(pm => pm.id === paymentMethodId);
+      const orderSurcharge = calculateSurcharge(grandTotal, primaryPaymentMethod?.processor);
+      const finalTotal = orderSurcharge.adjustedTotal;
+
       const ticketRequest = buildTicketRequest({
         items,
         charges,
         subtotal,
-        total: grandTotal,
+        total: finalTotal,
         paymentMethod: paymentMethodName,
         paymentMethodId,
         tenderedAmount: totalTendered,
@@ -221,7 +262,7 @@ export default function PaymentMobile() {
           orderModeName: appState.selected_order_mode_name,
           status: "IN_PROGRESS",
           items: JSON.stringify(items.map((item) => ({ id: item.id, name: item.name, quantity: item.quantity, price: item.price, notes: item.notes || "", modifiers: item.modifiers || [], completed: false }))),
-          totalAmount: Math.round(grandTotal * 100),
+          totalAmount: Math.round(finalTotal * 100),
           tokenNumber: queueNumber,
           createdAt,
           updatedAt: createdAt,
@@ -253,7 +294,7 @@ export default function PaymentMobile() {
           order_mode: appState.selected_order_mode_name,
           location_id: appState.selected_location_id,
           location: appState.selected_location_name,
-          total_amount: Math.round(grandTotal * 100),
+          total_amount: Math.round(finalTotal * 100),
           token_number: queueNumber,
           items: items.map((item) => ({ id: item.id, name: item.name, quantity: item.quantity, price: item.price, notes: item.notes || "", modifiers: item.modifiers || [], completed: false })),
           created_at: createdAt,
@@ -263,6 +304,19 @@ export default function PaymentMobile() {
       }
 
       const hasCashPayment = paymentsToProcess.some((p) => p.paymentMethodName.toLowerCase().includes("cash"));
+
+      // Include surcharge in receipt charges if applicable
+      const receiptCharges = charges.filter((c) => c.applied).map((charge) => ({
+        name: charge.name,
+        amount: charge.amount,
+      }));
+
+      if (orderSurcharge.hasSurcharge) {
+        receiptCharges.push({
+          name: orderSurcharge.surchargeAmount > 0 ? "Payment Surcharge" : "Payment Discount",
+          amount: orderSurcharge.surchargeAmount,
+        });
+      }
 
       // Save receipt data BEFORE clearing the cart
       const receiptDataToSave: ReceiptData = {
@@ -276,11 +330,8 @@ export default function PaymentMobile() {
           total: item.price * item.quantity,
         })),
         subtotal,
-        charges: charges.filter((c) => c.applied).map((charge) => ({
-          name: charge.name,
-          amount: charge.amount,
-        })),
-        total: grandTotal,
+        charges: receiptCharges,
+        total: finalTotal,
         payment_method: paymentMethodName,
         tendered: totalTendered,
         change: Math.abs(finalRemainingBalance),
@@ -292,7 +343,7 @@ export default function PaymentMobile() {
         setShowDrawer(true);
       } else {
         const changeAmount = Math.abs(finalRemainingBalance);
-        setFinal({ total: grandTotal, balance: changeAmount });
+        setFinal({ total: finalTotal, balance: changeAmount });
         await clear();
         setPayments([]);
         setShowSuccess(true);
@@ -306,7 +357,7 @@ export default function PaymentMobile() {
 
   const onComplete = async () => {
     const finalBalance = Math.abs(remainingBalance);
-    setFinal({ total: grandTotal, balance: finalBalance });
+    setFinal({ total: effectiveTotal, balance: finalBalance });
     setShowDrawer(false);
     setShowSuccess(true);
     await clear();
@@ -351,6 +402,41 @@ export default function PaymentMobile() {
     }
   };
 
+  const handleMethodSelect = (method) => {
+    const surchargeCheck = calculateSurcharge(
+      grandTotal,
+      method.processor
+    );
+
+    if (surchargeCheck.hasSurcharge) {
+      setPendingMethod(method.name);
+      setShowSurchargeConfirm(true);
+      return;
+    }
+
+    setSelectedMethod(method.name);
+    setConfirmedMethod(method.name);
+  }
+  const confirmSurchargeAndApply = async () => {
+    if (!pendingMethod) return;
+
+    const method = paymentMethods.find(pm => pm.name === pendingMethod);
+    if (!method) return;
+    const surchargeCheck = calculateSurcharge(grandTotal, method.processor);
+    const adjustedTotal = surchargeCheck.adjustedTotal;
+
+    const alreadyPaid = payments.reduce((s, p) => s + p.amount, 0);
+    const amountToPay =
+      Math.round((adjustedTotal - alreadyPaid) * 100) / 100;
+
+    setConfirmedMethod(pendingMethod);
+    setSelectedMethod(pendingMethod);
+    setShowSurchargeConfirm(false);
+    setPendingMethod(null);
+
+    await onAddPayment(pendingMethod, amountToPay);
+  };
+
 
 
   return (
@@ -364,10 +450,11 @@ export default function PaymentMobile() {
               <motion.button
                 key={method.id}
                 whileTap={{ scale: 0.95 }}
-                onClick={() => setSelectedMethod(method.name)}
+                onClick={() => handleMethodSelect(method)}
+
                 className={`flex-shrink-0 px-4 py-2.5 rounded-xl text-sm font-medium transition-all ${isSelected
-                    ? "bg-primary text-primary-foreground shadow-md"
-                    : "bg-secondary text-foreground hover:bg-muted"
+                  ? "bg-primary text-primary-foreground shadow-md"
+                  : "bg-secondary text-foreground hover:bg-muted"
                   }`}
               >
                 {t(method.name)}
@@ -427,10 +514,10 @@ export default function PaymentMobile() {
               key={key}
               onClick={() => onKey(key)}
               className={`h-12 rounded-xl border border-border text-xl font-semibold transition-all active:scale-95 ${key === "C"
-                  ? "bg-destructive/10 text-destructive"
-                  : key === "."
-                    ? "bg-secondary text-foreground"
-                    : "bg-secondary text-foreground hover:bg-muted"
+                ? "bg-destructive/10 text-destructive"
+                : key === "."
+                  ? "bg-secondary text-foreground"
+                  : "bg-secondary text-foreground hover:bg-muted"
                 }`}
             >
               {key}
@@ -444,8 +531,8 @@ export default function PaymentMobile() {
         {/* Totals Section - More compact */}
         <motion.div
           className={`px-4 py-2.5 text-sm space-y-1 relative ${isPaymentsClickable
-              ? "cursor-pointer active:bg-muted/50"
-              : ""
+            ? "cursor-pointer active:bg-muted/50"
+            : ""
             }`}
           onClick={() => {
             if (isPaymentsClickable) setShowPaymentModal(true);
@@ -471,19 +558,28 @@ export default function PaymentMobile() {
             <span>{currencyCode} {subtotal.toFixed(2)}</span>
           </div>
 
-          {charges.filter((c) => c.applied).map((charge) => (
+          {charges.filter(c => c.applied).map(charge => (
             <div key={charge.id} className="flex justify-between text-muted-foreground text-xs">
               <span>{charge.name}</span>
               <span>+{currencyCode} {charge.amount.toFixed(2)}</span>
             </div>
           ))}
 
+          {/* ✅ NEW: surcharge line */}
+          {surchargeInfo.hasSurcharge && (
+            <div className="flex justify-between text-warning text-xs">
+              <span>{t("Payment Surcharge")}</span>
+              <span>+{currencyCode} {surchargeInfo.surchargeAmount.toFixed(2)}</span>
+            </div>
+          )}
+
           <hr className="border-border my-1" />
 
           <div className="flex justify-between font-semibold">
-            <span>{t("Grand Total")}</span>
-            <span>{currencyCode} {grandTotal.toFixed(2)}</span>
+            <span>{t("Total to Pay")}</span>
+            <span>{currencyCode} {effectiveTotal.toFixed(2)}</span>
           </div>
+
 
           {totalPaid > 0 && (
             <>
@@ -502,11 +598,14 @@ export default function PaymentMobile() {
         {/* Action Buttons - Pay (70%) and Home (30%) */}
         <div className="px-4 pb-4 flex gap-2">
           <button
-            onClick={() => onAddPayment()}
+            onClick={() => {
+              if (showSurchargeConfirm) return;
+              onAddPayment();
+            }}
             disabled={!isPaymentReady || loading}
             className={`flex-[6] h-14 rounded-xl font-semibold text-base transition-all active:scale-[0.98] flex items-center justify-center gap-2 ${isPaymentReady && !loading
-                ? "bg-primary text-primary-foreground shadow-lg"
-                : "bg-sidebar text-muted-foreground"
+              ? "bg-primary text-primary-foreground shadow-lg"
+              : "bg-sidebar text-muted-foreground"
               }`}
           >
             {loading ? (
@@ -556,6 +655,21 @@ export default function PaymentMobile() {
           grandTotal={grandTotal}
         />
       )}
+      {showSurchargeConfirm && pendingMethod && (
+        <SurchargeConfirmModal
+          surchargeAmount={calculateSurcharge(
+            grandTotal,
+            paymentMethods.find(pm => pm.name === pendingMethod)?.processor
+          ).surchargeAmount}
+          currencyCode={currencyCode}
+          onConfirm={confirmSurchargeAndApply}
+          onClose={() => {
+            setShowSurchargeConfirm(false);
+            setPendingMethod(null);
+          }}
+        />
+      )}
+
     </div>
   );
 }

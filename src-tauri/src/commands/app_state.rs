@@ -249,19 +249,24 @@ pub fn clear_all_data(app: AppHandle) -> Result<(), String> {
         .map_err(|e| e.to_string())?;
 
     // Clear all tables (order doesn't matter now with FK disabled)
-    let tables_to_clear = vec![
-        "cart_draft",
-        "work_shift_draft",
-        "charge_mappings",
-        "charges",
-        "product_tags",
-        "product_tag_groups",
-        "product_group_categories",
-        "product_groups",
-        "products",
-        "categories",
-        "device_profiles",
-    ];
+        let tables_to_clear = vec![
+            // deepest children first
+            "product_tag_group_mappings",
+            "product_group_categories",
+            "charge_mappings",
+            "product_tag_groups",
+            "product_tags",
+            "product_groups",
+            "charges",
+            "products",
+            "categories",
+            "cart_draft",
+            "work_shift_draft",
+            "payment_methods",
+            "transaction_types",
+            "device_profiles",
+            "setups",
+        ];
 
     for table in tables_to_clear {
         match conn.execute(&format!("DELETE FROM {}", table), []) {

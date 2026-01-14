@@ -32,7 +32,8 @@ import { isOnline } from "@/ui/utils/networkDetection";
 
 
 
-const MenuSelectionSidebar = ({
+const 
+MenuSelectionSidebar = ({
   onChangeStyle,
   style,
 
@@ -300,8 +301,8 @@ const MenuSelectionSidebar = ({
 
       <div
         className={cn(
-          "group flex flex-col justify-between h-full transition-all duration-300",
-          "w-36"
+          "group flex flex-col justify-between h-full transition-all  duration-300 ",
+          "w-16 lg:w-36 "
         )}
       >
         {/* ===== Top Navigation ===== */}
@@ -368,7 +369,12 @@ const MenuSelectionSidebar = ({
 
                       {/* LABEL */}
                       <p
-                        className="text-navigation font-normal text-sm truncate"
+                        className={cn(
+                          "text-navigation font-normal text-sm truncate transition-all duration-200",
+                          "opacity-0 w-0 overflow-hidden",
+                          "group-hover:opacity-100 group-hover:w-auto",
+                          "lg:opacity-100 lg:w-auto"
+                        )}
                       >
                         {item.title === "Dark Mode"
                           ? theme === "dark"
@@ -405,7 +411,8 @@ const MenuSelectionSidebar = ({
                       if (item.action) item.action(openModal);
                     }}
                     className={cn(
-                      "flex items-center gap-2 p-2 rounded-lg cursor-pointer justify-start",
+                      "flex items-center gap-2  p-2 rounded-lg cursor-pointer",
+                      "justify-center lg:justify-start",
                       item.title === "Location"
                         ? "bg-primary text-primary-foreground hover:bg-primary/90"
                         : "bg-secondary hover:bg-sidebar-hover"
@@ -422,7 +429,15 @@ const MenuSelectionSidebar = ({
                   >
                     <div className="flex-shrink-0">{item.icon}</div>
                     <p
-                      className="text-body font-medium text-sm truncate max-w-[120px]"
+                      className={cn(
+                        "text-body font-medium text-sm truncate transition-all duration-200 max-w-[120px]",
+                        "opacity-0 w-0 overflow-hidden",
+                        "group-hover:opacity-100 group-hover:w-auto",
+                        "lg:opacity-100 lg:w-auto",
+                        item.title === "Dine In"
+                          ? "text-center"
+                          : "text-left"
+                      )}
                     >
                       {item.title === "Location"
                         ? selectedLocationName
