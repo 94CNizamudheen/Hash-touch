@@ -41,6 +41,16 @@ export default function PaymentMethodsSidebar({
 
   // 🔹 Handle click on payment method
   const handleMethodClick = (method: any) => {
+
+     const isGiftCard =
+    method.code === "Purchase card" ||
+    method.code === "Redeem Card";
+
+  if (isGiftCard) {
+    onMethodSelect(method.name);
+    onPay(method.name); 
+    return;
+  }
     const surcharge = calculateSurcharge(
       remainingBalance,
       method.processor

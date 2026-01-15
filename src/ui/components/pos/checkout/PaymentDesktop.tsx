@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import DrawerOpenedModal from "../DrowerOpenedModal";
 
@@ -28,6 +28,13 @@ import { useNotification } from "@/ui/context/NotificationContext";
 import type { TicketRequest } from "@/types/ticket";
 
 
+import GiftCardOtpModal from "../gift/GiftCardOtpModal";
+
+import { sendGiftCardOtp, verifyOtpAndApplyGiftCard } from "@/services/Gift/utils/giftCard.utils";
+import GiftCardUserDetailsModal from "../gift/GiftCardUserDetailsModal";
+
+
+
 export default function PaymentDesktop() {
   const navigate = useNavigate();
   const { items, clear, isHydrated } = useCart();
@@ -50,6 +57,12 @@ export default function PaymentDesktop() {
   const [final, setFinal] = useState({ total: 0, balance: 0 });
   const { currencyCode } = useSetup();
   const [confirmedMethod, setConfirmedMethod] = useState<string>("");
+  const [showGiftCardModal, setShowGiftCardModal] = useState(false);
+  const [giftCardMethod, setGiftCardMethod] = useState<any>(null);
+  const [giftCardReferenceId, setGiftCardReferenceId] = useState<string | null>(null);
+
+  const [showUserDetailsModal, setShowUserDetailsModal] = useState(false);
+  const userDetailsResolverRef = useRef<((value: { firstName: string; lastName: string } | null) => void) | null>(null);
 
 
   // NEW: Multi-payment state
@@ -464,8 +477,69 @@ export default function PaymentDesktop() {
       showNotification.error("Failed to send email");
     }
   };
+  const handleGiftCardSendOtp = async (username: string) => {
+    if (!giftCardMethod) return;
 
+    try {
+      setLoading(true);
+      const { referenceId } = await sendGiftCardOtp({
+        username,
+        paymentMethod: giftCardMethod,
+      });
+      setGiftCardReferenceId(referenceId);
+      showNotification.success("OTP sent successfully");
+    } catch (e: any) {
+      showNotification.error(e.message);
+    } finally {
+      setLoading(false);
+    }
+  };
 
+  const handleGiftCardVerifyOtp = async ({ otp }: { otp: string }) => {
+    if (!giftCardMethod || !giftCardReferenceId) return;
+
+    try {
+      setLoading(true);
+
+      await verifyOtpAndApplyGiftCard({
+        otp,
+        referenceId: giftCardReferenceId,
+        paymentMethod: giftCardMethod,
+        amount: remainingBalance,
+        getUserNamesIfRequired: () =>
+          new Promise((resolve) => {
+            userDetailsResolverRef.current = resolve;
+            setShowUserDetailsModal(true);
+          }),
+      });
+
+      await onAddPayment(giftCardMethod.name, remainingBalance);
+      setShowGiftCardModal(false);
+      setGiftCardMethod(null);
+      setGiftCardReferenceId(null);
+
+      showNotification.success("Gift card applied successfully");
+    } catch (e: any) {
+      showNotification.error(e.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+  
+  const handleUserDetailsSubmit = (data: {
+    firstName: string;
+    lastName: string;
+  }) => {
+    setShowUserDetailsModal(false);
+    userDetailsResolverRef.current?.(data);
+    userDetailsResolverRef.current = null;
+  };
+
+  const handleUserDetailsCancel = () => {
+    setShowUserDetailsModal(false);
+    userDetailsResolverRef.current?.(null);
+    userDetailsResolverRef.current = null;
+  };
 
 
 
@@ -507,7 +581,22 @@ export default function PaymentDesktop() {
         onMethodSelect={handleMethodSelect}
         onCancel={() => navigate("/pos")}
         isPaymentReady={isPaymentReady}
-        onPay={onAddPayment}
+        onPay={(methodName) => {
+          const method = paymentMethods.find(pm => pm.name === methodName);
+
+          if (
+            method?.code === "Purchase card" ||
+            method?.code === "Redeem Card"
+          ) {
+            setGiftCardMethod(method);
+            setShowGiftCardModal(true);
+            return;
+          }
+
+          onAddPayment(methodName);
+        }}
+
+
         isProcessing={loading}
         remainingBalance={remainingBalance}
       />
@@ -528,8 +617,83 @@ export default function PaymentDesktop() {
         onNewOrder={() => navigate("/pos")}
         onSendEmail={handleSendEmail}
       />
+      <GiftCardOtpModal
+        open={showGiftCardModal}
+        loading={loading}
+        onClose={() => {
+          setShowGiftCardModal(false);
+          setGiftCardMethod(null);
+          setGiftCardReferenceId(null);
+        }}
+        onSendOtp={handleGiftCardSendOtp}
+        onVerifyOtp={handleGiftCardVerifyOtp}
+      />
+
+      <GiftCardUserDetailsModal
+        open={showUserDetailsModal}
+        onClose={handleUserDetailsCancel}
+        onSubmit={handleUserDetailsSubmit}
+      />
 
 
     </div>
   );
 }
+
+
+
+
+
+
+
+
+//  const handleGiftCardFlow = async ({
+//     username,
+//     otp,
+//   }: {
+//     username: string;
+//     otp: string;
+//   }) => {
+//     if (!giftCardMethod) return;
+
+//     try {
+//       setLoading(true);
+
+//       await processGiftCardFlow({
+//         paymentMethod: giftCardMethod,
+//         amount: remainingBalance,
+//         receiptNumber: "TEMP", // real ticket no comes later
+//         mode:
+//           giftCardMethod.code === "Purchase card"
+//             ? "purchase"
+//             : "redeem",
+
+//         // UI callbacks
+//         getUserName: async () => username,
+//         getOtp: async () => otp,
+//         getUserNamesIfRequired: async () => {
+//           // 🔹 ask first + last name ONLY if backend needs it
+//           return await new Promise((resolve) => {
+//             // replace this with your modal / dialog
+//             const firstName = prompt("Enter First Name");
+//             const lastName = prompt("Enter Last Name");
+
+//             if (!firstName || !lastName) return resolve(null);
+
+//             resolve({ firstName, lastName });
+//           });
+//         },
+//       });
+
+//       // ✅ Gift card succeeded → add payment
+//       await onAddPayment(giftCardMethod.name, remainingBalance);
+
+//       setShowGiftCardModal(false);
+//       setGiftCardMethod(null);
+//       setGiftCardUsername("");
+//     } catch (e: any) {
+//       showNotification.error(e.message || "Gift card failed");
+//     } finally {
+//       setLoading(false);
+//     }
+//   };

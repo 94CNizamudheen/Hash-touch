@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Loader2, ChevronUp } from "lucide-react";
 import { MdAddShoppingCart } from "react-icons/md";
 import { useNavigate } from "react-router-dom";
@@ -26,6 +26,9 @@ import { useTranslation } from "react-i18next";
 import PaymentEntriesModal from "../PaymentEntriesModal";
 import type { TicketRequest } from "@/types/ticket";
 import SurchargeConfirmModal from "../SurchargeConfirmModal";
+import GiftCardOtpModal from "../../gift/GiftCardOtpModal";
+import { sendGiftCardOtp, verifyOtpAndApplyGiftCard } from "@/services/Gift/utils/giftCard.utils";
+import GiftCardUserDetailsModal from "../../gift/GiftCardUserDetailsModal";
 
 export default function PaymentMobile() {
   const navigate = useNavigate();
@@ -57,6 +60,14 @@ export default function PaymentMobile() {
   const [pendingMethod, setPendingMethod] = useState<string | null>(null);
   const [confirmedMethod, setConfirmedMethod] = useState("");
   const [showSurchargeConfirm, setShowSurchargeConfirm] = useState(false);
+
+  const [showGiftCardModal, setShowGiftCardModal] = useState(false);
+  const [giftCardMethod, setGiftCardMethod] = useState<any>(null);
+  const [giftCardReferenceId, setGiftCardReferenceId] = useState<string | null>(null);
+
+  const [showUserDetailsModal, setShowUserDetailsModal] = useState(false);
+  const userDetailsResolverRef = useRef<((value: { firstName: string; lastName: string } | null) => void) | null>(null);
+
 
   // Surcharge calculation based on selected payment method
   const selectedPaymentMethodData = paymentMethods.find(pm => pm.name === confirmedMethod);
@@ -135,6 +146,11 @@ export default function PaymentMobile() {
 
     if (!selectedPaymentMethod) {
       showNotification.error(`${t("Payment method not found")}: ${methodToUse}`);
+      return;
+    }
+    if (selectedPaymentMethod.code === "Purchase card" || selectedPaymentMethod.code === "Redeem Card") {
+      setGiftCardMethod(selectedPaymentMethod);
+      setShowGiftCardModal(true);
       return;
     }
 
@@ -401,6 +417,57 @@ export default function PaymentMobile() {
       showNotification.error("Failed to send email");
     }
   };
+  const handleGiftCardSendOtp = async (username: string) => {
+    if (!giftCardMethod) return;
+
+    try {
+      setLoading(true);
+
+      const { referenceId } = await sendGiftCardOtp({
+        username,
+        paymentMethod: giftCardMethod,
+      });
+
+      setGiftCardReferenceId(referenceId);
+      showNotification.success(t("OTP sent successfully"));
+    } catch (e: any) {
+      showNotification.error(e.message || t("Failed to send OTP"));
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleGiftCardVerifyOtp = async ({ otp }: { otp: string }) => {
+    if (!giftCardMethod || !giftCardReferenceId) return;
+
+    try {
+      setLoading(true);
+
+      await verifyOtpAndApplyGiftCard({
+        otp,
+        referenceId: giftCardReferenceId,
+        paymentMethod: giftCardMethod,
+        amount: remainingBalance,
+        getUserNamesIfRequired: () =>
+          new Promise((resolve) => {
+            userDetailsResolverRef.current = resolve;
+            setShowUserDetailsModal(true);
+          }),
+      });
+
+      await onAddPayment(giftCardMethod.name, remainingBalance);
+
+      setShowGiftCardModal(false);
+      setGiftCardMethod(null);
+      setGiftCardReferenceId(null);
+
+      showNotification.success(t("Gift card applied successfully"));
+    } catch (e: any) {
+      showNotification.error(e.message || t("Gift card failed"));
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleMethodSelect = (method) => {
     const surchargeCheck = calculateSurcharge(
@@ -417,6 +484,8 @@ export default function PaymentMobile() {
     setSelectedMethod(method.name);
     setConfirmedMethod(method.name);
   }
+
+
   const confirmSurchargeAndApply = async () => {
     if (!pendingMethod) return;
 
@@ -435,6 +504,21 @@ export default function PaymentMobile() {
     setPendingMethod(null);
 
     await onAddPayment(pendingMethod, amountToPay);
+  };
+
+  const handleUserDetailsSubmit = (data: {
+    firstName: string;
+    lastName: string;
+  }) => {
+    setShowUserDetailsModal(false);
+    userDetailsResolverRef.current?.(data);
+    userDetailsResolverRef.current = null;
+  };
+
+  const handleUserDetailsCancel = () => {
+    setShowUserDetailsModal(false);
+    userDetailsResolverRef.current?.(null);
+    userDetailsResolverRef.current = null;
   };
 
 
@@ -669,6 +753,23 @@ export default function PaymentMobile() {
           }}
         />
       )}
+      <GiftCardOtpModal
+        open={showGiftCardModal}
+        loading={loading}
+        onClose={() => {
+          setShowGiftCardModal(false);
+          setGiftCardMethod(null);
+          setGiftCardReferenceId(null);
+        }}
+        onSendOtp={handleGiftCardSendOtp}
+        onVerifyOtp={handleGiftCardVerifyOtp}
+      />
+      <GiftCardUserDetailsModal
+        open={showUserDetailsModal}
+        onClose={handleUserDetailsCancel}
+        onSubmit={handleUserDetailsSubmit}
+      />
+
 
     </div>
   );

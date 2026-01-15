@@ -14,7 +14,7 @@ interface ProcessorDataItem {
   defaultValue?: string;
 }
 
-interface ProcessorConfig {
+export interface ProcessorConfig {
   id: number;
   name: string;
   data: ProcessorDataItem[];

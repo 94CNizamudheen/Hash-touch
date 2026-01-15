@@ -294,6 +294,7 @@ pub fn run() {
         commands::queue_token::update_queue_token_status,
         
         commands::resync::clear_resync_data,
+        commands::gift_card::giftcard_get_token,
 
     ]);
 
@@ -398,7 +399,7 @@ pub fn run() {
         commands::charges::save_charge_mappings,
         commands::charges::get_charges,
         commands::charges::get_charge_mappings,
-        commands::charges::clear_charges_cache,
+        commands::charges::clear_charges_cache, 
 
         // Payment Methods
         commands::payment_method::save_payment_methods,
@@ -447,6 +448,7 @@ pub fn run() {
 
         commands::resync::clear_resync_data,
 
+        commands::gift_card::giftcard_get_token,
     ]);
 
     builder
