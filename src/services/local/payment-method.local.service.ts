@@ -1,5 +1,63 @@
 import { invoke } from "@tauri-apps/api/core";
 import type { DbPaymentMethod } from "@/types/payment_methods";
+import type { TerminalTransactionStatus } from "./terminal.local.service";
+import type { PaymentEntry } from "@/ui/components/pos/checkout/OrderSidebar";
+
+export function isTerminalApproved(status: TerminalTransactionStatus) {
+  const code = status.processor_response_code?.toUpperCase();
+  const resp = status.response?.toUpperCase();
+  const state = status.status?.toUpperCase();
+
+  return (
+    code === "APPR" ||
+    resp === "APPROVAL" ||
+    state === "PENDINGSETTLEMENT"
+  );
+}
+
+export function isTerminalFinal(status: TerminalTransactionStatus) {
+  const state = status.status?.toUpperCase();
+
+  return (
+    state === "PENDINGSETTLEMENT" ||
+    state === "DECLINED" ||
+    state === "FAILED" ||
+    state === "REJECTED"
+  );
+}
+
+export function buildUpdatedPayments(
+  payments: PaymentEntry[],
+  method: any,
+  amount: number
+): PaymentEntry[] {
+  const existingIndex = payments.findIndex(
+    (p) => p.paymentMethodId === method.id
+  );
+
+  if (existingIndex >= 0) {
+    return payments.map((p, idx) =>
+      idx === existingIndex
+        ? {
+            ...p,
+            amount: p.amount + amount,
+            timestamp: new Date().toISOString(),
+          }
+        : p
+    );
+  }
+
+  return [
+    ...payments,
+    {
+      id: crypto.randomUUID(),
+      paymentMethodId: method.id,
+      paymentMethodName: method.name,
+      amount,
+      timestamp: new Date().toISOString(),
+    },
+  ];
+}
 
 // Types for processor configuration
 interface ProcessorDataItem {
@@ -21,7 +79,7 @@ export interface ProcessorConfig {
 }
 
 // Parse processor JSON string to array of ProcessorConfig
-function parseProcessor(processor?: string): ProcessorConfig[] {
+export function parseProcessor(processor?: string): ProcessorConfig[] {
   if (!processor) return [];
   try {
     return JSON.parse(processor) as ProcessorConfig[];

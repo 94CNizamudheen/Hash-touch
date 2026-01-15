@@ -21,6 +21,7 @@ pub mod kds_ticket;
 pub mod printer;
 pub mod resync;
 pub mod gift_card;
+pub mod terminal;
 #[cfg(desktop)]
 pub mod websocket;
 pub mod queue_token;

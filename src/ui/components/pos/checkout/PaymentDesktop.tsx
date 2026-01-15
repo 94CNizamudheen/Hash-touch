@@ -10,7 +10,7 @@ import { useTransactionTypes } from "@/ui/hooks/useTransactionTypes";
 import { buildTicketRequest } from "@/ui/utils/ticketBuilder";
 import { ticketService } from "@/services/data/ticket.service";
 import { ticketLocal } from "@/services/local/ticket.local.service";
-import { calculateSurcharge } from "@/services/local/payment-method.local.service";
+import { buildUpdatedPayments, calculateSurcharge, isTerminalApproved } from "@/services/local/payment-method.local.service";
 import { kdsTicketLocal } from "@/services/local/kds-ticket.local.service";
 import { queueTokenLocal } from "@/services/local/queue-token.local.service";
 import { printerService, type ReceiptData } from "@/services/local/printer.local.service";
@@ -32,6 +32,9 @@ import GiftCardOtpModal from "../gift/GiftCardOtpModal";
 
 import { sendGiftCardOtp, verifyOtpAndApplyGiftCard } from "@/services/Gift/utils/giftCard.utils";
 import GiftCardUserDetailsModal from "../gift/GiftCardUserDetailsModal";
+import { terminalService } from "@/services/local/terminal.local.service";
+import { getRbsPayConfig, pollTerminalTransaction } from "@/services/utils/rbsPayConfig";
+import TerminalProcessingModal from "./TerminalProcessingModal";
 
 
 
@@ -64,6 +67,14 @@ export default function PaymentDesktop() {
   const [showUserDetailsModal, setShowUserDetailsModal] = useState(false);
   const userDetailsResolverRef = useRef<((value: { firstName: string; lastName: string } | null) => void) | null>(null);
 
+  const [showTerminalModal, setShowTerminalModal] = useState(false);
+  const [activeTerminalTxId, setActiveTerminalTxId] = useState<string | null>(null);
+  const [terminalError, setTerminalError] = useState<string | null>(null);
+  const [isCancellingTerminal, setIsCancellingTerminal] = useState(false);
+
+
+
+
 
   // NEW: Multi-payment state
   const [payments, setPayments] = useState<PaymentEntry[]>([]);
@@ -90,6 +101,7 @@ export default function PaymentDesktop() {
     transactionTypeLocal.getAllTransactionTypes();
   }, []);
 
+
   /* Default payment method */
   useEffect(() => {
     if (paymentMethods.length > 0 && !selectedMethod) {
@@ -109,7 +121,6 @@ export default function PaymentDesktop() {
 
   const isPaymentReady = !isNaN(tendered) && tendered > 0;
 
-
   /* Keypad handler */
   const onKey = (k: string) => {
     if (k === "C") return setInputValue("");
@@ -118,12 +129,13 @@ export default function PaymentDesktop() {
     setInputValue((p) => (p === "" || p === "0" ? k : p + k));
   };
 
-  const onAddPayment = async (paymentMethodName?: string, amountOverride?: number) => {
-    // Use amountOverride if provided (for direct payment), otherwise use tendered from input
+  const onAddPayment = async (
+    paymentMethodName?: string,
+    amountOverride?: number
+  ) => {
+    const paymentAmount =
+      amountOverride !== undefined ? amountOverride : tendered;
 
-    const paymentAmount = amountOverride !== undefined ? amountOverride : tendered;
-
-    // Allow payment if amount is valid and > 0
     if (!paymentAmount || paymentAmount <= 0) {
       showNotification.error("Please enter a valid payment amount");
       return;
@@ -139,62 +151,159 @@ export default function PaymentDesktop() {
       return;
     }
 
-    // Check if payment method already exists - merge amounts instead of duplicating
-    const existingPaymentIndex = payments.findIndex(
-      (p) => p.paymentMethodId === selectedPaymentMethod.id
-    );
+    if (selectedPaymentMethod.code === "RBS_PAY") {
+      const config = getRbsPayConfig(selectedPaymentMethod.processor);
+      if (!config) {
+        showNotification.error("RBSPay configuration missing");
+        return;
+      }
 
-    let updatedPayments: PaymentEntry[];
+      setShowTerminalModal(true);
+      setLoading(true);
 
-    if (existingPaymentIndex >= 0) {
-      // Update existing payment - add amount to it
-      updatedPayments = payments.map((p, index) =>
-        index === existingPaymentIndex
-          ? {
-            ...p,
-            amount: p.amount + paymentAmount,
-            timestamp: new Date().toISOString(), // Update timestamp
-          }
-          : p
-      );
-    } else {
-      // Add new payment entry
-      const newPayment: PaymentEntry = {
-        id: crypto.randomUUID(),
-        paymentMethodId: selectedPaymentMethod.id,
-        paymentMethodName: selectedPaymentMethod.name,
-        amount: paymentAmount,
-        timestamp: new Date().toISOString(),
-      };
-      updatedPayments = [...payments, newPayment];
+      try {
+        // 1️⃣ Initiate terminal
+        const { transaction_id } = await terminalService.initiate({
+          config,
+          amount: paymentAmount,
+          currency: currencyCode,
+          payment_method: "card",
+          invoice_number: `POS-${Date.now()}`,
+          description: "POS Terminal Payment",
+          tax_amount: 0,
+          tip_amount: 0,
+          triggered_by: "pos_system",
+        });
+
+        setActiveTerminalTxId(transaction_id);
+
+        // 2️⃣ Poll terminal status
+        showNotification.info("Polling terminal for payment status...");
+        const status = await pollTerminalTransaction({
+          config,
+          transactionId: transaction_id,
+          onStatusUpdate: (currentStatus) => {
+            // Update modal message in real-time
+            const statusText = `${currentStatus.status || 'Processing'}${currentStatus.response ? ` • ${currentStatus.response}` : ''
+              }`;
+            setTerminalError(statusText);
+          },
+        });
+
+        console.log("Terminal final status:", status);
+
+        if (!isTerminalApproved(status)) {
+          const errorMessage = `Payment ${status.status}: ${status.response || status.processor_response_code || 'Unknown error'
+            }`;
+          setTerminalError(errorMessage);
+          showNotification.error(errorMessage);
+          return; // ← IMPORTANT: Exit without closing modal yet
+        }
+
+        // Clear error message on success
+        setTerminalError(null);
+
+        // 3️⃣ Add payment
+        const updatedPayments = buildUpdatedPayments(
+          payments,
+          selectedPaymentMethod,
+          paymentAmount
+        );
+
+        setPayments(updatedPayments);
+        setInputValue("");
+        setTerminalError(null);
+
+        const totalPaid = updatedPayments.reduce((s, p) => s + p.amount, 0);
+        const remaining = Math.round((effectiveTotal - totalPaid) * 100) / 100;
+
+        showNotification.success("Terminal payment approved");
+
+        // 4️⃣ Close modal AFTER successful approval
+        setShowTerminalModal(false);
+        setActiveTerminalTxId(null);
+
+        if (remaining <= 0.01) {
+          await processOrderCompletion(updatedPayments, remaining);
+        }
+      } catch (err: any) {
+        console.error("Terminal error:", err);
+        setTerminalError(err.message || "Terminal payment failed");
+        setShowTerminalModal(false);
+        showNotification.error(err.message || "Terminal payment failed");
+      } finally {
+        setLoading(false);
+      }
+
+      return;
     }
 
+    /* ------------------------------------------------------------------ */
+    /*                  🟩 NORMAL PAYMENT FLOW (UNCHANGED)                */
+    /* ------------------------------------------------------------------ */
+
+    const updatedPayments = buildUpdatedPayments(
+      payments,
+      selectedPaymentMethod,
+      paymentAmount
+    );
+
     setPayments(updatedPayments);
-    setInputValue(""); // Clear input after adding payment
+    setInputValue("");
 
-
-    const newTotalPaid = Math.round(
+    const totalPaid = Math.round(
       updatedPayments.reduce((sum, p) => sum + p.amount, 0) * 100
     ) / 100;
 
-    const newRemainingBalance = Math.round(
-      (effectiveTotal - newTotalPaid) * 100
+    const remainingBalance = Math.round(
+      (effectiveTotal - totalPaid) * 100
     ) / 100;
 
-    // If fully paid or overpaid, auto-complete the order (use small epsilon for floating point safety)
-    if (newRemainingBalance <= 0.01) {
+    if (remainingBalance <= 0.01) {
       showNotification.success(
-        `${methodToUse}: ${paymentAmount.toFixed(2)} added - Completing order...`
+        `${methodToUse}: ${paymentAmount.toFixed(2)} added — completing order`
       );
-      await processOrderCompletion(updatedPayments, newRemainingBalance);
+      await processOrderCompletion(updatedPayments, remainingBalance);
     } else {
-      const action = existingPaymentIndex >= 0 ? "updated" : "added";
       showNotification.success(
-        `${methodToUse}: ${paymentAmount.toFixed(2)} ${action}`
+        `${methodToUse}: ${paymentAmount.toFixed(2)} added`
       );
     }
-
   };
+
+  const handleCancelTerminal = async () => {
+    if (!activeTerminalTxId) {
+      setShowTerminalModal(false);
+      return;
+    }
+
+    try {
+      setIsCancellingTerminal(true);
+
+      const method = paymentMethods.find(pm => pm.code === "RBS_PAY");
+      if (!method) return;
+
+      const config = getRbsPayConfig(method.processor);
+      if (!config) return;
+
+      await terminalService.cancel(config, activeTerminalTxId);
+
+      showNotification.info("Terminal transaction cancelled");
+    } catch {
+      showNotification.error("Failed to cancel terminal transaction");
+    } finally {
+      setIsCancellingTerminal(false);
+      setActiveTerminalTxId(null);
+      setShowTerminalModal(false);
+    }
+  };
+
+  const handleRetryTerminal = () => {
+    setShowTerminalModal(false);
+    setActiveTerminalTxId(null);
+    setTerminalError(null);
+  };
+
 
   const handleMethodSelect = (methodName: string) => {
     const method = paymentMethods.find(pm => pm.name === methodName);
@@ -525,7 +634,7 @@ export default function PaymentDesktop() {
       setLoading(false);
     }
   };
-  
+
   const handleUserDetailsSubmit = (data: {
     firstName: string;
     lastName: string;
@@ -635,65 +744,17 @@ export default function PaymentDesktop() {
         onSubmit={handleUserDetailsSubmit}
       />
 
+      <TerminalProcessingModal
+        open={showTerminalModal}
+        message={
+          terminalError ??
+          "Please complete the payment on the terminal device"
+        }
+        isCancelling={isCancellingTerminal}
+        onCancel={handleCancelTerminal}
+        onRetry={handleRetryTerminal}
+      />
 
     </div>
   );
 }
-
-
-
-
-
-
-
-
-//  const handleGiftCardFlow = async ({
-//     username,
-//     otp,
-//   }: {
-//     username: string;
-//     otp: string;
-//   }) => {
-//     if (!giftCardMethod) return;
-
-//     try {
-//       setLoading(true);
-
-//       await processGiftCardFlow({
-//         paymentMethod: giftCardMethod,
-//         amount: remainingBalance,
-//         receiptNumber: "TEMP", // real ticket no comes later
-//         mode:
-//           giftCardMethod.code === "Purchase card"
-//             ? "purchase"
-//             : "redeem",
-
-//         // UI callbacks
-//         getUserName: async () => username,
-//         getOtp: async () => otp,
-//         getUserNamesIfRequired: async () => {
-//           // 🔹 ask first + last name ONLY if backend needs it
-//           return await new Promise((resolve) => {
-//             // replace this with your modal / dialog
-//             const firstName = prompt("Enter First Name");
-//             const lastName = prompt("Enter Last Name");
-
-//             if (!firstName || !lastName) return resolve(null);
-
-//             resolve({ firstName, lastName });
-//           });
-//         },
-//       });
-
-//       // ✅ Gift card succeeded → add payment
-//       await onAddPayment(giftCardMethod.name, remainingBalance);
-
-//       setShowGiftCardModal(false);
-//       setGiftCardMethod(null);
-//       setGiftCardUsername("");
-//     } catch (e: any) {
-//       showNotification.error(e.message || "Gift card failed");
-//     } finally {
-//       setLoading(false);
-//     }
-//   };

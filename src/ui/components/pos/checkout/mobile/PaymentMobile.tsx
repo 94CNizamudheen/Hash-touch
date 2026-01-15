@@ -29,6 +29,10 @@ import SurchargeConfirmModal from "../SurchargeConfirmModal";
 import GiftCardOtpModal from "../../gift/GiftCardOtpModal";
 import { sendGiftCardOtp, verifyOtpAndApplyGiftCard } from "@/services/Gift/utils/giftCard.utils";
 import GiftCardUserDetailsModal from "../../gift/GiftCardUserDetailsModal";
+import { terminalService } from "@/services/local/terminal.local.service";
+import { getRbsPayConfig, pollTerminalTransaction } from "@/services/utils/rbsPayConfig";
+import { isTerminalApproved } from "@/services/local/payment-method.local.service";
+import TerminalProcessingModal from "../TerminalProcessingModal";
 
 export default function PaymentMobile() {
   const navigate = useNavigate();
@@ -74,6 +78,11 @@ export default function PaymentMobile() {
 
   const surchargeInfo = calculateSurcharge(grandTotal, selectedPaymentMethodData?.processor);
   const effectiveTotal = surchargeInfo.adjustedTotal;
+
+  const [showTerminalModal, setShowTerminalModal] = useState(false);
+  const [activeTerminalTxId, setActiveTerminalTxId] = useState<string | null>(null);
+  const [terminalError, setTerminalError] = useState<string | null>(null);
+  const [isCancellingTerminal, setIsCancellingTerminal] = useState(false);
 
 
   useEffect(() => {
@@ -148,11 +157,126 @@ export default function PaymentMobile() {
       showNotification.error(`${t("Payment method not found")}: ${methodToUse}`);
       return;
     }
+
     if (selectedPaymentMethod.code === "Purchase card" || selectedPaymentMethod.code === "Redeem Card") {
       setGiftCardMethod(selectedPaymentMethod);
       setShowGiftCardModal(true);
       return;
     }
+
+    /* ------------------------------------------------------------------ */
+    /*                        🟦 RBS TERMINAL FLOW                          */
+    /* ------------------------------------------------------------------ */
+    if (selectedPaymentMethod.code === "RBS_PAY") {
+      const config = getRbsPayConfig(selectedPaymentMethod.processor);
+      if (!config) {
+        showNotification.error("RBSPay configuration missing");
+        return;
+      }
+
+      setShowTerminalModal(true);
+      setLoading(true);
+
+      try {
+        // 1️⃣ Initiate terminal
+        const { transaction_id } = await terminalService.initiate({
+          config,
+          amount: paymentAmount,
+          currency: currencyCode,
+          payment_method: "card",
+          invoice_number: `POS-${Date.now()}`,
+          description: "POS Terminal Payment",
+          tax_amount: 0,
+          tip_amount: 0,
+          triggered_by: "pos_system",
+        });
+
+        setActiveTerminalTxId(transaction_id);
+
+        // 2️⃣ Poll terminal status with real-time updates
+        showNotification.info("Polling terminal for payment status...");
+
+        const status = await pollTerminalTransaction({
+          config,
+          transactionId: transaction_id,
+          onStatusUpdate: (currentStatus) => {
+            // Update modal message in real-time
+            const statusText = `${currentStatus.status || 'Processing'}${currentStatus.response ? ` • ${currentStatus.response}` : ''
+              }`;
+            setTerminalError(statusText);
+          },
+        });
+
+        console.log("Terminal final status:", status);
+
+        if (!isTerminalApproved(status)) {
+          const errorMessage = `Payment ${status.status}: ${status.response || status.processor_response_code || 'Unknown error'
+            }`;
+          setTerminalError(errorMessage);
+          showNotification.error(errorMessage);
+          return;
+        }
+
+        // 3️⃣ Payment approved - add to payments list
+        setTerminalError(null);
+
+        const existingPaymentIndex = payments.findIndex(
+          (p) => p.paymentMethodId === selectedPaymentMethod.id
+        );
+
+        let updatedPayments: PaymentEntry[];
+
+        if (existingPaymentIndex >= 0) {
+          updatedPayments = payments.map((p, index) =>
+            index === existingPaymentIndex
+              ? { ...p, amount: p.amount + paymentAmount, timestamp: new Date().toISOString() }
+              : p
+          );
+        } else {
+          const newPayment: PaymentEntry = {
+            id: crypto.randomUUID(),
+            paymentMethodId: selectedPaymentMethod.id,
+            paymentMethodName: selectedPaymentMethod.name,
+            amount: paymentAmount,
+            timestamp: new Date().toISOString(),
+          };
+          updatedPayments = [...payments, newPayment];
+        }
+
+        setPayments(updatedPayments);
+        setInputValue("");
+        setShowTerminalModal(false);
+        setActiveTerminalTxId(null);
+
+        const paymentMethodProcessor = selectedPaymentMethod.processor;
+        const paymentSurcharge = calculateSurcharge(grandTotal, paymentMethodProcessor);
+        const totalWithSurcharge = paymentSurcharge.adjustedTotal;
+
+        const newTotalPaid = Math.round(updatedPayments.reduce((sum, p) => sum + p.amount, 0) * 100) / 100;
+        const newRemainingBalance = Math.round((totalWithSurcharge - newTotalPaid) * 100) / 100;
+
+        if (newRemainingBalance <= 0.01) {
+          showNotification.success(`${methodToUse}: ${currencySymbol}${paymentAmount.toFixed(2)} - ${t("Completing order")}...`);
+          await processOrderCompletion(updatedPayments, newRemainingBalance);
+        } else {
+          showNotification.success(`${methodToUse}: ${currencySymbol}${paymentAmount.toFixed(2)}`);
+        }
+
+        return;
+      } catch (err: any) {
+        console.error("Terminal error:", err);
+        setTerminalError(err.message || "Terminal payment failed");
+        showNotification.error(err.message || "Terminal payment failed");
+      } finally {
+        setLoading(false);
+      }
+
+      return;
+    }
+
+    /* ------------------------------------------------------------------ */
+    /*                  🟩 NORMAL PAYMENT FLOW (UNCHANGED)                */
+    /* ------------------------------------------------------------------ */
 
     const existingPaymentIndex = payments.findIndex(
       (p) => p.paymentMethodId === selectedPaymentMethod.id
@@ -180,7 +304,6 @@ export default function PaymentMobile() {
     setPayments(updatedPayments);
     setInputValue("");
 
-    // Calculate surcharge for the payment method being used
     const paymentMethodProcessor = selectedPaymentMethod.processor;
     const paymentSurcharge = calculateSurcharge(grandTotal, paymentMethodProcessor);
     const totalWithSurcharge = paymentSurcharge.adjustedTotal;
@@ -195,6 +318,42 @@ export default function PaymentMobile() {
       showNotification.success(`${methodToUse}: ${currencySymbol}${paymentAmount.toFixed(2)}`);
     }
   };
+
+  // Add these handler functions
+  const handleCancelTerminal = async () => {
+    if (!activeTerminalTxId) {
+      setShowTerminalModal(false);
+      return;
+    }
+
+    try {
+      setIsCancellingTerminal(true);
+
+      const method = paymentMethods.find(pm => pm.code === "RBS_PAY");
+      if (!method) return;
+
+      const config = getRbsPayConfig(method.processor);
+      if (!config) return;
+
+      await terminalService.cancel(config, activeTerminalTxId);
+
+      showNotification.info("Terminal transaction cancelled");
+    } catch {
+      showNotification.error("Failed to cancel terminal transaction");
+    } finally {
+      setIsCancellingTerminal(false);
+      setActiveTerminalTxId(null);
+      setShowTerminalModal(false);
+    }
+  };
+
+  const handleRetryTerminal = () => {
+    setShowTerminalModal(false);
+    setActiveTerminalTxId(null);
+    setTerminalError(null);
+  };
+
+
 
   const onRemovePayment = (paymentId: string) => {
     setPayments((prev) => prev.filter((p) => p.id !== paymentId));
@@ -768,6 +927,16 @@ export default function PaymentMobile() {
         open={showUserDetailsModal}
         onClose={handleUserDetailsCancel}
         onSubmit={handleUserDetailsSubmit}
+      />
+      <TerminalProcessingModal
+        open={showTerminalModal}
+        message={
+          terminalError ??
+          "Please complete the payment on the terminal device"
+        }
+        isCancelling={isCancellingTerminal}
+        onCancel={handleCancelTerminal}
+        onRetry={handleRetryTerminal}
       />
 
 

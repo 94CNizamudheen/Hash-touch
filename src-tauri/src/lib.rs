@@ -296,6 +296,10 @@ pub fn run() {
         commands::resync::clear_resync_data,
         commands::gift_card::giftcard_get_token,
 
+        //terminal 
+        commands::terminal::rbs_terminal_initiate,
+        commands::terminal::rbs_terminal_cancel,
+        commands::terminal::rbs_get_transaction,
     ]);
 
     // Mobile: excludes WebSocket commands
@@ -449,6 +453,11 @@ pub fn run() {
         commands::resync::clear_resync_data,
 
         commands::gift_card::giftcard_get_token,
+
+        //terminal 
+        commands::terminal::rbs_terminal_initiate,
+        commands::terminal::rbs_terminal_cancel,
+        conmands::terminal::rbs_get_transaction,
     ]);
 
     builder
