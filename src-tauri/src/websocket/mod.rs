@@ -10,7 +10,7 @@ use tokio::sync::{mpsc, RwLock};
 use tokio_tungstenite::{accept_async, tungstenite::Message};
 
 pub mod event_bus;
-#[cfg(desktop)]
+#[cfg(any(desktop, target_os = "android"))]
 pub mod ws_routes;
 /// ==============================
 /// Device Message (shared payload)

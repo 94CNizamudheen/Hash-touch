@@ -2,33 +2,33 @@ mod db;
 mod commands;
 mod printer;
 
-// WebSocket module - only used on desktop
-#[cfg(desktop)]
+// WebSocket module - used on desktop and Android (not iOS)
+#[cfg(any(desktop, target_os = "android"))]
 mod websocket;
 
-// Desktop-only imports
-#[cfg(desktop)]
+// WebSocket imports for desktop and Android
+#[cfg(any(desktop, target_os = "android"))]
 use std::sync::Arc;
-#[cfg(desktop)]
+#[cfg(any(desktop, target_os = "android"))]
 use tokio::sync::mpsc;
-#[cfg(desktop)]
+#[cfg(any(desktop, target_os = "android"))]
 use tauri::Manager;
-#[cfg(desktop)]
+#[cfg(any(desktop, target_os = "android"))]
 use websocket::WebSocketServer;
-#[cfg(desktop)]
+#[cfg(any(desktop, target_os = "android"))]
 use websocket::event_bus::EventBus;
-#[cfg(desktop)]
+#[cfg(any(desktop, target_os = "android"))]
 use websocket::ws_routes::register_ws_routes;
 
 
 
-#[cfg(desktop)]
+#[cfg(any(desktop, target_os = "android"))]
 #[derive(Clone)]
 pub struct WsState {
     pub server: Arc<WebSocketServer>,
 }
 
-#[cfg(desktop)]
+#[cfg(any(desktop, target_os = "android"))]
 #[derive(Clone)]
 pub struct EventBusState {
     pub bus: EventBus,
@@ -53,9 +53,9 @@ pub fn run() {
             db::init(app.handle());
 
             // ==============================
-            // DESKTOP ONLY: WebSocket + EventBus
+            // DESKTOP & ANDROID: WebSocket + EventBus
             // ==============================
-            #[cfg(desktop)]
+            #[cfg(any(desktop, target_os = "android"))]
             {
                 let (event_tx, event_rx) = mpsc::unbounded_channel();
 
@@ -86,7 +86,7 @@ pub fn run() {
                     event_bus_clone.start().await;
                 });
 
-                // Check device role - POS devices run as server (DESKTOP ONLY)
+                // Check device role - POS devices run as server
                 let conn = db::migrate::connection(app.handle());
                 let device_role = match db::models::app_state_repo::get_app_state(&conn) {
                     Ok(state) => state.device_role.clone(),
@@ -128,19 +128,19 @@ pub fn run() {
             }
 
             // ==============================
-            // MOBILE (iOS / Android)
+            // iOS ONLY: WebSocket server not supported
             // ==============================
-            #[cfg(mobile)]
+            #[cfg(target_os = "ios")]
             {
-                log::info!("📱 Mobile build detected - WebSocket server disabled, network printers enabled");
+                log::info!("📱 iOS build detected - WebSocket server not supported on iOS, running as client only");
             }
 
             log::info!("🚀 Setup complete, app is ready");
             Ok(())
         });
 
-    // Desktop: includes WebSocket commands
-    #[cfg(desktop)]
+    // Desktop & Android: includes WebSocket commands
+    #[cfg(any(desktop, target_os = "android"))]
     let builder = builder.invoke_handler(tauri::generate_handler![
         // Location
         commands::location::get_locations,
@@ -282,7 +282,7 @@ pub fn run() {
         commands::printer::print_raw,
         commands::printer::print_raw_to_all_active,
 
-        // WebSocket (desktop only)
+        // WebSocket (desktop & Android)
         commands::websocket::broadcast_to_kds,
         commands::websocket::broadcast_to_queue,
         commands::websocket::broadcast_to_pos,
@@ -302,8 +302,8 @@ pub fn run() {
         commands::terminal::rbs_get_transaction,
     ]);
 
-    // Mobile: excludes WebSocket commands
-    #[cfg(mobile)]
+    // iOS: excludes WebSocket commands (not supported on iOS)
+    #[cfg(target_os = "ios")]
     let builder = builder.invoke_handler(tauri::generate_handler![
         // Location
         commands::location::get_locations,

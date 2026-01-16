@@ -27,6 +27,7 @@ import { useAppState } from "@/ui/hooks/useAppState";
 import { deviceService } from "./services/local/device.local.service";
 import { setupLocal } from "@/services/local/setup.local.service";
 import { localEventBus, LocalEventTypes } from "@/services/eventbus/LocalEventBus";
+import { manageWebSocketServiceForRole } from "@/services/android/websocket.service";
 
 interface Location {
   id: string;
@@ -106,8 +107,13 @@ export default function App() {
         const logo = await setupLocal.getImageByMediaTag(state.setup_code, "logo_image");
         if (logo) {
           setLogoUrl(logo);
-          appStateApi.setLogoUrl(logo); 
+          appStateApi.setLogoUrl(logo);
         }
+      }
+
+      // Start WebSocket foreground service on Android if device is POS
+      if (state.device_role) {
+        manageWebSocketServiceForRole(state.device_role);
       }
 
       setBooting(false);
@@ -129,6 +135,9 @@ export default function App() {
 
       // Refresh context
       await refreshAppStateContext();
+
+      // Manage WebSocket foreground service on Android based on role
+      manageWebSocketServiceForRole(newRole);
 
       // Navigate to the new role's route (replace history to prevent back button going to previous role)
       const routeMap: Record<DeviceRole, string> = {
@@ -288,6 +297,9 @@ export default function App() {
       await appStateApi.setDeviceRole(role);
       dispatch(setDeviceRole(role));
       await refreshAppStateContext();
+
+      // Manage WebSocket foreground service on Android based on role
+      manageWebSocketServiceForRole(role);
 
       // Register device if not exists
       let device = await deviceService.getDevice();

@@ -22,7 +22,7 @@ pub mod printer;
 pub mod resync;
 pub mod gift_card;
 pub mod terminal;
-#[cfg(desktop)]
+#[cfg(any(desktop, target_os = "android"))]
 pub mod websocket;
 pub mod queue_token;
 pub mod setup;
