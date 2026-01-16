@@ -412,6 +412,7 @@ export default function PaymentMobile() {
         transactionTypes,
         queueNumber,
         currencyCode,
+        surchargeAmount: orderSurcharge.surchargeAmount,
       });
       setSavedTicketRequest(ticketRequest);
 
@@ -553,7 +554,11 @@ export default function PaymentMobile() {
   };
 
 
-  const handleSendEmail = async (email: string) => {
+
+  const handleSendReceipt = async (payload: {
+    email?: string;
+    phone?: string;
+  }) => {
     if (
       !savedTicketRequest ||
       !appState?.tenant_domain ||
@@ -564,18 +569,19 @@ export default function PaymentMobile() {
     }
 
     try {
-      await ticketService.sendEmail(
+      await ticketService.sendReceipt(
         appState.tenant_domain,
         appState.access_token,
-        email,
+        payload,
         [savedTicketRequest]
       );
 
       showNotification.success("Receipt sent successfully");
     } catch {
-      showNotification.error("Failed to send email");
+      showNotification.error("Failed to send receipt");
     }
   };
+
   const handleGiftCardSendOtp = async (username: string) => {
     if (!giftCardMethod) return;
 
@@ -878,14 +884,14 @@ export default function PaymentMobile() {
         <DrawerOpenedModal isOpen loading={loading} onCompleteOrder={onComplete} />
       )}
 
-      <PaymentSuccessModal
-        isOpen={showSuccess}
-        total={final.total}
-        balance={final.balance}
-        onPrintReceipt={handlePrintReceipt}
-        onNewOrder={() => navigate("/pos")}
-        onSendEmail={handleSendEmail}
-      />
+       <PaymentSuccessModal
+          isOpen={showSuccess}
+          total={final.total}
+          balance={final.balance}
+          onPrintReceipt={handlePrintReceipt}
+          onNewOrder={() => navigate("/pos")}
+          onSendReceipt={handleSendReceipt}
+        />
 
       {showPaymentModal && (
         <PaymentEntriesModal

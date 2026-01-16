@@ -279,8 +279,8 @@ pub fn run() {
         commands::printer::delete_printer,
         commands::printer::set_printer_active,
         commands::printer::test_printer,
-        commands::printer::print_receipt,
-        commands::printer::print_receipt_to_all_active,
+        commands::printer::print_raw,
+        commands::printer::print_raw_to_all_active,
 
         // WebSocket (desktop only)
         commands::websocket::broadcast_to_kds,
@@ -442,8 +442,8 @@ pub fn run() {
         commands::printer::delete_printer,
         commands::printer::set_printer_active,
         commands::printer::test_printer,
-        commands::printer::print_receipt,
-        commands::printer::print_receipt_to_all_active,
+        commands::printer::print_raw,
+        commands::printer::print_raw_to_all_active,
 
         // Queue token
         commands::queue_token::save_queue_token,
@@ -457,7 +457,7 @@ pub fn run() {
         //terminal 
         commands::terminal::rbs_terminal_initiate,
         commands::terminal::rbs_terminal_cancel,
-        conmands::terminal::rbs_get_transaction,
+        commands::terminal::rbs_get_transaction,
     ]);
 
     builder

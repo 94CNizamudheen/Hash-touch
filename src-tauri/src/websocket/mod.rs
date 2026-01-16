@@ -10,7 +10,6 @@ use tokio::sync::{mpsc, RwLock};
 use tokio_tungstenite::{accept_async, tungstenite::Message};
 
 pub mod event_bus;
-pub mod printer;
 #[cfg(desktop)]
 pub mod ws_routes;
 /// ==============================

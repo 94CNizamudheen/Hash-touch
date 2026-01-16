@@ -160,20 +160,21 @@ export const ticketService = {
     return post(domain, "sync-tickets", token, tickets);
   },
 
-  async sendEmail(
-    domain: string,
-    token: string,
-    email: string,
-    tickets: TicketRequest[]
-  ): Promise<{ success: boolean; message?: string }> {
-    return postWithQuery(
-      domain,
-      "send-receipts",
-      token,
-      { email },
-      tickets
-    );
-  }
+async sendReceipt(
+  domain: string,
+  token: string,
+  query: { email?: string; phone?: string },
+  tickets: TicketRequest[]
+): Promise<{ success: boolean; message?: string }> {
+  return postWithQuery(
+    domain,
+    "send-receipts",
+    token,
+    query,
+    tickets
+  );
+}
+
 
 
 };

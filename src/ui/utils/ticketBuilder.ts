@@ -3,7 +3,6 @@ import type { CalculatedCharge } from "@/ui/hooks/useCharges";
 import type { TicketRequest, Order, Payment, Transaction } from "@/types/ticket";
 import type { DbTransactionType } from "@/types/transaction-type";
 
-
 interface BuildTicketParams {
   items: CartItem[];
   charges: CalculatedCharge[];
@@ -22,19 +21,14 @@ interface BuildTicketParams {
   transactionTypes: DbTransactionType[];
   queueNumber: number;
   currencyCode: string;
+  surchargeAmount?: number; // ✅ NEW: Add surcharge parameter
 }
 
 function getCurrentDateTime() {
   const now = new Date();
-
-  // Get UTC date in YYYY-MM-DD format
   const date = now.toISOString().split("T")[0];
-
-  // Get UTC time components from ISO string
   const isoString = now.toISOString();
-  const timePart = isoString.split("T")[1].split(".")[0]; // HH:MM:SS
-
-  // Format: "YYYY-MM-DD HH:MM:SS+00" (UTC)
+  const timePart = isoString.split("T")[1].split(".")[0];
   const timestamp = `${date} ${timePart}+00`;
 
   return {
@@ -45,12 +39,10 @@ function getCurrentDateTime() {
 }
 
 function generateTicketNumber(): number {
-  // Generate a unique ticket number based on timestamp
   return parseInt(Date.now().toString().slice(-8));
 }
 
 function generateInvoiceNumber(): string {
-  // Generate invoice number with prefix
   const timestamp = Date.now();
   return `INV-${timestamp}`;
 }
@@ -74,23 +66,21 @@ export function buildTicketRequest(params: BuildTicketParams): TicketRequest {
     transactionTypes,
     queueNumber,
     currencyCode,
+    surchargeAmount = 0, 
   } = params;
 
   const { date, timestamp } = getCurrentDateTime();
   const ticketNumber = generateTicketNumber();
   const invoiceNumber = generateInvoiceNumber();
 
-  // Calculate total tax from charges
   const totalTax = charges
     .filter((c) => c.is_tax)
     .reduce((sum, c) => sum + c.amount, 0);
 
-  // Calculate total charges (non-tax)
   const totalCharges = charges
     .filter((c) => !c.is_tax)
     .reduce((sum, c) => sum + c.amount, 0);
 
-  // Build tax detail object - Backend expects: {"VAT": 7} (percentage as value)
   const taxDetail: Record<string, number> = {};
   charges
     .filter((c) => c.is_tax)
@@ -98,7 +88,6 @@ export function buildTicketRequest(params: BuildTicketParams): TicketRequest {
       taxDetail[charge.name] = charge.percentage;
     });
 
-  // Build charge details object - Backend expects: {"service_charge": 1.5} (amount as value)
   const chargeDetails: Record<string, number> = {};
   charges
     .filter((c) => !c.is_tax)
@@ -106,7 +95,6 @@ export function buildTicketRequest(params: BuildTicketParams): TicketRequest {
       chargeDetails[charge.name] = charge.amount;
     });
 
-  // Build orders array from cart items
   const orders: Order[] = items.map((item, index) => ({
     location_id: locationId,
     product_name: item.name,
@@ -141,16 +129,16 @@ export function buildTicketRequest(params: BuildTicketParams): TicketRequest {
     order_time: timestamp,
   }));
 
-  // Build payment object
+  // ✅ UPDATED: Add surcharge as tip_amount
   const payments: Payment[] = [
     {
       payment_type_id: paymentMethodId,
       payment_type: paymentMethod,
       payment_amount: total.toFixed(2),
-      tip_amount: "0.00",
+      tip_amount: surchargeAmount.toFixed(2), // ✅ Changed from "0.00" to surcharge
       tendered_amount: tenderedAmount.toFixed(2),
       net_amount: total.toFixed(2),
-      currency: currencyCode|| "USD",
+      currency: currencyCode || "USD",
       currency_exchange_rate: "1.00",
       tags: {},
       terminal: "POS",
@@ -162,10 +150,8 @@ export function buildTicketRequest(params: BuildTicketParams): TicketRequest {
     },
   ];
 
-  // Build transactions array
   const transactions: Transaction[] = [];
 
-  // 1. SALE transaction - subtotal amount
   transactions.push({
     transaction_type_name: "SALE",
     amount: subtotal.toFixed(2),
@@ -173,7 +159,6 @@ export function buildTicketRequest(params: BuildTicketParams): TicketRequest {
     transaction_type_id: saleTransactionTypeId,
   });
 
-  // 2. PAYMENT transaction - total amount
   transactions.push({
     transaction_type_name: "PAYMENT",
     amount: total.toFixed(2),
@@ -181,7 +166,6 @@ export function buildTicketRequest(params: BuildTicketParams): TicketRequest {
     transaction_type_id: paymentTransactionTypeId,
   });
 
-  // 3. Charge transactions (TAX, etc.) - group by transaction_type_id and sum amounts
   const chargesByTransactionType = charges
     .filter((charge) => charge.applied && charge.transaction_type_id)
     .reduce((acc, charge) => {
@@ -196,7 +180,6 @@ export function buildTicketRequest(params: BuildTicketParams): TicketRequest {
       return acc;
     }, {} as Record<string, { transaction_type_id: string; amount: number }>);
 
-  // Create transactions from grouped charges
   Object.values(chargesByTransactionType).forEach(({ transaction_type_id, amount }) => {
     const transactionType = transactionTypes.find((tt) => tt.id === transaction_type_id);
 
@@ -208,7 +191,6 @@ export function buildTicketRequest(params: BuildTicketParams): TicketRequest {
     });
   });
 
-  // Build ticket object
   const ticketRequest: TicketRequest = {
     ticket: {
       channel_name: channelName,
@@ -224,7 +206,7 @@ export function buildTicketRequest(params: BuildTicketParams): TicketRequest {
         closed: false,
         void: false,
       },
-      queue_number: queueNumber, 
+      queue_number: queueNumber,
       extra_data: {
         location_name: locationName,
         subtotal: subtotal.toFixed(2),

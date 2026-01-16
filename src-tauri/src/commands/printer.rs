@@ -1,7 +1,7 @@
 use crate::db::migrate;
 use crate::db::models::printer::Printer;
 use crate::db::models::printer_repo::PrinterRepo;
-use crate::printer::{PrinterConfig, PrinterService, ReceiptData};
+use crate::printer::{PrinterConfig, PrinterService};
 use tauri::{command, AppHandle};
 
 #[command]
@@ -55,8 +55,10 @@ pub fn test_printer(printer: Printer) -> Result<(), String> {
     PrinterService::test_print(&config)
 }
 
+/// Print raw ESC/POS data to a specific printer
+/// The data should be base64 encoded ESC/POS commands from TypeScript
 #[command]
-pub fn print_receipt(app: AppHandle, printer_id: String, receipt_data: ReceiptData) -> Result<(), String> {
+pub fn print_raw(app: AppHandle, printer_id: String, data: String) -> Result<(), String> {
     let conn = migrate::connection(&app);
 
     let printer = PrinterRepo::get_by_id(&conn, &printer_id)
@@ -65,6 +67,11 @@ pub fn print_receipt(app: AppHandle, printer_id: String, receipt_data: ReceiptDa
 
     if !printer.is_active {
         return Err("Printer is not active".to_string());
+    }
+
+    // Skip builtin printers (handled by frontend)
+    if printer.printer_type == "builtin" {
+        return Ok(());
     }
 
     let config = PrinterConfig {
@@ -76,23 +83,41 @@ pub fn print_receipt(app: AppHandle, printer_id: String, receipt_data: ReceiptDa
         is_active: printer.is_active,
     };
 
-    PrinterService::print_receipt(&config, &receipt_data)
+    // Decode base64 data
+    use base64::{Engine as _, engine::general_purpose::STANDARD};
+    let raw_bytes = STANDARD.decode(&data)
+        .map_err(|e| format!("Failed to decode base64 data: {}", e))?;
+
+    PrinterService::print_raw(&config, &raw_bytes)
 }
 
+/// Print raw ESC/POS data to all active network printers
+/// The data should be base64 encoded ESC/POS commands from TypeScript
 #[command]
-pub fn print_receipt_to_all_active(app: AppHandle, receipt_data: ReceiptData) -> Result<(), String> {
+pub fn print_raw_to_all_active(app: AppHandle, data: String) -> Result<(), String> {
     let conn = migrate::connection(&app);
 
     let printers = PrinterRepo::get_active(&conn)
         .map_err(|e| format!("Failed to get active printers: {}", e))?;
 
-    if printers.is_empty() {
-        return Err("No active printers found".to_string());
+    // Filter only network printers (builtin handled by frontend)
+    let network_printers: Vec<_> = printers.into_iter()
+        .filter(|p| p.printer_type == "network")
+        .collect();
+
+    if network_printers.is_empty() {
+        // No network printers, that's ok - builtin will be handled by frontend
+        return Ok(());
     }
+
+    // Decode base64 data once
+    use base64::{Engine as _, engine::general_purpose::STANDARD};
+    let raw_bytes = STANDARD.decode(&data)
+        .map_err(|e| format!("Failed to decode base64 data: {}", e))?;
 
     let mut errors = Vec::new();
 
-    for printer in printers {
+    for printer in network_printers {
         let config = PrinterConfig {
             id: printer.id.clone(),
             name: printer.name.clone(),
@@ -102,7 +127,7 @@ pub fn print_receipt_to_all_active(app: AppHandle, receipt_data: ReceiptData) ->
             is_active: printer.is_active,
         };
 
-        if let Err(e) = PrinterService::print_receipt(&config, &receipt_data) {
+        if let Err(e) = PrinterService::print_raw(&config, &raw_bytes) {
             errors.push(format!("Printer '{}': {}", printer.name, e));
         }
     }

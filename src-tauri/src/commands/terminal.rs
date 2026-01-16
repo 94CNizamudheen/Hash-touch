@@ -77,7 +77,7 @@ pub async fn rbs_terminal_initiate(
         .json(&serde_json::json!({
     "terminal_id": payload.config.terminal_id,
     "amount": payload.amount,
-    "currency": "USD",
+    "currency": payload.currency,
     "payment_method": payload.payment_method,
     "invoice_number": payload.invoice_number,
     "description": payload.description,
