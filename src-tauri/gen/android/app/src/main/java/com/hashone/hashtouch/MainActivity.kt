@@ -12,6 +12,7 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.content.ContextCompat
 import com.hashone.hashtouch.printer.PrinterBridge
 import com.hashone.hashtouch.service.WebSocketServiceBridge
+import com.hashone.hashtouch.ui.SystemInsetsBridge
 
 class MainActivity : TauriActivity() {
 
@@ -21,6 +22,7 @@ class MainActivity : TauriActivity() {
 
   private lateinit var printerBridge: PrinterBridge
   private lateinit var webSocketServiceBridge: WebSocketServiceBridge
+  private lateinit var systemInsetsBridge: SystemInsetsBridge
 
   // Permission launcher for notification permission (Android 13+)
   private val notificationPermissionLauncher = registerForActivityResult(
@@ -54,6 +56,12 @@ class MainActivity : TauriActivity() {
     webSocketServiceBridge = WebSocketServiceBridge(this)
     webView.addJavascriptInterface(webSocketServiceBridge, WebSocketServiceBridge.JS_INTERFACE_NAME)
     Log.d(TAG, "WebSocketServiceBridge injected as '${WebSocketServiceBridge.JS_INTERFACE_NAME}'")
+
+    // Initialize system insets bridge for safe area handling on POS devices
+    systemInsetsBridge = SystemInsetsBridge(this, webView)
+    webView.addJavascriptInterface(systemInsetsBridge, SystemInsetsBridge.JS_INTERFACE_NAME)
+    systemInsetsBridge.initialize()
+    Log.d(TAG, "SystemInsetsBridge initialized for safe area handling")
   }
 
   private fun requestNotificationPermissionIfNeeded() {

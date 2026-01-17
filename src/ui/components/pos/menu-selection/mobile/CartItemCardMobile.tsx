@@ -115,7 +115,7 @@ const CartItemCardMobile = ({
                 {name}
               </h3>
               <span className="text-sm font-bold text-primary flex-shrink-0">
-                {currencySymbol}{lineTotal.toFixed(2)}
+                {currencySymbol} {lineTotal.toFixed(2)}
               </span>
             </div>
 
@@ -138,7 +138,7 @@ const CartItemCardMobile = ({
             {/* Quantity Controls */}
             <div className="flex items-center justify-between">
               <span className="text-xs text-muted-foreground">
-                {currencySymbol}{price.toFixed(2)} each
+                {currencySymbol} {price.toFixed(2)} each
               </span>
 
               <div className="flex items-center gap-1">

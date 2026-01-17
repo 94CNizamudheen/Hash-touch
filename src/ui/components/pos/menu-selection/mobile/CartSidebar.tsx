@@ -23,7 +23,7 @@ type CartSidebarProps = {
 const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
   const navigate = useNavigate();
   const { t } = useTranslation();
-  const { currencyCode, currencySymbol } = useSetup();
+  const { currencyCode } = useSetup();
 
 
 
@@ -214,7 +214,7 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
                   <div className="flex justify-between pt-2 border-t border-border">
                     <span className="text-base font-bold text-foreground">{t("Total")}</span>
                     <span className="text-xl font-bold text-primary">
-                      {currencySymbol}{grandTotal.toFixed(2)}
+                      {currencyCode} {grandTotal.toFixed(2)}
                     </span>
                   </div>
                 </div>
@@ -235,7 +235,7 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
                   >
                     <span>{t("Settle")}</span>
                     <span className="bg-primary-foreground/20 px-3 py-1 rounded-lg text-sm">
-                      {currencySymbol}{grandTotal.toFixed(2)}
+                      {currencyCode} {grandTotal.toFixed(2)}
                     </span>
                   </button>
                 </div>

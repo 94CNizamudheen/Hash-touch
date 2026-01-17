@@ -2,10 +2,22 @@ import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 import tailwindcss from "@tailwindcss/vite";
 import path from "path";
+import browserslist from "browserslist";
+import { browserslistToTargets } from "lightningcss";
 
 
 export default defineConfig({
-  plugins: [react(), tailwindcss(),],
+  plugins: [react(), tailwindcss()],
+  css: {
+    transformer: "lightningcss",
+    lightningcss: {
+      // Target older browsers/WebViews for Android POS device compatibility
+      // This converts oklch() to rgb(), color-mix() to fallbacks, etc.
+      // Target Chrome 70 to force conversion of lab()/oklch() to rgb()
+      // Chrome 70 doesn't support lab/oklch, so Lightning CSS will convert them
+      targets: browserslistToTargets(browserslist("Chrome >= 70")),
+    },
+  },
   server: {
     host: "0.0.0.0",
     port: 5173,
@@ -18,7 +30,6 @@ export default defineConfig({
       usePolling: true,
       interval: 100,
     },
-
   },
   resolve: {
     alias: {

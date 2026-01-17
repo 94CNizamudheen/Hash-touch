@@ -29,8 +29,8 @@ const MobileBottomCartBar = ({ onOpenCart }: { onOpenCart: () => void }) => {
                 flex items-center justify-between
                 shadow-[0_4px_20px_rgba(0,0,0,0.15)]
                 pointer-events-auto
-                bg-gradient-to-r from-blue-600 to-blue-700
-                text-white
+                bg-primary
+                text-background
                 hover:scale-[1.02]
                 active:scale-[0.98]
                 transition-transform
@@ -44,7 +44,7 @@ const MobileBottomCartBar = ({ onOpenCart }: { onOpenCart: () => void }) => {
                   </div>
 
                   {itemCount > 0 && (
-                    <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center">
+                    <span className="absolute -top-1 -right-1 bg-destructive text-background text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center">
                       {itemCount > 9 ? "9+" : itemCount}
                     </span>
                   )}
