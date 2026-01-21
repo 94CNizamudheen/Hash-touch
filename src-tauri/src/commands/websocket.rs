@@ -1,6 +1,8 @@
-use crate::websocket::{broadcast_to_device_type, DeviceMessage};
+use crate::websocket::{broadcast_to_device_type, ConnectedDevice, DeviceMessage};
 use crate::WsState;
+use std::collections::HashMap;
 use tauri::{command, State};
+use tokio::sync::RwLockReadGuard;
 
 #[command]
 pub async fn broadcast_to_kds(
@@ -9,7 +11,9 @@ pub async fn broadcast_to_kds(
 ) -> Result<(), String> {
     let devices = ws_state.server.get_devices();
 
-    let count = devices.read().await.len();
+    let device_guard: RwLockReadGuard<'_, HashMap<String, ConnectedDevice>> = devices.read().await;
+    let count = device_guard.len();
+    drop(device_guard);
     if count == 0 {
         log::warn!("⚠️ No connected KDS devices");
     }
@@ -26,7 +30,9 @@ pub async fn broadcast_to_queue(
 ) -> Result<(), String> {
     let devices = ws_state.server.get_devices();
 
-    let count = devices.read().await.len();
+    let device_guard: RwLockReadGuard<'_, HashMap<String, ConnectedDevice>> = devices.read().await;
+    let count = device_guard.len();
+    drop(device_guard);
     if count == 0 {
         log::warn!("⚠️ No connected QUEUE devices");
     }
@@ -43,7 +49,9 @@ pub async fn broadcast_to_pos(
 ) -> Result<(), String> {
     let devices = ws_state.server.get_devices();
 
-    let count = devices.read().await.len();
+    let device_guard: RwLockReadGuard<'_, HashMap<String, ConnectedDevice>> = devices.read().await;
+    let count = device_guard.len();
+    drop(device_guard);
     if count == 0 {
         log::warn!("⚠️ No connected POS devices");
     }

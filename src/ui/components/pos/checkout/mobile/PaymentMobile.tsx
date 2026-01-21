@@ -275,9 +275,7 @@ export default function PaymentMobile() {
       return;
     }
 
-    /* ------------------------------------------------------------------ */
-    /*                  🟩 NORMAL PAYMENT FLOW (UNCHANGED)                */
-    /* ------------------------------------------------------------------ */
+
 
     const existingPaymentIndex = payments.findIndex(
       (p) => p.paymentMethodId === selectedPaymentMethod.id
@@ -320,7 +318,7 @@ export default function PaymentMobile() {
     }
   };
 
-  // Add these handler functions
+
   const handleCancelTerminal = async () => {
     if (!activeTerminalTxId) {
       setShowTerminalModal(false);
