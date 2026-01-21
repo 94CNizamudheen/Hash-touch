@@ -1,4 +1,5 @@
 import { invoke } from "@tauri-apps/api/core";
+import { generateUUID } from "@/utils/uuid";
 
 export type DeviceRole = "POS" | "KIOSK" | "QUEUE" | "KDS";
 
@@ -20,7 +21,7 @@ export const deviceService = {
     
     async registerDevices(input: { name: string; role: DeviceRole }) {
         const device: DeviceProfile = {
-            id: crypto.randomUUID(),
+            id: generateUUID(),
             name: input.name,
             role: input.role,
         };

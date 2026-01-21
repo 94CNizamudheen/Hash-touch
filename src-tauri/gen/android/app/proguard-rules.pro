@@ -5,16 +5,49 @@
 # For more details, see
 #   http://developer.android.com/guide/developing/tools/proguard.html
 
-# If your project uses WebView with JS, uncomment the following
-# and specify the fully qualified class name to the JavaScript interface
-# class:
-#-keepclassmembers class fqcn.of.javascript.interface.for.webview {
-#   public *;
-#}
+# ============================================================
+# CRITICAL: Keep JavaScript Bridge Classes for WebView
+# These are called from JS, not Java, so ProGuard thinks they're unused
+# ============================================================
 
-# Uncomment this to preserve the line number information for
-# debugging stack traces.
-#-keepattributes SourceFile,LineNumberTable
+# Keep all classes with @JavascriptInterface methods
+-keepclassmembers class * {
+    @android.webkit.JavascriptInterface <methods>;
+}
+
+# Keep PrinterBridge and all printer-related classes
+-keep class com.hashone.hashtouch.printer.** { *; }
+
+# Keep SystemInsetsBridge
+-keep class com.hashone.hashtouch.ui.SystemInsetsBridge { *; }
+
+# Keep WebSocketServiceBridge
+-keep class com.hashone.hashtouch.service.** { *; }
+
+# Keep MainActivity
+-keep class com.hashone.hashtouch.MainActivity { *; }
+
+# ============================================================
+# Keep attributes needed for reflection and annotations
+# ============================================================
+-keepattributes *Annotation*
+-keepattributes Signature
+-keepattributes SourceFile,LineNumberTable
+
+# ============================================================
+# AndroidX and Kotlin
+# ============================================================
+-keep class androidx.** { *; }
+-dontwarn androidx.**
+
+# Keep Kotlin metadata
+-keep class kotlin.Metadata { *; }
+-dontwarn kotlin.**
+
+# ============================================================
+# JSON/Serialization
+# ============================================================
+-keep class org.json.** { *; }
 
 # If you keep the line number information, uncomment this to
 # hide the original source file name.

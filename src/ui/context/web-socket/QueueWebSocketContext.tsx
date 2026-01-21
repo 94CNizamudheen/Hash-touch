@@ -16,6 +16,7 @@ import { deviceService } from "@/services/local/device.local.service";
 import { queueTokenLocal } from "@/services/local/queue-token.local.service";
 import { useAppState } from "@/ui/hooks/useAppState";
 import { localEventBus, LocalEventTypes } from "@/services/eventbus/LocalEventBus";
+import { generateUUID } from "@/utils/uuid";
 
 interface QueueWebSocketContextType {
   isConnected: boolean;
@@ -121,7 +122,7 @@ export const QueueWebSocketProvider = ({ children }: { children: ReactNode }) =>
       const p = msg.payload;
 
       await queueTokenLocal.saveToken({
-        id: crypto.randomUUID(),
+        id: generateUUID(),
         ticket_id: p.ticket_id,
         ticket_number: String(p.ticket_number),
         token_number: p.token_number,

@@ -55,6 +55,38 @@ interface BuiltinPrinterResult {
   error?: string;
 }
 
+// Diagnostics types
+export interface PrinterDiagnostics {
+  device: {
+    manufacturer: string;
+    model: string;
+    brand: string;
+    device: string;
+    product: string;
+  };
+  adapters: {
+    sunmi: boolean;
+    pax: boolean;
+    intent: boolean;
+    usb: boolean;
+    serial: boolean;
+  };
+  printServices: Array<{
+    action: string;
+    package: string;
+    name: string;
+  }>;
+  serialPorts: string[];
+  error?: string;
+}
+
+export interface PrintServiceScan {
+  allPrintRelated: string[];
+  intentServices: string[];
+  count: number;
+  error?: string;
+}
+
 // Declare the Android JavaScript interface
 declare global {
   interface Window {
@@ -65,118 +97,157 @@ declare global {
       printTest: () => string;
       connect: () => string;
       disconnect: () => string;
+      hasPermission: () => string;
+      requestPermission: () => string;
+      listUsbDevices: () => string;
+      listSerialPorts: () => string;
+      getDiagnostics: () => string;
+      scanPrintServices: () => string;
     };
   }
 }
 
-// ESC/POS Command Constants
+const PAPER_WIDTH = 32; // 58mm printer (use 48 for 80mm)
+
 const ESC_POS = {
   INIT: [0x1b, 0x40],
-  BOLD_ON: [0x1b, 0x45, 0x01],
-  BOLD_OFF: [0x1b, 0x45, 0x00],
-  DOUBLE_HEIGHT_ON: [0x1d, 0x21, 0x11],
-  DOUBLE_SIZE_ON: [0x1d, 0x21, 0x33],
-  NORMAL_SIZE: [0x1d, 0x21, 0x00],
   ALIGN_LEFT: [0x1b, 0x61, 0x00],
   ALIGN_CENTER: [0x1b, 0x61, 0x01],
-  LINE_FEED: [0x0a],
-  CUT_PAPER: [0x1d, 0x56, 0x00],
+  BOLD_ON: [0x1b, 0x45, 0x01],
+  BOLD_OFF: [0x1b, 0x45, 0x00],
+  SIZE_NORMAL: [0x1d, 0x21, 0x00],
+  SIZE_DOUBLE: [0x1d, 0x21, 0x11],
+  FEED: [0x0a],
+  CUT: [0x1d, 0x56, 0x00],
 };
 
-/**
- * Build ESC/POS receipt commands from receipt data
- */
-function buildReceiptEscPos(receipt: ReceiptData): Uint8Array {
-  const commands: number[] = [];
+const encoder = new TextEncoder();
 
-  // Initialize
-  commands.push(...ESC_POS.INIT);
-
-  // Header - Location Name (centered, double size)
-  commands.push(...ESC_POS.ALIGN_CENTER);
-  commands.push(...ESC_POS.DOUBLE_SIZE_ON);
-  commands.push(...new TextEncoder().encode(receipt.location_name));
-  commands.push(...ESC_POS.LINE_FEED);
-  commands.push(...ESC_POS.NORMAL_SIZE);
-  commands.push(...ESC_POS.LINE_FEED);
-
-  // Ticket Number (centered, bold)
-  commands.push(...ESC_POS.BOLD_ON);
-  commands.push(...new TextEncoder().encode(`Ticket: ${receipt.ticket_number}`));
-  commands.push(...ESC_POS.LINE_FEED);
-  commands.push(...ESC_POS.BOLD_OFF);
-
-  // Order Mode
-  commands.push(...new TextEncoder().encode(`Mode: ${receipt.order_mode}`));
-  commands.push(...ESC_POS.LINE_FEED);
-
-  // Timestamp
-  commands.push(...new TextEncoder().encode(receipt.timestamp));
-  commands.push(...ESC_POS.LINE_FEED);
-  commands.push(...ESC_POS.LINE_FEED);
-
-  // Separator line
-  commands.push(...ESC_POS.ALIGN_LEFT);
-  commands.push(...new TextEncoder().encode("--------------------------------"));
-  commands.push(...ESC_POS.LINE_FEED);
-
-  // Items
-  for (const item of receipt.items) {
-    const line = `${item.name} x${item.quantity} @ $${item.price.toFixed(2)}  $${item.total.toFixed(2)}`;
-    commands.push(...new TextEncoder().encode(line));
-    commands.push(...ESC_POS.LINE_FEED);
-  }
-
-  commands.push(...new TextEncoder().encode("--------------------------------"));
-  commands.push(...ESC_POS.LINE_FEED);
-
-  // Subtotal
-  commands.push(...new TextEncoder().encode(`Subtotal:              $${receipt.subtotal.toFixed(2)}`));
-  commands.push(...ESC_POS.LINE_FEED);
-
-  // Charges (tax, fees, etc.)
-  for (const charge of receipt.charges) {
-    commands.push(...new TextEncoder().encode(`${charge.name}:              $${charge.amount.toFixed(2)}`));
-    commands.push(...ESC_POS.LINE_FEED);
-  }
-
-  commands.push(...new TextEncoder().encode("--------------------------------"));
-  commands.push(...ESC_POS.LINE_FEED);
-
-  // Total (bold, larger)
-  commands.push(...ESC_POS.BOLD_ON);
-  commands.push(...ESC_POS.DOUBLE_HEIGHT_ON);
-  commands.push(...new TextEncoder().encode(`TOTAL: $${receipt.total.toFixed(2)}`));
-  commands.push(...ESC_POS.LINE_FEED);
-  commands.push(...ESC_POS.NORMAL_SIZE);
-  commands.push(...ESC_POS.BOLD_OFF);
-
-  commands.push(...new TextEncoder().encode("--------------------------------"));
-  commands.push(...ESC_POS.LINE_FEED);
-
-  // Payment info
-  commands.push(...new TextEncoder().encode(`Payment: ${receipt.payment_method}`));
-  commands.push(...ESC_POS.LINE_FEED);
-  commands.push(...new TextEncoder().encode(`Tendered:              $${receipt.tendered.toFixed(2)}`));
-  commands.push(...ESC_POS.LINE_FEED);
-  commands.push(...new TextEncoder().encode(`Change:                $${receipt.change.toFixed(2)}`));
-  commands.push(...ESC_POS.LINE_FEED);
-  commands.push(...ESC_POS.LINE_FEED);
-
-  // Thank you message (centered)
-  commands.push(...ESC_POS.ALIGN_CENTER);
-  commands.push(...new TextEncoder().encode("Thank You!"));
-  commands.push(...ESC_POS.LINE_FEED);
-  commands.push(...new TextEncoder().encode("Please Come Again"));
-  commands.push(...ESC_POS.LINE_FEED);
-  commands.push(...ESC_POS.LINE_FEED);
-  commands.push(...ESC_POS.LINE_FEED);
-
-  // Cut paper
-  commands.push(...ESC_POS.CUT_PAPER);
-
-  return new Uint8Array(commands);
+function line(text = ""): number[] {
+  return [...encoder.encode(text), ...ESC_POS.FEED];
 }
+
+function center(text: string): number[] {
+  return [
+    ...ESC_POS.ALIGN_CENTER,
+    ...encoder.encode(text),
+    ...ESC_POS.FEED,
+    ...ESC_POS.ALIGN_LEFT,
+  ];
+}
+
+function hr(): number[] {
+  return line("-".repeat(PAPER_WIDTH));
+}
+
+function padRight(text: string, width: number): string {
+  return text.length > width ? text.substring(0, width) : text.padEnd(width);
+}
+
+function padLeft(text: string, width: number): string {
+  return text.length > width ? text.substring(0, width) : text.padStart(width);
+}
+
+function formatItemRow(
+  name: string,
+  qty: number,
+  price: number,
+  total: number
+): number[] {
+  const nameW = 16;
+  const qtyW = 4;
+  const priceW = 6;
+  const totalW = PAPER_WIDTH - (nameW + qtyW + priceW);
+
+  const row =
+    padRight(name, nameW) +
+    padLeft(`x${qty}`, qtyW) +
+    padLeft(price.toFixed(2), priceW) +
+    padLeft(total.toFixed(2), totalW);
+
+  return line(row);
+}
+
+function formatMoneyRow(label: string, value: number): number[] {
+  const left = padRight(label, PAPER_WIDTH - 10);
+  const right = padLeft(value.toFixed(2), 10);
+  return line(left + right);
+}
+function buildReceiptEscPos(receipt: ReceiptData): Uint8Array {
+  const cmd: number[] = [];
+
+  cmd.push(...ESC_POS.INIT);
+
+  // -------- HEADER --------
+  cmd.push(...ESC_POS.SIZE_DOUBLE);
+  cmd.push(...ESC_POS.BOLD_ON);
+  cmd.push(...center(receipt.location_name));
+  cmd.push(...ESC_POS.SIZE_NORMAL);
+  cmd.push(...ESC_POS.BOLD_OFF);
+
+  cmd.push(...center(`Ticket: ${receipt.ticket_number}`));
+  cmd.push(...line(`Mode: ${receipt.order_mode}`));
+  cmd.push(...line(receipt.timestamp));
+
+  cmd.push(...hr());
+
+  // -------- ITEMS HEADER --------
+  cmd.push(...line("Item            Qty Price Total"));
+  cmd.push(...hr());
+
+  // -------- ITEMS --------
+  receipt.items.forEach((item) => {
+    cmd.push(
+      ...formatItemRow(
+        item.name,
+        item.quantity,
+        item.price,
+        item.total
+      )
+    );
+  });
+
+  cmd.push(...hr());
+
+  // -------- TOTALS --------
+  cmd.push(...formatMoneyRow("Subtotal", receipt.subtotal));
+
+  receipt.charges.forEach((charge) => {
+    cmd.push(...formatMoneyRow(charge.name, charge.amount));
+  });
+
+  cmd.push(...hr());
+
+  // -------- GRAND TOTAL --------
+  cmd.push(...ESC_POS.BOLD_ON);
+  cmd.push(...ESC_POS.SIZE_DOUBLE);
+  cmd.push(...center(`TOTAL  ${receipt.total.toFixed(2)}`));
+  cmd.push(...ESC_POS.SIZE_NORMAL);
+  cmd.push(...ESC_POS.BOLD_OFF);
+
+  cmd.push(...hr());
+
+  // -------- PAYMENT --------
+  cmd.push(...line(`Payment: ${receipt.payment_method}`));
+  cmd.push(...formatMoneyRow("Tendered", receipt.tendered));
+  cmd.push(...formatMoneyRow("Change", receipt.change));
+
+  cmd.push(...ESC_POS.FEED);
+  cmd.push(...ESC_POS.FEED);
+
+  // -------- FOOTER --------
+  cmd.push(...center("Thank You!"));
+  cmd.push(...center("Please Come Again"));
+
+  cmd.push(...ESC_POS.FEED);
+  cmd.push(...ESC_POS.FEED);
+
+  // -------- CUT --------
+  cmd.push(...ESC_POS.CUT);
+
+  return new Uint8Array(cmd);
+}
+
 
 /**
  * Convert Uint8Array to base64
@@ -221,12 +292,94 @@ export const printerService = {
   },
 
   /**
+   * List all USB devices for debugging (Android only)
+   */
+  listUsbDevices(): { count: number; devices: unknown[]; error?: string } | null {
+    if (typeof window !== "undefined" && window.BuiltinPrinter?.listUsbDevices) {
+      try {
+        const resultJson = window.BuiltinPrinter.listUsbDevices();
+        return JSON.parse(resultJson);
+      } catch (e) {
+        console.error("Failed to list USB devices:", e);
+        return { count: 0, devices: [], error: e instanceof Error ? e.message : String(e) };
+      }
+    }
+    return null;
+  },
+
+  /**
+   * List available serial ports for debugging (Android only)
+   */
+  listSerialPorts(): { count: number; ports: string[]; error?: string } | null {
+    if (typeof window !== "undefined" && window.BuiltinPrinter?.listSerialPorts) {
+      try {
+        const resultJson = window.BuiltinPrinter.listSerialPorts();
+        return JSON.parse(resultJson);
+      } catch (e) {
+        console.error("Failed to list serial ports:", e);
+        return { count: 0, ports: [], error: e instanceof Error ? e.message : String(e) };
+      }
+    }
+    return null;
+  },
+
+  /**
+   * Check if USB permission is granted (Android only)
+   */
+  hasBuiltinPrinterPermission(): boolean {
+    if (typeof window !== "undefined" && window.BuiltinPrinter?.hasPermission) {
+      try {
+        const resultJson = window.BuiltinPrinter.hasPermission();
+        const result = JSON.parse(resultJson);
+        return result.granted === true;
+      } catch {
+        return false;
+      }
+    }
+    return false;
+  },
+
+  /**
+   * Request USB permission for builtin printer (Android only)
+   */
+  async requestBuiltinPrinterPermission(): Promise<boolean> {
+    if (!window.BuiltinPrinter?.requestPermission) {
+      throw new Error("Permission request not available on this device");
+    }
+
+    const resultJson = window.BuiltinPrinter.requestPermission();
+    const result: BuiltinPrinterResult = JSON.parse(resultJson);
+
+    if (!result.success) {
+      throw new Error(result.error || "USB permission denied");
+    }
+
+    return true;
+  },
+
+  /**
    * Print receipt via builtin printer (Android only)
    */
   async printReceiptBuiltin(receiptData: ReceiptData): Promise<void> {
     if (!window.BuiltinPrinter) {
-      throw new Error("Built-in printer not available on this device");
+      throw new Error("Built-in printer not available");
     }
+
+    // Detect printer first
+    const detection = this.detectBuiltinPrinter();
+
+    if (!detection?.available) {
+      throw new Error("Built-in printer not detected");
+    }
+
+    // ONLY ask permission for USB printers
+    if (detection.type === "usb_builtin") {
+      if (!this.hasBuiltinPrinterPermission()) {
+        await this.requestBuiltinPrinterPermission();
+      }
+    }
+
+    // SERIAL printers DO NOT need permission
 
     const escPosCommands = buildReceiptEscPos(receiptData);
     const base64Data = uint8ArrayToBase64(escPosCommands);
@@ -235,7 +388,7 @@ export const printerService = {
     const result: BuiltinPrinterResult = JSON.parse(resultJson);
 
     if (!result.success) {
-      throw new Error(result.error || "Failed to print via built-in printer");
+      throw new Error(result.error || "Print failed");
     }
   },
 
@@ -244,15 +397,61 @@ export const printerService = {
    */
   async testBuiltinPrinter(): Promise<void> {
     if (!window.BuiltinPrinter) {
-      throw new Error("Built-in printer not available on this device");
+      throw new Error("Built-in printer not available");
+    }
+
+    const detection = this.detectBuiltinPrinter();
+
+    if (!detection?.available) {
+      throw new Error("Printer not detected");
+    }
+
+    if (detection.type === "usb_builtin") {
+      if (!this.hasBuiltinPrinterPermission()) {
+        await this.requestBuiltinPrinterPermission();
+      }
     }
 
     const resultJson = window.BuiltinPrinter.printTest();
     const result: BuiltinPrinterResult = JSON.parse(resultJson);
 
     if (!result.success) {
-      throw new Error(result.error || "Failed to test built-in printer");
+      throw new Error(result.error || "Test print failed");
     }
+  },
+
+  /**
+   * Get full diagnostic info for the device (Android only)
+   * Use this to identify what print services are available
+   */
+  getDiagnostics(): PrinterDiagnostics | null {
+    if (typeof window !== "undefined" && window.BuiltinPrinter?.getDiagnostics) {
+      try {
+        const resultJson = window.BuiltinPrinter.getDiagnostics();
+        return JSON.parse(resultJson) as PrinterDiagnostics;
+      } catch (e) {
+        console.error("Failed to get diagnostics:", e);
+        return null;
+      }
+    }
+    return null;
+  },
+
+  /**
+   * Scan for ALL print-related services on the device (Android only)
+   * Use this to find vendor-specific print services on unknown devices
+   */
+  scanPrintServices(): PrintServiceScan | null {
+    if (typeof window !== "undefined" && window.BuiltinPrinter?.scanPrintServices) {
+      try {
+        const resultJson = window.BuiltinPrinter.scanPrintServices();
+        return JSON.parse(resultJson) as PrintServiceScan;
+      } catch (e) {
+        console.error("Failed to scan print services:", e);
+        return null;
+      }
+    }
+    return null;
   },
 
   async getAllPrinters(): Promise<Printer[]> {
@@ -305,18 +504,36 @@ export const printerService = {
   async printReceiptToAllActive(receiptData: ReceiptData): Promise<void> {
     const activePrinters = await this.getActivePrinters();
     const errors: string[] = [];
+    let printedToAny = false;
 
     // Build ESC/POS commands once in TypeScript
     const escPosCommands = buildReceiptEscPos(receiptData);
     const base64Data = uint8ArrayToBase64(escPosCommands);
 
-    // Print to builtin printer if available and active
+    // Print to builtin printer if available and active (from database)
     const builtinPrinter = activePrinters.find((p) => p.printer_type === "builtin");
     if (builtinPrinter) {
       try {
         await this.printReceiptBuiltin(receiptData);
+        printedToAny = true;
       } catch (e) {
         errors.push(`Builtin: ${e instanceof Error ? e.message : String(e)}`);
+      }
+    } else {
+      // Try to auto-detect and print to builtin printer even without database entry
+      // This handles the case where builtin printer was never registered
+      const isBuiltinAvailable = this.isBuiltinPrinterAvailable();
+      if (isBuiltinAvailable) {
+        try {
+          await this.printReceiptBuiltin(receiptData);
+          printedToAny = true;
+          // Also auto-setup the printer for future use
+          this.autoSetupBuiltinPrinter().catch(() => {
+            // Ignore auto-setup errors
+          });
+        } catch (e) {
+          errors.push(`Builtin: ${e instanceof Error ? e.message : String(e)}`);
+        }
       }
     }
 
@@ -325,17 +542,22 @@ export const printerService = {
     if (networkPrinters.length > 0) {
       try {
         await invoke("print_raw_to_all_active", { data: base64Data });
+        printedToAny = true;
       } catch (e) {
         errors.push(`Network: ${e instanceof Error ? e.message : String(e)}`);
       }
     }
 
-    // If no printers at all, still try (will error appropriately)
-    if (!builtinPrinter && networkPrinters.length === 0 && activePrinters.length === 0) {
-      return invoke("print_raw_to_all_active", { data: base64Data });
+    // If no printers printed successfully and no builtin available, try network fallback
+    if (!printedToAny && networkPrinters.length === 0) {
+      try {
+        await invoke("print_raw_to_all_active", { data: base64Data });
+      } catch (e) {
+        errors.push(`Fallback: ${e instanceof Error ? e.message : String(e)}`);
+      }
     }
 
-    if (errors.length > 0) {
+    if (errors.length > 0 && !printedToAny) {
       throw new Error(`Print errors: ${errors.join("; ")}`);
     }
   },

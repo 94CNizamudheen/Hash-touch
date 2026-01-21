@@ -2,6 +2,7 @@ import { invoke } from "@tauri-apps/api/core";
 import type { DbPaymentMethod } from "@/types/payment_methods";
 import type { TerminalTransactionStatus } from "./terminal.local.service";
 import type { PaymentEntry } from "@/ui/components/pos/checkout/OrderSidebar";
+import { generateUUID } from "@/utils/uuid";
 
 export function isTerminalApproved(status: TerminalTransactionStatus) {
   const code = status.processor_response_code?.toUpperCase();
@@ -50,7 +51,7 @@ export function buildUpdatedPayments(
   return [
     ...payments,
     {
-      id: crypto.randomUUID(),
+      id: generateUUID(),
       paymentMethodId: method.id,
       paymentMethodName: method.name,
       amount,

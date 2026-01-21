@@ -1,46 +1,33 @@
 package com.hashone.hashtouch.printer
 
 import android.content.Context
-import android.hardware.usb.UsbConstants
-import android.hardware.usb.UsbDevice
-import android.hardware.usb.UsbDeviceConnection
-import android.hardware.usb.UsbEndpoint
-import android.hardware.usb.UsbInterface
-import android.hardware.usb.UsbManager
+import android.hardware.usb.*
 import android.os.Build
 import android.util.Log
+import java.io.File
+import java.io.FileInputStream
+import java.io.FileOutputStream
+import java.io.IOException
 
-/**
- * Generic Android POS Built-in Printer Handler
- *
- * Supports printing via USB serial (most common for Android POS devices)
- * Works with devices that expose their internal thermal printer as USB
- */
 class BuiltinPrinter(private val context: Context) {
 
     companion object {
         private const val TAG = "BuiltinPrinter"
-
-        // Common USB vendor IDs for thermal printers
-        private val PRINTER_VENDOR_IDS = setOf(
-            0x0483, // STMicroelectronics (common in Chinese POS)
-            0x0416, // Winbond (many thermal printers)
-            0x04B8, // Epson
-            0x0519, // Star Micronics
-            0x0DD4, // Custom Engineering
-            0x0FE6, // Contec/Generic
-            0x1504, // Face (common POS printer)
-            0x20D1, // Simba
-            0x1659, // ShenZhen
-            0x6868, // Generic Chinese thermal
-            0x0525, // PLX Technology (USB-Serial bridge)
-            0x067B, // Prolific (USB-Serial)
-            0x10C4, // Silicon Labs (USB-Serial)
-            0x1A86, // QinHeng (CH340 USB-Serial, very common)
-        )
-
-        // USB class for printers
         private const val USB_CLASS_PRINTER = 7
+
+        // ESC/POS status request command
+        private val DLE_EOT_STATUS = byteArrayOf(0x10, 0x04, 0x01) // Real-time status request
+
+        private val SERIAL_PRINTER_PATHS = listOf(
+            "/dev/ttyS1", "/dev/ttyS2", "/dev/ttyS3", "/dev/ttyS0",
+            "/dev/ttyMT1", "/dev/ttyMT0",
+            "/dev/ttyHSL1", "/dev/ttyHSL0",
+            "/dev/ttyUSB0", "/dev/ttyACM0",
+            "/dev/ttySAC1", "/dev/ttySAC0",
+            "/dev/ttyAMA0", "/dev/ttyGS0",
+            "/dev/printer", "/dev/thermal",
+            "/dev/usb/lp0"
+        )
 
         @Volatile
         private var instance: BuiltinPrinter? = null
@@ -52,43 +39,66 @@ class BuiltinPrinter(private val context: Context) {
         }
     }
 
-    private var usbManager: UsbManager? = null
-    private var usbDevice: UsbDevice? = null
-    private var usbConnection: UsbDeviceConnection? = null
-    private var usbInterface: UsbInterface? = null
-    private var usbEndpoint: UsbEndpoint? = null
-
-    init {
-        usbManager = context.getSystemService(Context.USB_SERVICE) as? UsbManager
+    enum class PrinterType {
+        NONE, USB, SERIAL
     }
 
-    /**
-     * Detect if a built-in printer is available
-     */
+    private var usbManager: UsbManager? =
+        context.getSystemService(Context.USB_SERVICE) as? UsbManager
+
+    private var usbConnection: UsbDeviceConnection? = null
+    private var usbEndpoint: UsbEndpoint? = null
+
+    private var serialPortPath: String? = null
+    private var detectedPrinterType: PrinterType = PrinterType.NONE
+
+    // -------------------- DETECTION --------------------
+
     fun detectPrinter(): PrinterDetectionResult {
         Log.d(TAG, "Detecting built-in printer...")
         Log.d(TAG, "Device: ${Build.MANUFACTURER} ${Build.MODEL}")
 
-        // Check USB devices for printer
-        val usbPrinter = findUsbPrinter()
-        if (usbPrinter != null) {
-            Log.d(TAG, "Found USB printer: ${usbPrinter.deviceName}")
+        // USB FIRST (more reliable than serial on modern devices)
+        val usb = findUsbPrinter()
+        if (usb != null) {
+            detectedPrinterType = PrinterType.USB
+
             return PrinterDetectionResult(
                 available = true,
                 type = "usb_builtin",
-                deviceName = usbPrinter.deviceName,
-                vendorId = usbPrinter.vendorId,
-                productId = usbPrinter.productId,
+                deviceName = usb.deviceName,
+                vendorId = usb.vendorId,
+                productId = usb.productId,
                 manufacturer = Build.MANUFACTURER,
                 model = Build.MODEL
             )
         }
 
-        Log.d(TAG, "No built-in printer detected")
+        // SERIAL fallback (only if we have write access)
+        val serial = findSerialPrinter()
+        if (serial != null) {
+            serialPortPath = serial
+            detectedPrinterType = PrinterType.SERIAL
+
+            return PrinterDetectionResult(
+                available = true,
+                type = "serial_builtin",
+                deviceName = serial,
+                vendorId = 0,
+                productId = 0,
+                manufacturer = Build.MANUFACTURER,
+                model = Build.MODEL
+            )
+        }
+
+        // Check if serial ports exist but aren't accessible (for better diagnostics)
+        val inaccessiblePorts = findInaccessibleSerialPorts()
+        detectedPrinterType = PrinterType.NONE
+
         return PrinterDetectionResult(
             available = false,
-            type = "none",
-            deviceName = null,
+            type = if (inaccessiblePorts.isNotEmpty()) "serial_no_permission" else "none",
+            deviceName = inaccessiblePorts.firstOrNull(),
             vendorId = null,
             productId = null,
             manufacturer = Build.MANUFACTURER,
@@ -97,214 +107,571 @@ class BuiltinPrinter(private val context: Context) {
     }
 
     /**
-     * Find USB printer device
+     * Find serial ports that exist but we don't have permission to access
      */
-    private fun findUsbPrinter(): UsbDevice? {
-        val manager = usbManager ?: return null
-        val deviceList = manager.deviceList
-
-        Log.d(TAG, "Scanning ${deviceList.size} USB devices...")
-
-        for ((_, device) in deviceList) {
-            Log.d(TAG, "USB Device: ${device.deviceName}, VID: ${device.vendorId}, PID: ${device.productId}, Class: ${device.deviceClass}")
-
-            // Check if it's a known printer vendor
-            if (PRINTER_VENDOR_IDS.contains(device.vendorId)) {
-                Log.d(TAG, "Found device from known printer vendor: ${device.vendorId}")
-                return device
+    private fun findInaccessibleSerialPorts(): List<String> {
+        val ports = mutableListOf<String>()
+        for (path in SERIAL_PRINTER_PATHS) {
+            val file = File(path)
+            if (file.exists() && !file.canWrite()) {
+                ports.add(path)
             }
+        }
+        return ports
+    }
 
-            // Check device class
-            if (device.deviceClass == USB_CLASS_PRINTER) {
-                Log.d(TAG, "Found USB printer class device")
-                return device
-            }
+    fun isAvailable(): Boolean {
+        if (findUsbPrinter() != null) return true
+        if (findSerialPrinter() != null) return true
+        return false
+    }
 
-            // Check interface classes
-            for (i in 0 until device.interfaceCount) {
-                val iface = device.getInterface(i)
-                if (iface.interfaceClass == USB_CLASS_PRINTER) {
-                    Log.d(TAG, "Found USB printer interface")
-                    return device
-                }
-                // Also check for CDC (serial) interfaces that might be printers
-                if (iface.interfaceClass == UsbConstants.USB_CLASS_CDC_DATA ||
-                    iface.interfaceClass == UsbConstants.USB_CLASS_COMM) {
-                    Log.d(TAG, "Found potential serial printer interface")
-                    return device
+    // -------------------- SERIAL --------------------
+
+    private fun findSerialPrinter(): String? {
+        for (path in SERIAL_PRINTER_PATHS) {
+            val file = File(path)
+            if (file.exists()) {
+                val canRead = file.canRead()
+                val canWrite = file.canWrite()
+                Log.d(TAG, "Found serial device: $path r=$canRead w=$canWrite")
+
+                // Only return if we have write permission - without it, printing is impossible
+                if (canWrite) {
+                    return path
+                } else {
+                    Log.d(TAG, "Skipping $path - no write permission")
                 }
             }
         }
-
         return null
     }
 
-    /**
-     * Check if printer is available (quick check)
-     */
-    fun isAvailable(): Boolean {
-        return findUsbPrinter() != null
+    fun getAvailableSerialPorts(): List<String> {
+        val ports = mutableListOf<String>()
+        for (path in SERIAL_PRINTER_PATHS) {
+            val file = File(path)
+            if (file.exists()) {
+                ports.add("$path (r=${file.canRead()}, w=${file.canWrite()})")
+            }
+        }
+        return ports
     }
 
-    /**
-     * Initialize printer connection
-     */
-    fun connect(): Boolean {
-        val device = findUsbPrinter() ?: run {
-            Log.e(TAG, "No USB printer found")
-            return false
-        }
+    // -------------------- USB --------------------
 
+    private fun findUsbPrinter(): UsbDevice? {
+        val manager = usbManager ?: return null
+        val devices = manager.deviceList
+
+        for ((_, device) in devices) {
+            if (device.deviceClass == USB_CLASS_PRINTER) {
+                return device
+            }
+
+            for (i in 0 until device.interfaceCount) {
+                val iface = device.getInterface(i)
+                if (iface.interfaceClass == USB_CLASS_PRINTER) {
+                    return device
+                }
+            }
+        }
+        return null
+    }
+
+    private fun connectUsb(device: UsbDevice): Boolean {
         val manager = usbManager ?: return false
 
-        // Check if we have permission
         if (!manager.hasPermission(device)) {
-            Log.e(TAG, "No USB permission for device")
+            Log.e(TAG, "USB permission missing")
             return false
         }
 
-        // Open connection
-        val connection = manager.openDevice(device) ?: run {
-            Log.e(TAG, "Failed to open USB device")
-            return false
-        }
+        val connection = manager.openDevice(device) ?: return false
 
-        // Find printer interface and endpoint
         for (i in 0 until device.interfaceCount) {
             val iface = device.getInterface(i)
 
-            // Look for bulk OUT endpoint (for sending data to printer)
             for (j in 0 until iface.endpointCount) {
                 val endpoint = iface.getEndpoint(j)
-                if (endpoint.type == UsbConstants.USB_ENDPOINT_XFER_BULK &&
-                    endpoint.direction == UsbConstants.USB_DIR_OUT) {
 
-                    // Claim interface
+                if (endpoint.type == UsbConstants.USB_ENDPOINT_XFER_BULK &&
+                    endpoint.direction == UsbConstants.USB_DIR_OUT
+                ) {
                     if (connection.claimInterface(iface, true)) {
-                        usbDevice = device
                         usbConnection = connection
-                        usbInterface = iface
                         usbEndpoint = endpoint
-                        Log.d(TAG, "Printer connected successfully")
+                        Log.d(TAG, "USB printer connected")
                         return true
                     }
                 }
             }
         }
 
-        Log.e(TAG, "Failed to find suitable endpoint")
         connection.close()
         return false
     }
 
+    // -------------------- PRINTER STATUS CHECK --------------------
+
     /**
-     * Disconnect printer
+     * Check if printer is actually responsive by requesting status
      */
-    fun disconnect() {
-        usbInterface?.let { iface ->
-            usbConnection?.releaseInterface(iface)
+    private fun checkPrinterStatus(port: String): Boolean {
+        var fos: FileOutputStream? = null
+        var fis: FileInputStream? = null
+        
+        return try {
+            // Open for both read and write
+            val file = File(port)
+            fos = FileOutputStream(file, false)
+            fis = FileInputStream(file)
+
+            // Send status request command
+            fos.write(DLE_EOT_STATUS)
+            fos.flush()
+
+            // Wait a bit for response
+            Thread.sleep(100)
+
+            // Try to read response (should get at least 1 byte)
+            val available = fis.available()
+            
+            if (available > 0) {
+                val response = ByteArray(available)
+                fis.read(response)
+                Log.d(TAG, "Printer status response: ${response.size} bytes")
+                true
+            } else {
+                Log.w(TAG, "No status response from printer")
+                false
+            }
+        } catch (e: Exception) {
+            Log.w(TAG, "Status check failed: ${e.message}")
+            false
+        } finally {
+            try { fis?.close() } catch (_: Exception) {}
+            try { fos?.close() } catch (_: Exception) {}
         }
-        usbConnection?.close()
-        usbDevice = null
-        usbConnection = null
-        usbInterface = null
-        usbEndpoint = null
-        Log.d(TAG, "Printer disconnected")
+    }
+
+    // -------------------- PRINT --------------------
+
+    fun printRaw(data: ByteArray): PrintResult {
+        if (detectedPrinterType == PrinterType.NONE) {
+            detectPrinter()
+        }
+
+        return when (detectedPrinterType) {
+            PrinterType.SERIAL -> printViaSerial(data)
+            PrinterType.USB -> printViaUsb(data)
+            PrinterType.NONE -> PrintResult(false, "No printer detected")
+        }
+    }
+
+    private fun printViaSerial(data: ByteArray): PrintResult {
+        val port = serialPortPath ?: findSerialPrinter()
+            ?: return PrintResult(false, "Serial printer not found")
+
+        Log.d(TAG, "Printing via SERIAL: $port (${data.size} bytes)")
+
+        // FIRST: Check if printer is responsive
+        if (!checkPrinterStatus(port)) {
+            Log.w(TAG, "Printer not responding to status check, attempting print anyway...")
+            // Continue anyway - some printers might not respond to status but still work
+        }
+
+        val errors = mutableListOf<String>()
+
+        // Method 1: Direct file access with verification
+        val directResult = printSerialDirectWithVerification(port, data)
+        if (directResult.success) {
+            Log.d(TAG, "Direct serial print succeeded")
+            return directResult
+        }
+        errors.add("Direct: ${directResult.error}")
+        Log.w(TAG, "Direct access failed: ${directResult.error}")
+
+        // Method 2: Shell command with verification
+        val shellResult = printSerialViaShellWithVerification(port, data)
+        if (shellResult.success) {
+            Log.d(TAG, "Shell serial print succeeded")
+            return shellResult
+        }
+        errors.add("Shell: ${shellResult.error}")
+        Log.w(TAG, "Shell method failed: ${shellResult.error}")
+
+        // Method 3: Root access
+        val suResult = printSerialViaSu(port, data)
+        if (suResult.success) {
+            Log.d(TAG, "SU serial print succeeded")
+            return suResult
+        }
+        errors.add("SU: ${suResult.error}")
+        Log.w(TAG, "SU method failed: ${suResult.error}")
+
+        val errorMsg = "Printer not responding on $port. The device may not have a working printer. Errors: ${errors.joinToString("; ")}"
+        Log.e(TAG, errorMsg)
+
+        return PrintResult(false, errorMsg)
     }
 
     /**
-     * Print raw ESC/POS data
+     * Configure serial port with stty before printing
+     * Common baud rates for thermal printers: 9600, 19200, 38400, 57600, 115200
      */
-    fun printRaw(data: ByteArray): Boolean {
-        // Try to connect if not connected
-        if (usbConnection == null || usbEndpoint == null) {
-            if (!connect()) {
-                Log.e(TAG, "Cannot connect to printer")
-                return false
-            }
-        }
-
-        val connection = usbConnection ?: return false
-        val endpoint = usbEndpoint ?: return false
-
+    private fun configureSerialPort(port: String, baudRate: Int = 115200): Boolean {
         return try {
-            // Send data in chunks (max 16384 bytes per transfer typically)
-            val chunkSize = 4096
-            var offset = 0
+            // Configure serial port: baud rate, 8 data bits, no parity, 1 stop bit, raw mode
+            val process = ProcessBuilder("sh", "-c",
+                "stty -F $port $baudRate cs8 -cstopb -parenb raw -echo 2>&1")
+                .start()
 
-            while (offset < data.size) {
-                val length = minOf(chunkSize, data.size - offset)
-                val chunk = data.copyOfRange(offset, offset + length)
+            val output = process.inputStream.bufferedReader().use { it.readText() }
+            val exitCode = process.waitFor()
 
-                val result = connection.bulkTransfer(endpoint, chunk, length, 5000)
-                if (result < 0) {
-                    Log.e(TAG, "Bulk transfer failed at offset $offset, result: $result")
-                    return false
-                }
-
-                offset += length
+            if (exitCode == 0) {
+                Log.d(TAG, "Serial port $port configured: $baudRate baud")
+                true
+            } else {
+                Log.w(TAG, "stty failed (exit $exitCode): $output")
+                false
             }
-
-            Log.d(TAG, "Print data sent successfully (${data.size} bytes)")
-            true
         } catch (e: Exception) {
-            Log.e(TAG, "Print failed: ${e.message}")
+            Log.w(TAG, "Failed to configure serial port: ${e.message}")
             false
         }
     }
 
-    /**
-     * Print test page
-     */
-    fun printTestPage(): Boolean {
-        val testData = buildTestPageEscPos()
-        return printRaw(testData)
+    private fun printSerialDirectWithVerification(port: String, data: ByteArray): PrintResult {
+        var fos: FileOutputStream? = null
+
+        // Common baud rates for thermal printers (most common first)
+        val baudRates = listOf(115200, 9600, 19200, 38400, 57600)
+
+        return try {
+            // Try to configure serial port - try different baud rates if first fails
+            var configured = false
+            for (baud in baudRates) {
+                if (configureSerialPort(port, baud)) {
+                    configured = true
+                    break
+                }
+            }
+
+            if (!configured) {
+                Log.w(TAG, "Could not configure serial port, attempting raw write anyway")
+            }
+
+            fos = FileOutputStream(port)
+
+            val chunkSize = 512
+            var offset = 0
+            var totalWritten = 0
+
+            while (offset < data.size) {
+                val len = minOf(chunkSize, data.size - offset)
+                fos.write(data, offset, len)
+                fos.flush()
+
+                totalWritten += len
+                offset += len
+
+                if (offset < data.size) {
+                    Thread.sleep(10)
+                }
+            }
+
+            // Verify all data was sent
+            if (totalWritten != data.size) {
+                return PrintResult(false, "Write incomplete: $totalWritten/${data.size} bytes")
+            }
+
+            Log.d(TAG, "Direct serial write complete: ${data.size} bytes")
+
+            // Give printer time to process
+            Thread.sleep(300)
+
+            // Status check is informational only - many printers don't respond to status queries
+            val statusOk = checkPrinterStatus(port)
+            if (!statusOk) {
+                Log.w(TAG, "Printer did not respond to status check (this may be normal)")
+            }
+
+            PrintResult(true)
+
+        } catch (e: Exception) {
+            Log.e(TAG, "Direct serial failed", e)
+            PrintResult(false, "$port: ${e.message}")
+        } finally {
+            try { fos?.close() } catch (e: Exception) {
+                Log.w(TAG, "Error closing serial port", e)
+            }
+        }
     }
 
-    /**
-     * Build ESC/POS test page commands
-     */
+    private fun printSerialViaShellWithVerification(port: String, data: ByteArray): PrintResult {
+        var process: Process? = null
+        var tempFile: File? = null
+
+        return try {
+            // Configure serial port first
+            configureSerialPort(port, 115200)
+
+            tempFile = File(context.cacheDir, "print_data_${System.currentTimeMillis()}.bin")
+            tempFile.writeBytes(data)
+
+            // Use dd WITHOUT conv=fsync - serial ports don't support fsync and it causes false failures
+            process = ProcessBuilder("sh", "-c",
+                "dd if=${tempFile.absolutePath} of=$port bs=512 2>&1")
+                .start()
+
+            val output = process.inputStream.bufferedReader().use { it.readText() }
+            val exitCode = process.waitFor()
+
+            Log.d(TAG, "Shell dd output: $output, exit: $exitCode")
+
+            // Extract bytes written first - dd reports this even if there are other issues
+            val bytesRegex = """(\d+) bytes""".toRegex()
+            val match = bytesRegex.find(output)
+            val bytesWritten = match?.groupValues?.get(1)?.toIntOrNull() ?: 0
+
+            // Check for hard errors (but ignore fsync errors if bytes were written)
+            val lowerOutput = output.lowercase()
+            val hasFatalError = (lowerOutput.contains("permission denied") ||
+                lowerOutput.contains("operation not permitted") ||
+                lowerOutput.contains("cannot open") ||
+                lowerOutput.contains("no such device"))
+
+            if (hasFatalError && bytesWritten == 0) {
+                return PrintResult(false, "Shell error: $output")
+            }
+
+            // If bytes were written, consider it a success
+            if (bytesWritten > 0) {
+                if (bytesWritten != data.size) {
+                    Log.w(TAG, "Partial write: $bytesWritten/${data.size} bytes")
+                    return PrintResult(false, "Incomplete write: $bytesWritten/${data.size} bytes")
+                }
+
+                Log.d(TAG, "Shell serial write complete: $bytesWritten bytes")
+
+                // Give printer time to process
+                Thread.sleep(300)
+
+                // Status check is informational only - many printers don't respond to status queries
+                val statusOk = checkPrinterStatus(port)
+                if (!statusOk) {
+                    Log.w(TAG, "Printer did not respond to status check (this may be normal)")
+                }
+
+                PrintResult(true)
+            } else if (exitCode == 0) {
+                PrintResult(false, "Shell: No bytes written")
+            } else {
+                PrintResult(false, "Shell exit $exitCode: $output")
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Shell serial failed", e)
+            PrintResult(false, e.message)
+        } finally {
+            try {
+                process?.inputStream?.close()
+                process?.errorStream?.close()
+                process?.outputStream?.close()
+                process?.destroy()
+            } catch (_: Exception) {}
+            try { tempFile?.delete() } catch (_: Exception) {}
+        }
+    }
+
+    private fun printSerialViaSu(port: String, data: ByteArray): PrintResult {
+        var suCheck: Process? = null
+        var process: Process? = null
+        var tempFile: File? = null
+
+        return try {
+            suCheck = Runtime.getRuntime().exec(arrayOf("which", "su"))
+            suCheck.inputStream.bufferedReader().use { it.readText() }
+            val suAvailable = suCheck.waitFor() == 0
+
+            if (!suAvailable) {
+                return PrintResult(false, "Device not rooted")
+            }
+
+            tempFile = File(context.cacheDir, "print_data_su_${System.currentTimeMillis()}.bin")
+            tempFile.writeBytes(data)
+            tempFile.setReadable(true, false)
+
+            // Use dd WITHOUT conv=fsync - serial ports don't support fsync
+            process = ProcessBuilder("su", "-c",
+                "dd if=${tempFile.absolutePath} of=$port bs=512 2>&1")
+                .start()
+
+            val output = process.inputStream.bufferedReader().use { it.readText() }
+            val exitCode = process.waitFor()
+
+            Log.d(TAG, "SU dd output: $output, exit: $exitCode")
+
+            // Extract bytes written first
+            val bytesRegex = """(\d+) bytes""".toRegex()
+            val match = bytesRegex.find(output)
+            val bytesWritten = match?.groupValues?.get(1)?.toIntOrNull() ?: 0
+
+            val lowerOutput = output.lowercase()
+            val hasFatalError = (lowerOutput.contains("permission denied") ||
+                lowerOutput.contains("operation not permitted") ||
+                lowerOutput.contains("cannot open") ||
+                lowerOutput.contains("no such device"))
+
+            if (hasFatalError && bytesWritten == 0) {
+                return PrintResult(false, "SU error: $output")
+            }
+
+            if (bytesWritten > 0) {
+                if (bytesWritten != data.size) {
+                    return PrintResult(false, "Incomplete: $bytesWritten/${data.size} bytes")
+                }
+
+                Log.d(TAG, "SU serial write complete: $bytesWritten bytes")
+
+                // Give printer time to process
+                Thread.sleep(300)
+
+                // Status check is informational only
+                val statusOk = checkPrinterStatus(port)
+                if (!statusOk) {
+                    Log.w(TAG, "Printer did not respond to status check (this may be normal)")
+                }
+
+                PrintResult(true)
+            } else if (exitCode == 0) {
+                PrintResult(false, "SU: No bytes written")
+            } else {
+                PrintResult(false, "SU exit $exitCode: $output")
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "SU serial failed", e)
+            PrintResult(false, e.message)
+        } finally {
+            try {
+                suCheck?.inputStream?.close()
+                suCheck?.errorStream?.close()
+                suCheck?.outputStream?.close()
+                suCheck?.destroy()
+            } catch (_: Exception) {}
+            try {
+                process?.inputStream?.close()
+                process?.errorStream?.close()
+                process?.outputStream?.close()
+                process?.destroy()
+            } catch (_: Exception) {}
+            try { tempFile?.delete() } catch (_: Exception) {}
+        }
+    }
+
+    private fun printViaUsb(data: ByteArray): PrintResult {
+        val device = findUsbPrinter()
+            ?: return PrintResult(false, "USB printer not found")
+
+        if (usbConnection == null || usbEndpoint == null) {
+            if (!connectUsb(device)) {
+                return PrintResult(false, "USB connect failed")
+            }
+        }
+
+        val connection = usbConnection ?: return PrintResult(false, "USB lost")
+        val endpoint = usbEndpoint ?: return PrintResult(false, "USB endpoint lost")
+
+        return try {
+            val chunk = 4096
+            var offset = 0
+
+            while (offset < data.size) {
+                val len = minOf(chunk, data.size - offset)
+                val result = connection.bulkTransfer(
+                    endpoint,
+                    data.copyOfRange(offset, offset + len),
+                    len,
+                    5000
+                )
+
+                if (result < 0) {
+                    return PrintResult(false, "USB transfer failed at byte $offset")
+                }
+                
+                if (result != len) {
+                    return PrintResult(false, "USB incomplete transfer: $result/$len bytes")
+                }
+
+                offset += len
+            }
+
+            Log.d(TAG, "USB print complete: ${data.size} bytes")
+            PrintResult(true)
+
+        } catch (e: Exception) {
+            Log.e(TAG, "USB print error", e)
+            PrintResult(false, e.message)
+        }
+    }
+
+    // -------------------- TEST PRINT --------------------
+
+    fun printTestPage(): PrintResult {
+        return printRaw(buildTestPageEscPos())
+    }
+
     private fun buildTestPageEscPos(): ByteArray {
-        val commands = mutableListOf<Byte>()
+        val cmd = mutableListOf<Byte>()
 
-        // Initialize printer
-        commands.addAll(byteArrayOf(0x1B, 0x40).toList()) // ESC @
+        cmd.addAll(byteArrayOf(0x1B, 0x40).toList())
+        cmd.addAll(byteArrayOf(0x1B, 0x61, 0x01).toList())
+        cmd.addAll(byteArrayOf(0x1D, 0x21, 0x33).toList())
 
-        // Center alignment
-        commands.addAll(byteArrayOf(0x1B, 0x61, 0x01).toList()) // ESC a 1
+        cmd.addAll("TEST PRINT".toByteArray().toList())
+        cmd.add(0x0A)
 
-        // Double size
-        commands.addAll(byteArrayOf(0x1D, 0x21, 0x33).toList()) // GS ! 0x33
+        cmd.addAll(byteArrayOf(0x1D, 0x21, 0x00).toList())
+        cmd.add(0x0A)
 
-        // "TEST PRINT"
-        commands.addAll("TEST PRINT".toByteArray().toList())
-        commands.add(0x0A) // LF
+        cmd.addAll("Printer is working!".toByteArray().toList())
+        cmd.add(0x0A)
 
-        // Normal size
-        commands.addAll(byteArrayOf(0x1D, 0x21, 0x00).toList()) // GS ! 0x00
-        commands.add(0x0A)
+        cmd.addAll("Device: ${Build.MANUFACTURER} ${Build.MODEL}".toByteArray().toList())
+        cmd.add(0x0A)
 
-        // "Printer is working!"
-        commands.addAll("Printer is working!".toByteArray().toList())
-        commands.add(0x0A)
+        cmd.add(0x0A)
+        cmd.add(0x0A)
 
-        // Device info
-        commands.add(0x0A)
-        commands.addAll("Device: ${Build.MANUFACTURER} ${Build.MODEL}".toByteArray().toList())
-        commands.add(0x0A)
+        cmd.addAll(byteArrayOf(0x1D, 0x56, 0x00).toList())
 
-        // Feed and cut
-        commands.add(0x0A)
-        commands.add(0x0A)
-        commands.add(0x0A)
-        commands.addAll(byteArrayOf(0x1D, 0x56, 0x00).toList()) // GS V 0 (full cut)
-
-        return commands.toByteArray()
+        return cmd.toByteArray()
     }
 
-    /**
-     * Data class for printer detection result
-     */
+    // -------------------- CLEANUP --------------------
+
+    fun cleanup() {
+        Log.d(TAG, "Cleaning up printer resources")
+
+        try {
+            usbConnection?.close()
+            usbConnection = null
+            usbEndpoint = null
+        } catch (e: Exception) {
+            Log.w(TAG, "Error closing USB connection", e)
+        }
+
+        serialPortPath = null
+        detectedPrinterType = PrinterType.NONE
+
+        synchronized(Companion) {
+            instance = null
+        }
+    }
+
+    // -------------------- RESULT MODEL --------------------
+
     data class PrinterDetectionResult(
         val available: Boolean,
         val type: String,

@@ -152,4 +152,42 @@ class SystemInsetsBridge(
             injectCssVariables()
         }
     }
+
+    /**
+     * Force re-request insets from the system and re-inject
+     * Useful when resuming from background on POS terminals
+     */
+    fun forceRefresh() {
+        activity.runOnUiThread {
+            // Re-request insets from system
+            updateInsetsFromSystem()
+
+            // Request window insets to be reapplied
+            webView.requestApplyInsets()
+
+            // Inject with small delay to ensure WebView is ready
+            webView.postDelayed({
+                injectCssVariables()
+                Log.d(TAG, "Force refresh completed")
+            }, 50)
+        }
+    }
+
+    /**
+     * Inject CSS with retry mechanism for reliability
+     */
+    fun injectWithRetry(retryCount: Int = 3, delayMs: Long = 100) {
+        activity.runOnUiThread {
+            updateInsetsFromSystem()
+            injectCssVariables()
+
+            // Schedule retries with increasing delays
+            for (i in 1 until retryCount) {
+                webView.postDelayed({
+                    injectCssVariables()
+                    Log.d(TAG, "Retry injection #$i")
+                }, delayMs * i)
+            }
+        }
+    }
 }

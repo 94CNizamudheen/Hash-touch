@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
+import { generateUUID } from "@/utils/uuid";
 import DrawerOpenedModal from "../DrowerOpenedModal";
 
 import { useCart } from "@/ui/context/CartContext";
@@ -438,7 +439,7 @@ export default function PaymentDesktop() {
       /* Save to local Queue tokens */
       try {
         await queueTokenLocal.saveToken({
-          id: crypto.randomUUID(),
+          id: generateUUID(),
           ticket_id: ticketId,
           ticket_number: String(ticketRequest.ticket.ticket_number),
           token_number: queueNumber,
@@ -558,8 +559,10 @@ export default function PaymentDesktop() {
 
       await printerService.printReceiptToAllActive(savedReceiptData);
       showNotification.success("Receipt printed successfully");
-    } catch {
-      showNotification.error("Failed to print receipt");
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : "Unknown print error";
+      showNotification.error(`Print failed: ${errorMessage}`);
+      console.error("Print error:", error);
     }
   };
 

@@ -61,30 +61,43 @@ export default function PrinterFormModal({ open, editing, onClose, reload }: Pro
                         />
                     </div>
 
-                    {/* IP Address */}
-                    <div className="space-y-1.5">
-                        <label className="text-sm font-medium">IP Address</label>
-                        <Input
-                            placeholder="192.168.1.100"
-                            value={form.ip_address || ""}
-                            onChange={(e) => update({ ip_address: e.target.value })}
-                            className="h-11 sm:h-10 text-base sm:text-sm"
-                            inputMode="decimal"
-                        />
-                    </div>
+                    {/* Printer Type indicator for builtin */}
+                    {form.printer_type === "builtin" && (
+                        <div className="p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
+                            <p className="text-sm text-blue-700 dark:text-blue-300">
+                                Built-in thermal printer auto-detected on this device.
+                            </p>
+                        </div>
+                    )}
 
-                    {/* Port */}
-                    <div className="space-y-1.5">
-                        <label className="text-sm font-medium">Port</label>
-                        <Input
-                            placeholder="9100"
-                            type="number"
-                            value={form.port || 9100}
-                            onChange={(e) => update({ port: Number(e.target.value) })}
-                            className="h-11 sm:h-10 text-base sm:text-sm"
-                            inputMode="numeric"
-                        />
-                    </div>
+                    {/* IP Address - only for network printers */}
+                    {form.printer_type !== "builtin" && (
+                        <div className="space-y-1.5">
+                            <label className="text-sm font-medium">IP Address</label>
+                            <Input
+                                placeholder="192.168.1.100"
+                                value={form.ip_address || ""}
+                                onChange={(e) => update({ ip_address: e.target.value })}
+                                className="h-11 sm:h-10 text-base sm:text-sm"
+                                inputMode="decimal"
+                            />
+                        </div>
+                    )}
+
+                    {/* Port - only for network printers */}
+                    {form.printer_type !== "builtin" && (
+                        <div className="space-y-1.5">
+                            <label className="text-sm font-medium">Port</label>
+                            <Input
+                                placeholder="9100"
+                                type="number"
+                                value={form.port || 9100}
+                                onChange={(e) => update({ port: Number(e.target.value) })}
+                                className="h-11 sm:h-10 text-base sm:text-sm"
+                                inputMode="numeric"
+                            />
+                        </div>
+                    )}
 
                     {/* Active Status */}
                     <div className="flex items-center justify-between p-4 bg-muted rounded-lg">

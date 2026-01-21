@@ -11,10 +11,6 @@ export default defineConfig({
   css: {
     transformer: "lightningcss",
     lightningcss: {
-      // Target older browsers/WebViews for Android POS device compatibility
-      // This converts oklch() to rgb(), color-mix() to fallbacks, etc.
-      // Target Chrome 70 to force conversion of lab()/oklch() to rgb()
-      // Chrome 70 doesn't support lab/oklch, so Lightning CSS will convert them
       targets: browserslistToTargets(browserslist("Chrome >= 70")),
     },
   },

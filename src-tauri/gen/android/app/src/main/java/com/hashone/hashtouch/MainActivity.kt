@@ -23,6 +23,7 @@ class MainActivity : TauriActivity() {
   private lateinit var printerBridge: PrinterBridge
   private lateinit var webSocketServiceBridge: WebSocketServiceBridge
   private lateinit var systemInsetsBridge: SystemInsetsBridge
+  private var isWebViewReady = false
 
   // Permission launcher for notification permission (Android 13+)
   private val notificationPermissionLauncher = registerForActivityResult(
@@ -36,7 +37,11 @@ class MainActivity : TauriActivity() {
   }
 
   override fun onCreate(savedInstanceState: Bundle?) {
-    enableEdgeToEdge()
+    // enableEdgeToEdge works on API 21+ but may have visual issues on older POS terminals
+    // Only enable on Android 8.0+ (API 26) for better compatibility with Sunmi/POS devices
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+      enableEdgeToEdge()
+    }
     super.onCreate(savedInstanceState)
 
     // Request notification permission on Android 13+
@@ -61,7 +66,35 @@ class MainActivity : TauriActivity() {
     systemInsetsBridge = SystemInsetsBridge(this, webView)
     webView.addJavascriptInterface(systemInsetsBridge, SystemInsetsBridge.JS_INTERFACE_NAME)
     systemInsetsBridge.initialize()
+    isWebViewReady = true
     Log.d(TAG, "SystemInsetsBridge initialized for safe area handling")
+  }
+
+  override fun onResume() {
+    super.onResume()
+    Log.d(TAG, "onResume - re-injecting safe area insets")
+
+    // Re-inject CSS variables when app comes back from background
+    // Use retry mechanism to ensure it works on slow POS terminals
+    if (isWebViewReady && ::systemInsetsBridge.isInitialized) {
+      window.decorView.postDelayed({
+        systemInsetsBridge.injectWithRetry(retryCount = 3, delayMs = 150)
+        Log.d(TAG, "Safe area insets re-injection scheduled after resume")
+      }, 100)
+    }
+  }
+
+  override fun onWindowFocusChanged(hasFocus: Boolean) {
+    super.onWindowFocusChanged(hasFocus)
+    Log.d(TAG, "onWindowFocusChanged: hasFocus=$hasFocus")
+
+    // Re-inject when window gains focus (important for POS terminals)
+    if (hasFocus && isWebViewReady && ::systemInsetsBridge.isInitialized) {
+      window.decorView.postDelayed({
+        systemInsetsBridge.forceRefresh()
+        Log.d(TAG, "Safe area insets force refresh after focus change")
+      }, 200)
+    }
   }
 
   private fun requestNotificationPermissionIfNeeded() {

@@ -1,13 +1,8 @@
 @import "tailwindcss";
 
-
-
-
 @theme {
   --font-sans: "Inter", sans-serif;
 }
-
-
 
 @layer base {
   :root {
@@ -435,15 +430,15 @@ textarea {
   }
 
   .fill-primary-30 {
-    fill: color-mix(in srgb, var(--primary) 30%, transparent);
+    fill: rgba(0, 92, 230, 0.3);
   }
 
   .fill-primary-50 {
-    fill: color-mix(in srgb, var(--primary) 50%, transparent);
+    fill: rgba(0, 92, 230, 0.5);
   }
 
   .fill-primary-70 {
-    fill: color-mix(in srgb, var(--primary) 70%, transparent);
+    fill: rgba(0, 92, 230, 0.7);
   }
 
   .stroke-primary {
@@ -455,15 +450,15 @@ textarea {
   }
 
   .stroke-primary-30 {
-    stroke: color-mix(in srgb, var(--primary) 30%, transparent);
+    stroke: rgba(0, 92, 230, 0.3);
   }
 
   .stroke-primary-50 {
-    stroke: color-mix(in srgb, var(--primary) 50%, transparent);
+    stroke: rgba(0, 92, 230, 0.5);
   }
 
   .stroke-primary-70 {
-    stroke: color-mix(in srgb, var(--primary) 70%, transparent);
+    stroke: rgba(0, 92, 230, 0.7);
   }
 
   .custom-scrollbar::-webkit-scrollbar {

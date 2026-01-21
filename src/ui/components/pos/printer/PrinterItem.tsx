@@ -44,6 +44,8 @@ export default function PrinterItem({ printer, reload, onEdit }: Props) {
             <p className="text-sm text-muted-foreground mt-1">
               {printer.printer_type === "network"
                 ? `${printer.ip_address}:${printer.port}`
+                : printer.printer_type === "builtin"
+                ? "Built-in Thermal Printer"
                 : "USB Printer"}
             </p>
           </div>

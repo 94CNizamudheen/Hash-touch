@@ -3,6 +3,7 @@ import { Loader2, ChevronUp } from "lucide-react";
 import { MdAddShoppingCart } from "react-icons/md";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
+import { generateUUID } from "@/utils/uuid";
 import DrawerOpenedModal from "../../DrowerOpenedModal";
 import PaymentSuccessModal from "../PaymentSuccessModal";
 import { type PaymentEntry } from "../OrderSidebar";
@@ -234,7 +235,7 @@ export default function PaymentMobile() {
           );
         } else {
           const newPayment: PaymentEntry = {
-            id: crypto.randomUUID(),
+            id: generateUUID(),
             paymentMethodId: selectedPaymentMethod.id,
             paymentMethodName: selectedPaymentMethod.name,
             amount: paymentAmount,
@@ -292,7 +293,7 @@ export default function PaymentMobile() {
       );
     } else {
       const newPayment: PaymentEntry = {
-        id: crypto.randomUUID(),
+        id: generateUUID(),
         paymentMethodId: selectedPaymentMethod.id,
         paymentMethodName: selectedPaymentMethod.name,
         amount: paymentAmount,
@@ -449,7 +450,7 @@ export default function PaymentMobile() {
 
       try {
         await queueTokenLocal.saveToken({
-          id: crypto.randomUUID(),
+          id: generateUUID(),
           ticket_id: ticketId,
           ticket_number: String(ticketRequest.ticket.ticket_number),
           token_number: queueNumber,
@@ -548,8 +549,10 @@ export default function PaymentMobile() {
       }
       await printerService.printReceiptToAllActive(savedReceiptData);
       showNotification.success(t("Receipt printed"));
-    } catch {
-      showNotification.error(t("Failed to print"));
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : "Unknown print error";
+      showNotification.error(`${t("Print failed")}: ${errorMessage}`);
+      console.error("Print error:", error);
     }
   };
 
