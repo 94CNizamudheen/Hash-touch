@@ -74,11 +74,17 @@ export default function PaymentMobile() {
   const userDetailsResolverRef = useRef<((value: { firstName: string; lastName: string } | null) => void) | null>(null);
 
 
-  // Surcharge calculation based on selected payment method
+  // Surcharge calculation based on selected payment method and entered amount
   const selectedPaymentMethodData = paymentMethods.find(pm => pm.name === confirmedMethod);
+  const enteredAmount = parseFloat(inputValue) || 0;
 
-  const surchargeInfo = calculateSurcharge(grandTotal, selectedPaymentMethodData?.processor);
-  const effectiveTotal = surchargeInfo.adjustedTotal;
+  // Calculate surcharge on the entered amount (not grand total)
+  const surchargeInfo = enteredAmount > 0
+    ? calculateSurcharge(enteredAmount, selectedPaymentMethodData?.processor)
+    : { hasSurcharge: false, surchargeAmount: 0, adjustedTotal: grandTotal };
+
+  // Effective total = base total + surcharge on entered amount (for display)
+  const effectiveTotal = grandTotal + surchargeInfo.surchargeAmount;
 
   const [showTerminalModal, setShowTerminalModal] = useState(false);
   const [activeTerminalTxId, setActiveTerminalTxId] = useState<string | null>(null);
@@ -166,7 +172,7 @@ export default function PaymentMobile() {
     }
 
     /* ------------------------------------------------------------------ */
-    /*                        🟦 RBS TERMINAL FLOW                          */
+    /*                        RBS TERMINAL FLOW                          */
     /* ------------------------------------------------------------------ */
     if (selectedPaymentMethod.code === "RBS_PAY") {
       const config = getRbsPayConfig(selectedPaymentMethod.processor);
@@ -249,18 +255,19 @@ export default function PaymentMobile() {
         setShowTerminalModal(false);
         setActiveTerminalTxId(null);
 
+        // Calculate surcharge on the payment amount (not grand total)
         const paymentMethodProcessor = selectedPaymentMethod.processor;
-        const paymentSurcharge = calculateSurcharge(grandTotal, paymentMethodProcessor);
-        const totalWithSurcharge = paymentSurcharge.adjustedTotal;
+        const paymentSurcharge = calculateSurcharge(paymentAmount, paymentMethodProcessor);
+        const surchargeForThisPayment = paymentSurcharge.surchargeAmount;
 
         const newTotalPaid = Math.round(updatedPayments.reduce((sum, p) => sum + p.amount, 0) * 100) / 100;
-        const newRemainingBalance = Math.round((totalWithSurcharge - newTotalPaid) * 100) / 100;
+        const newRemainingBalance = Math.round((grandTotal + surchargeForThisPayment - newTotalPaid) * 100) / 100;
 
         if (newRemainingBalance <= 0.01) {
           showNotification.success(`${methodToUse}: ${currencySymbol}${paymentAmount.toFixed(2)} - ${t("Completing order")}...`);
-          await processOrderCompletion(updatedPayments, newRemainingBalance);
+          await processOrderCompletion(updatedPayments, newRemainingBalance, surchargeForThisPayment);
         } else {
-          showNotification.success(`${methodToUse}: ${currencySymbol}${paymentAmount.toFixed(2)}`);
+          showNotification.success(`${methodToUse}: ${currencySymbol}${paymentAmount.toFixed(2)}${surchargeForThisPayment > 0 ? ` (+${currencySymbol}${surchargeForThisPayment.toFixed(2)} surcharge)` : ''}`);
         }
 
         return;
@@ -303,18 +310,20 @@ export default function PaymentMobile() {
     setPayments(updatedPayments);
     setInputValue("");
 
+    // Calculate surcharge on the payment amount (not grand total)
     const paymentMethodProcessor = selectedPaymentMethod.processor;
-    const paymentSurcharge = calculateSurcharge(grandTotal, paymentMethodProcessor);
-    const totalWithSurcharge = paymentSurcharge.adjustedTotal;
+    const paymentSurcharge = calculateSurcharge(paymentAmount, paymentMethodProcessor);
+    const surchargeForThisPayment = paymentSurcharge.surchargeAmount;
 
     const newTotalPaid = Math.round(updatedPayments.reduce((sum, p) => sum + p.amount, 0) * 100) / 100;
-    const newRemainingBalance = Math.round((totalWithSurcharge - newTotalPaid) * 100) / 100;
+    // Remaining balance = grandTotal + surcharge on this payment - total paid
+    const newRemainingBalance = Math.round((grandTotal + surchargeForThisPayment - newTotalPaid) * 100) / 100;
 
     if (newRemainingBalance <= 0.01) {
       showNotification.success(`${methodToUse}: ${currencySymbol}${paymentAmount.toFixed(2)} - ${t("Completing order")}...`);
-      await processOrderCompletion(updatedPayments, newRemainingBalance);
+      await processOrderCompletion(updatedPayments, newRemainingBalance, surchargeForThisPayment);
     } else {
-      showNotification.success(`${methodToUse}: ${currencySymbol}${paymentAmount.toFixed(2)}`);
+      showNotification.success(`${methodToUse}: ${currencySymbol}${paymentAmount.toFixed(2)}${surchargeForThisPayment > 0 ? ` (+${currencySymbol}${surchargeForThisPayment.toFixed(2)} surcharge)` : ''}`);
     }
   };
 
@@ -365,7 +374,7 @@ export default function PaymentMobile() {
     showNotification.info(t("All payments cleared"));
   };
 
-  const processOrderCompletion = async (paymentsToProcess: PaymentEntry[], finalRemainingBalance: number) => {
+  const processOrderCompletion = async (paymentsToProcess: PaymentEntry[], finalRemainingBalance: number, totalSurchargeAmount: number = 0) => {
     setLoading(true);
 
     try {
@@ -388,9 +397,12 @@ export default function PaymentMobile() {
       const paymentMethodName = uniqueMethods.length === 1 ? uniqueMethods[0] : "SPLIT";
       const paymentMethodId = paymentsToProcess[0]?.paymentMethodId || "";
 
-      // Calculate surcharge based on the primary payment method
-      const primaryPaymentMethod = paymentMethods.find(pm => pm.id === paymentMethodId);
-      const orderSurcharge = calculateSurcharge(grandTotal, primaryPaymentMethod?.processor);
+      // Use the surcharge calculated on payment amount (passed as parameter)
+      const orderSurcharge = {
+        hasSurcharge: totalSurchargeAmount !== 0,
+        surchargeAmount: totalSurchargeAmount,
+        adjustedTotal: grandTotal + totalSurchargeAmount,
+      };
       const finalTotal = orderSurcharge.adjustedTotal;
 
       const ticketRequest = buildTicketRequest({
@@ -657,18 +669,17 @@ export default function PaymentMobile() {
 
     const method = paymentMethods.find(pm => pm.name === pendingMethod);
     if (!method) return;
-    const surchargeCheck = calculateSurcharge(grandTotal, method.processor);
-    const adjustedTotal = surchargeCheck.adjustedTotal;
 
+    // Calculate remaining balance without surcharge first
     const alreadyPaid = payments.reduce((s, p) => s + p.amount, 0);
-    const amountToPay =
-      Math.round((adjustedTotal - alreadyPaid) * 100) / 100;
+    const amountToPay = Math.round((grandTotal - alreadyPaid) * 100) / 100;
 
     setConfirmedMethod(pendingMethod);
     setSelectedMethod(pendingMethod);
     setShowSurchargeConfirm(false);
     setPendingMethod(null);
 
+    // Surcharge will be calculated on this payment amount in onAddPayment
     await onAddPayment(pendingMethod, amountToPay);
   };
 
@@ -908,7 +919,8 @@ export default function PaymentMobile() {
       {showSurchargeConfirm && pendingMethod && (
         <SurchargeConfirmModal
           surchargeAmount={calculateSurcharge(
-            grandTotal,
+            // Calculate surcharge on entered amount or remaining balance
+            enteredAmount > 0 ? enteredAmount : remainingBalance,
             paymentMethods.find(pm => pm.name === pendingMethod)?.processor
           ).surchargeAmount}
           currencyCode={currencyCode}

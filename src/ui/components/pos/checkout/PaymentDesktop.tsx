@@ -80,20 +80,25 @@ export default function PaymentDesktop() {
   // NEW: Multi-payment state
   const [payments, setPayments] = useState<PaymentEntry[]>([]);
 
-  // Surcharge calculation based on selected payment method
-  const primaryPaymentMethod = payments.length > 0
-    ? paymentMethods.find(pm => pm.id === payments[0].paymentMethodId)
-    : null;
+  // Calculate total paid first (needed for surcharge calculation)
+  const totalPaid = Math.round(payments.reduce((sum, p) => sum + p.amount, 0) * 100) / 100;
 
-  const surchargeInfo = payments.length > 0 && primaryPaymentMethod
-    ? calculateSurcharge(total, primaryPaymentMethod.processor)
+  // Surcharge calculation based on selected payment method and entered amount
+  const selectedPaymentMethodData = paymentMethods.find(pm => pm.name === confirmedMethod);
+  const enteredAmount = parseFloat(inputValue) || 0;
+
+  // Calculate surcharge ONLY on entered amount (not on remaining balance)
+  const surchargeInfo = enteredAmount > 0 && selectedPaymentMethodData
+    ? calculateSurcharge(enteredAmount, selectedPaymentMethodData.processor)
     : {
       hasSurcharge: false,
       surchargeAmount: 0,
       adjustedTotal: total,
     };
 
-  const effectiveTotal = surchargeInfo.adjustedTotal;
+  // Effective total = base total + surcharge on the amount
+  const effectiveTotal = total + surchargeInfo.surchargeAmount;
+  const remainingBalance = Math.round((effectiveTotal - totalPaid) * 100) / 100;
 
 
 
@@ -113,10 +118,6 @@ export default function PaymentDesktop() {
   }, [paymentMethods, selectedMethod]);
 
   if (!isHydrated) return null;
-
-
-  const totalPaid = Math.round(payments.reduce((sum, p) => sum + p.amount, 0) * 100) / 100;
-  const remainingBalance = Math.round((effectiveTotal - totalPaid) * 100) / 100;
   const tendered = parseFloat(inputValue) || 0;
   const changeAmount = tendered > 0 ? tendered - remainingBalance : 0;
 
@@ -215,8 +216,12 @@ export default function PaymentDesktop() {
         setInputValue("");
         setTerminalError(null);
 
+        // Calculate surcharge on the payment amount (not total)
+        const paymentSurcharge = calculateSurcharge(paymentAmount, selectedPaymentMethod.processor);
+        const surchargeForThisPayment = paymentSurcharge.surchargeAmount;
+
         const totalPaid = updatedPayments.reduce((s, p) => s + p.amount, 0);
-        const remaining = Math.round((effectiveTotal - totalPaid) * 100) / 100;
+        const remaining = Math.round((total + surchargeForThisPayment - totalPaid) * 100) / 100;
 
         showNotification.success("Terminal payment approved");
 
@@ -225,7 +230,7 @@ export default function PaymentDesktop() {
         setActiveTerminalTxId(null);
 
         if (remaining <= 0.01) {
-          await processOrderCompletion(updatedPayments, remaining);
+          await processOrderCompletion(updatedPayments, remaining, surchargeForThisPayment);
         }
       } catch (err: any) {
         console.error("Terminal error:", err);
@@ -240,7 +245,7 @@ export default function PaymentDesktop() {
     }
 
     /* ------------------------------------------------------------------ */
-    /*                  🟩 NORMAL PAYMENT FLOW (UNCHANGED)                */
+    /*                  🟩 NORMAL PAYMENT FLOW                            */
     /* ------------------------------------------------------------------ */
 
     const updatedPayments = buildUpdatedPayments(
@@ -252,22 +257,27 @@ export default function PaymentDesktop() {
     setPayments(updatedPayments);
     setInputValue("");
 
+    // Calculate surcharge on the payment amount (not total)
+    const paymentSurcharge = calculateSurcharge(paymentAmount, selectedPaymentMethod.processor);
+    const surchargeForThisPayment = paymentSurcharge.surchargeAmount;
+
     const totalPaid = Math.round(
       updatedPayments.reduce((sum, p) => sum + p.amount, 0) * 100
     ) / 100;
 
+    // Remaining balance = total + surcharge on this payment - total paid
     const remainingBalance = Math.round(
-      (effectiveTotal - totalPaid) * 100
+      (total + surchargeForThisPayment - totalPaid) * 100
     ) / 100;
 
     if (remainingBalance <= 0.01) {
       showNotification.success(
         `${methodToUse}: ${paymentAmount.toFixed(2)} added — completing order`
       );
-      await processOrderCompletion(updatedPayments, remainingBalance);
+      await processOrderCompletion(updatedPayments, remainingBalance, surchargeForThisPayment);
     } else {
       showNotification.success(
-        `${methodToUse}: ${paymentAmount.toFixed(2)} added`
+        `${methodToUse}: ${paymentAmount.toFixed(2)} added${surchargeForThisPayment > 0 ? ` (+${surchargeForThisPayment.toFixed(2)} surcharge)` : ''}`
       );
     }
   };
@@ -328,7 +338,7 @@ export default function PaymentDesktop() {
 
 
 
-  const processOrderCompletion = async (paymentsToProcess: PaymentEntry[], finalRemainingBalance: number) => {
+  const processOrderCompletion = async (paymentsToProcess: PaymentEntry[], finalRemainingBalance: number, totalSurchargeAmount: number = 0) => {
     setLoading(true);
 
     try {
@@ -363,9 +373,12 @@ export default function PaymentDesktop() {
       const paymentMethodName = uniqueMethods.length === 1 ? uniqueMethods[0] : "SPLIT";
       const paymentMethodId = paymentsToProcess[0]?.paymentMethodId || "";
 
-      // Calculate surcharge based on the primary payment method
-      const primaryPaymentMethod = paymentMethods.find(pm => pm.id === paymentMethodId);
-      const orderSurcharge = calculateSurcharge(total, primaryPaymentMethod?.processor);
+      // Use the surcharge calculated on payment amount (passed as parameter)
+      const orderSurcharge = {
+        hasSurcharge: totalSurchargeAmount !== 0,
+        surchargeAmount: totalSurchargeAmount,
+        adjustedTotal: total + totalSurchargeAmount,
+      };
       const finalTotal = orderSurcharge.adjustedTotal;
 
       // Build ticket request
@@ -717,6 +730,7 @@ export default function PaymentDesktop() {
 
         isProcessing={loading}
         remainingBalance={remainingBalance}
+        enteredAmount={enteredAmount}
       />
 
       {showDrawer && (

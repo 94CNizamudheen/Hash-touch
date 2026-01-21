@@ -16,6 +16,7 @@ interface PaymentMethodsSidebarProps {
   onPay: (paymentMethodName?: string) => void;
   isProcessing?: boolean;
   remainingBalance?: number;
+  enteredAmount?: number;
 }
 
 export default function PaymentMethodsSidebar({
@@ -26,7 +27,7 @@ export default function PaymentMethodsSidebar({
   onPay,
   isProcessing = false,
   selectedMethod,
-  remainingBalance = 0,
+  enteredAmount = 0,
 }: PaymentMethodsSidebarProps) {
   const { t } = useTranslation();
   const { paymentMethods, loading, error } = usePaymentMethods();
@@ -48,15 +49,17 @@ export default function PaymentMethodsSidebar({
 
   if (isGiftCard) {
     onMethodSelect(method.name);
-    onPay(method.name); 
+    onPay(method.name);
     return;
   }
+
+    // Calculate surcharge on entered amount (not remaining balance)
     const surcharge = calculateSurcharge(
-      remainingBalance,
+      enteredAmount,
       method.processor
     );
 
-    if (surcharge.hasSurcharge) {
+    if (surcharge.hasSurcharge && enteredAmount > 0) {
       setPendingMethod(method.name);
       setSurchargeAmount(surcharge.surchargeAmount);
       setShowSurchargeConfirm(true);
