@@ -1,13 +1,24 @@
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 import tailwindcss from "@tailwindcss/vite";
+import legacy from "@vitejs/plugin-legacy";
 import path from "path";
 import browserslist from "browserslist";
 import { browserslistToTargets } from "lightningcss";
 
 
 export default defineConfig({
-  plugins: [react(), tailwindcss()],
+  plugins: [
+    react(),
+    tailwindcss(),
+    legacy({
+      targets: ["Chrome >= 61", "Android >= 7"],
+      additionalLegacyPolyfills: ["regenerator-runtime/runtime"],
+    }),
+  ],
+  build: {
+    target: "es2015",
+  },
   css: {
     transformer: "lightningcss",
     lightningcss: {
