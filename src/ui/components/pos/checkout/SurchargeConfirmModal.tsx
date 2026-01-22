@@ -7,6 +7,7 @@ interface SurchargeConfirmModalProps {
   currencyCode: string;
   onConfirm: () => Promise<void> | void;
   onClose: () => void;
+  enteredAmount: number;
 }
 
 export default function SurchargeConfirmModal({
@@ -14,6 +15,7 @@ export default function SurchargeConfirmModal({
   currencyCode,
   onConfirm,
   onClose,
+  enteredAmount
 }: SurchargeConfirmModalProps) {
   const { t } = useTranslation();
   const [isLoading, setIsLoading] = useState(false);
@@ -29,10 +31,11 @@ export default function SurchargeConfirmModal({
       setIsLoading(false);
     }
   };
+  const appliedSurcharge = (enteredAmount + surchargeAmount);
 
   return (
-    <div className="fixed inset-0 z-[9999] bg-black/50 flex items-center justify-center p-4">
-      <div className="bg-secondary rounded-2xl w-full max-w-[550px] p-8 shadow-2xl">
+    <div className="fixed inset-0 z-9999 bg-black/50 flex items-center justify-center p-4">
+      <div className="bg-secondary rounded-2xl w-full max-w-137.5 p-8 shadow-2xl">
         {/* Icon */}
         <div className="w-16 h-16 mx-auto mb-6 rounded-full bg-yellow-100 flex items-center justify-center">
           {isLoading ? (
@@ -80,16 +83,18 @@ export default function SurchargeConfirmModal({
         {/* Description */}
         <p className="text-center text-gray-600 mb-8">
           {t(
-            "This payment method includes an additional surcharge of {{amount}}. Do you want to continue?",
+            "You will be charged {{amount}} additionally.. Total amount will be {{appliedSurcharge}} ",
             {
               amount: `${currencyCode} ${surchargeAmount.toFixed(2)}`,
-            }
+              appliedSurcharge: `${currencyCode} ${appliedSurcharge.toFixed(2)}`,
+            },
           )}
         </p>
 
         {/* Actions */}
         <div className="flex gap-3">
           <Button
+            variant="destructive"
             onClick={onClose}
             disabled={isLoading}
             className="flex-1 border-2"
@@ -100,9 +105,9 @@ export default function SurchargeConfirmModal({
           <Button
             onClick={handleConfirm}
             disabled={isLoading}
-            className="flex-1 bg-destructive"
+            className="flex-1"
           >
-            {isLoading ? t("Applying...") : t("Apply Surcharge")}
+            {isLoading ? t("Applying...") : t("Confirm")}
           </Button>
         </div>
       </div>

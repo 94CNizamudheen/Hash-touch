@@ -666,6 +666,7 @@ export default function PaymentMobile() {
 
   const confirmSurchargeAndApply = async () => {
     if (!pendingMethod) return;
+    const amountWithSurcharge = enteredAmount+surchargeInfo.surchargeAmount;
 
     const method = paymentMethods.find(pm => pm.name === pendingMethod);
     if (!method) return;
@@ -673,7 +674,7 @@ export default function PaymentMobile() {
     // Calculate remaining balance without surcharge first
     const alreadyPaid = payments.reduce((s, p) => s + p.amount, 0);
     const amountToPay = Math.round((grandTotal - alreadyPaid) * 100) / 100;
-
+    setInputValue(amountWithSurcharge.toFixed(2));
     setConfirmedMethod(pendingMethod);
     setSelectedMethod(pendingMethod);
     setShowSurchargeConfirm(false);
@@ -703,7 +704,7 @@ export default function PaymentMobile() {
   return (
     <div className="fixed inset-0 flex flex-col bg-background safe-area safe-area-header safe-area-bottom safe-area-bottom-bg">
       {/* Payment Methods - Horizontal Scroll */}
-      <div className="flex-shrink-0 p-3 border-b border-border">
+      <div className="shrink-0 p-3 border-b border-border">
         <div className="flex gap-2 overflow-x-auto no-scrollbar pb-1">
           {paymentMethods.map((method) => {
             const isSelected = selectedMethod === method.name;
@@ -713,7 +714,7 @@ export default function PaymentMobile() {
                 whileTap={{ scale: 0.95 }}
                 onClick={() => handleMethodSelect(method)}
 
-                className={`flex-shrink-0 px-4 py-2.5 rounded-xl text-sm font-medium transition-all ${isSelected
+                className={`shrink-0 px-4 py-2.5 rounded-xl text-sm font-medium transition-all ${isSelected
                   ? "bg-primary text-primary-foreground shadow-md"
                   : "bg-secondary text-foreground hover:bg-muted"
                   }`}
@@ -788,7 +789,7 @@ export default function PaymentMobile() {
       </div>
 
       {/* Fixed Bottom - Totals & Action Buttons */}
-      <div className="flex-shrink-0 border-t border-border bg-secondary ">
+      <div className="shrink-0 border-t border-border bg-secondary ">
         {/* Totals Section - More compact */}
         <motion.div
           className={`px-4 py-2.5 text-sm space-y-1 relative ${isPaymentsClickable
@@ -864,7 +865,7 @@ export default function PaymentMobile() {
               onAddPayment();
             }}
             disabled={!isPaymentReady || loading}
-            className={`flex-[6] h-14 rounded-xl font-semibold text-base transition-all active:scale-[0.98] flex items-center justify-center gap-2 ${isPaymentReady && !loading
+            className={`flex-6 h-14 rounded-xl font-semibold text-base transition-all active:scale-[0.98] flex items-center justify-center gap-2 ${isPaymentReady && !loading
               ? "bg-primary text-primary-foreground shadow-lg"
               : "bg-sidebar text-muted-foreground"
               }`}
@@ -876,14 +877,14 @@ export default function PaymentMobile() {
               </>
             ) : (
               <>
-                {t("Pay")} {inputValue ? `${currencySymbol}${inputValue}` : ""} - {selectedMethod}
+                {t("Pay")} {inputValue ? `${currencyCode} ${inputValue}` : ""} - {selectedMethod}
               </>
             )}
           </button>
 
           <button
             onClick={() => navigate("/pos")}
-            className="flex-[4] h-14 rounded-xl font-semibold text-base bg-warning text-foreground hover:bg-muted active:scale-[0.98] transition-all flex items-center justify-center gap-2"
+            className="flex-4 h-14 rounded-xl font-semibold text-base bg-warning text-foreground hover:bg-muted active:scale-[0.98] transition-all flex items-center justify-center gap-2"
           >
             <MdAddShoppingCart className="w-5 h-5" />
             {t("Add More")}
@@ -929,6 +930,7 @@ export default function PaymentMobile() {
             setShowSurchargeConfirm(false);
             setPendingMethod(null);
           }}
+          enteredAmount={enteredAmount}
         />
       )}
       <GiftCardOtpModal

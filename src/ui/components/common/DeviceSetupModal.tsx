@@ -76,7 +76,7 @@ export default function DeviceSetupModal({
 
   return (
     <div className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center">
-      <div className={`w-full max-w-lg ${showKeyboard ? "pb-[280px]" : ""}`}>
+      <div className={`w-full max-w-lg ${showKeyboard ? "pb-70" : ""}`}>
         <div
           className={`
           bg-background w-full max-w-md rounded-xl p-6
@@ -115,11 +115,10 @@ export default function DeviceSetupModal({
           {showKeyboard && (
             <div
               ref={keyboardRef}
-              className="fixed bottom-0 left-0 w-full min-h-[300px] px-44 py-4 bg-background z-50"
+              className="fixed bottom-0 left-0 w-full min-h-75 px-44 py-4 bg-background z-50"
             >
               <Keyboard
                 defaultValue={code}
-                initKeyboard={1} // numeric (optional)
                 onChange={(value) => setCode(value)}
               />
             </div>

@@ -127,12 +127,20 @@
     --android-inset-left: 0px;
     --android-inset-right: 0px;
 
-    /* Safe area with Android fallback */
-    /* Uses env() for iOS/notched devices, falls back to Android insets for POS devices */
-    --safe-top: max(env(safe-area-inset-top, 0px), var(--android-status-bar-height));
-    --safe-bottom: max(env(safe-area-inset-bottom, 0px), var(--android-nav-bar-height));
-    --safe-left: max(env(safe-area-inset-left, 0px), var(--android-inset-left));
-    --safe-right: max(env(safe-area-inset-right, 0px), var(--android-inset-right));
+    /* Platform detection flag (set by JS: 'ios' or 'android') */
+    /* Default: use iOS env() values */
+    --safe-top: env(safe-area-inset-top, 0px);
+    --safe-bottom: env(safe-area-inset-bottom, 0px);
+    --safe-left: env(safe-area-inset-left, 0px);
+    --safe-right: env(safe-area-inset-right, 0px);
+  }
+
+  /* Android-specific: Override safe area to use injected values */
+  :root.android {
+    --safe-top: var(--android-status-bar-height);
+    --safe-bottom: var(--android-nav-bar-height);
+    --safe-left: var(--android-inset-left);
+    --safe-right: var(--android-inset-right);
   }
 }
 

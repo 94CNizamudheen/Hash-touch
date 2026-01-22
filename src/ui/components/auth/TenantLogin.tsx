@@ -87,7 +87,7 @@ export default function TenantLogin({
     <section
       className={cn(
         "min-h-screen flex items-center justify-center bg-background px-4 transition-all ",
-        showKeyboard && "pb-[320px]"
+        showKeyboard && "pb-80"
       )}
     >
       <div className="w-full flex flex-col items-center gap-3 rounded-2xl shadow-lg max-w-lg  ">

@@ -115,7 +115,7 @@ export default function TenantInput({
       {matches && showKeyboard && (
         <div
           ref={keyboardRef}
-          className="fixed bottom-0 left-0 w-full min-h-[300px] px-44 py-4 bg-background z-50"
+          className="fixed bottom-0 left-0 w-full min-h-75 px-44 py-4 bg-background z-50"
         >
           <Keyboard
             defaultValue={form.getValues(name)}

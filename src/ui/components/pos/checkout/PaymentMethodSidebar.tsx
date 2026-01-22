@@ -80,7 +80,7 @@ export default function PaymentMethodsSidebar({
         if (isMobileOverlay && e.target === e.currentTarget) onClose();
       }}
     >
-      <div className="w-[300px] h-full bg-background flex flex-col border-l border-border shadow-lg relative">
+      <div className="w-75 h-full bg-background flex flex-col border-l border-border shadow-lg relative">
         {/* Close button for mobile */}
         {isMobileOverlay && (
           <div className="p-3 border-b">
@@ -141,8 +141,8 @@ export default function PaymentMethodsSidebar({
 
         {/* 🔹 Desktop surcharge confirmation modal */}
         {showSurchargeConfirm && pendingMethod && (
-          <div className="fixed inset-0 z-[9999] bg-black/50 flex items-center justify-center p-4">
-            <div className="bg-secondary rounded-2xl w-full max-w-[550px] p-8 shadow-2xl">
+          <div className="fixed inset-0 z-9999 bg-black/50 flex items-center justify-center p-4">
+            <div className="bg-secondary rounded-2xl w-full max-w-137.5 p-8 shadow-2xl">
               {/* Icon */}
               <div className="w-16 h-16 mx-auto mb-6 rounded-full bg-yellow-100 flex items-center justify-center">
                 {isProcessing ? (
@@ -190,9 +190,10 @@ export default function PaymentMethodsSidebar({
               {/* Description */}
               <p className="text-center text-muted-foreground mb-8">
                 {t(
-                  "This payment method includes an additional surcharge of {{amount}}. Do you want to continue?",
+                  "You will be charged {{amount}} additionally.. Total amount will be {{appliedSurcharge}}",
                   {
                     amount: `${currencyCode} ${surchargeAmount.toFixed(2)}`,
+                    appliedSurcharge: `${currencyCode} ${(enteredAmount + surchargeAmount).toFixed(2)}`,
                   }
                 )}
               </p>

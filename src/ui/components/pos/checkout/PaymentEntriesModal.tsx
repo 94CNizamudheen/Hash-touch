@@ -63,7 +63,7 @@ export default function PaymentEntriesModal({
         </div>
 
         {/* ===== Payment List ===== */}
-        <div className="p-4 max-h-[300px] overflow-y-auto">
+        <div className="p-4 max-h-75 overflow-y-auto">
           {payments.length === 0 ? (
             <div className="text-center text-muted-foreground py-8">
               {t("No payments added")}
@@ -91,14 +91,15 @@ export default function PaymentEntriesModal({
           <div className="flex gap-4 p-4 border-t border-border rtl:flex-row-reverse">
             <Button
               onClick={onClose}
-              className="flex-1 h-12 rounded-xl bg-background text-foreground hover:bg-muted/80"
+              className="flex-1 h-12 rounded-xl hover:bg-muted/80"
             >
               {t("Cancel")}
             </Button>
 
             <Button
+            variant="destructive"
               onClick={handleClearAll}
-              className="flex-1 h-12 rounded-xl bg-primary text-background hover:bg-primary-hover"
+              className="flex-1 h-12 rounded-xl   hover:bg-primary-hover"
             >
               {t("Clear")}
             </Button>
@@ -130,8 +131,9 @@ export default function PaymentEntriesModal({
               {/* Actions */}
               <div className="flex gap-4 px-6 py-6 rtl:flex-row-reverse">
                 <Button
+                variant="destructive"
                   onClick={() => setShowConfirmClear(false)}
-                  className="flex-1 h-12 rounded-xl bg-destructive text-white hover:bg-red-600"
+                  className="flex-1 h-12 rounded-xl "
                 >
                   {t("Cancel")}
                 </Button>

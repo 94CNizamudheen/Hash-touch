@@ -114,7 +114,7 @@ const CartItemCardMobile = ({
               <h3 className="text-sm font-semibold text-foreground line-clamp-2 flex-1">
                 {name}
               </h3>
-              <span className="text-sm font-bold text-primary flex-shrink-0">
+              <span className="text-sm font-bold text-primary shrink-0">
                 {currencySymbol} {lineTotal.toFixed(2)}
               </span>
             </div>
@@ -152,7 +152,7 @@ const CartItemCardMobile = ({
                   <Minus className="w-4 h-4" strokeWidth={2.5} />
                 </button>
 
-                <span className="text-base font-bold min-w-[28px] text-center text-foreground">
+                <span className="text-base font-bold min-w-7 text-center text-foreground">
                   {quantity}
                 </span>
 

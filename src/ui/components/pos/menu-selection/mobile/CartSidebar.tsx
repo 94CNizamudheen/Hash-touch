@@ -118,7 +118,7 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
             className={`safe-area fixed inset-0 bg-background z-50 flex flex-col pointer-events-auto`}
           >
             {/* Header */}
-            <header className="flex-shrink-0 px-4 py-3 border-b border-border bg-background">
+            <header className="shrink-0 px-4 py-3 border-b border-border bg-background">
               <div className="flex items-center justify-between">
                 <button
                   onClick={onClose}
@@ -194,7 +194,7 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
 
             {/* Footer - Only show when items exist */}
             {items.length > 0 && (
-              <footer className="flex-shrink-0 border-t border-border bg-secondary ">
+              <footer className="shrink-0 border-t border-border bg-secondary ">
                 {/* Order Summary */}
                 <div className="px-4 py-3 space-y-2">
                   <div className="flex justify-between text-sm">
@@ -223,7 +223,7 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
                 <div className="px-4 pb-4 flex gap-3">
                   <button
                     onClick={handleAddMore}
-                    className="h-14 bg-secondary text-foreground border-2 border-primary rounded-xl font-semibold text-base flex items-center justify-center gap-2 active:scale-[0.98] transition-transform flex-shrink-0 px-6"
+                    className="h-14 bg-secondary text-foreground border-2 border-primary rounded-xl font-semibold text-base flex items-center justify-center gap-2 active:scale-[0.98] transition-transform shrink-0 px-6"
                   >
                     <MdAddShoppingCart className="w-6 h-6" />
                     <span>{t("Add More")}</span>
@@ -233,7 +233,7 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
                     onClick={handleSettle}
                     className="flex-1 h-14 bg-primary text-primary-foreground rounded-xl font-bold text-base flex items-center justify-center gap-3 active:scale-[0.98] transition-transform shadow-lg"
                   >
-                    <span>{t("Settle")}</span>
+                    <span>{t("Check out")}</span>
                     <span className="bg-primary-foreground/20 px-3 py-1 rounded-lg text-sm">
                       {currencyCode} {grandTotal.toFixed(2)}
                     </span>
