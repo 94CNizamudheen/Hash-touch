@@ -24,11 +24,11 @@ const MobileHeader = ({
   onSearchChange: (value: string) => void;
 }) => {
   return (
-    <header className="flex-shrink-0 h-14 z-30 border-b border-border bg-background flex items-center justify-between px-4 gap-3">
+    <header className="shrink-0 h-14 z-30 border-b border-border bg-background flex items-center justify-between px-4 gap-3">
       {/* Menu Icon */}
       <button
         onClick={onOpenMenu}
-        className="flex-shrink-0 w-10 h-10 flex items-center justify-center bg-primary rounded-lg hover:bg-primary-hover active:scale-95 transition-all"
+        className="shrink-0 w-10 h-10 flex items-center justify-center bg-primary rounded-lg hover:bg-primary-hover active:scale-95 transition-all"
       >
         <Menu className="w-5 h-5 text-primary-foreground" />
       </button>
@@ -58,7 +58,7 @@ const MobileStickyFilters = ({
   searchValue: string;
 }) => {
   return (
-    <div className="flex-shrink-0 bg-background ">
+    <div className="shrink-0 bg-background ">
       <div className="p-1 space-y-3">
         {/* Product Groups - Only show if no search */}
         {!searchValue.trim() && <MobileProductGroupTabs />}

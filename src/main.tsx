@@ -3,12 +3,21 @@ import './index.css'
 import App from './App.tsx'
 
 // Platform detection for safe area handling
-// Add 'android' class to root element on Android devices
-// iOS uses native env(safe-area-inset-*) values by default
-const isAndroid = /android/i.test(navigator.userAgent);
+// Android: uses injected --android-* variables from SystemInsetsBridge
+// iOS: uses native env(safe-area-inset-*) values
+const userAgent = navigator.userAgent.toLowerCase();
+const isAndroid = /android/i.test(userAgent);
+const isIOS = /iphone|ipad|ipod/i.test(userAgent) ||
+  (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1); // iPad detection
+
 if (isAndroid) {
   document.documentElement.classList.add('android');
+} else if (isIOS) {
+  document.documentElement.classList.add('ios');
 }
+
+// Debug: log platform detection
+console.log('[Platform]', { isAndroid, isIOS, userAgent: navigator.userAgent });
 import { HashRouter } from 'react-router-dom'
 import { PersistGate } from 'redux-persist/integration/react';
 import { persistor, store } from './ui/store/store.ts';
